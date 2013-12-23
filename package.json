@@ -1,0 +1,28 @@
+{
+  "name": "ble-ble113",
+  "version": "0.0.2",
+  "description": "Library to run the Bluetooth BLE113 Tessel Module.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:tessel/beta.git"
+  },
+  "author": "Jon McKay <jon@technical.io>",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "directories": {
+    "example": "examples"
+  },
+  "keywords": [
+    "tessel",
+    "bluetooth",
+    "ble",
+    "ble113"
+  ],
+  "dependencies": {
+    "bglib" : "*"
+  }
+}
