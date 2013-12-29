@@ -45,25 +45,25 @@ function BluetoothController(hardware, next) {
 	this.hardware = hardware;
 	this.isAdvertising = false;
 	this.messenger = new BluetoothMessenger(hardware);
-	this.connected = false;
+	// this.connected = false;
 
-	var self = this;
+	// var self = this;
 
-	this.verifyCommunication(function(err, response) {
-		if (err) {
-			console.log("ERROR: Could not establish comms with BLE...");
-			console.log(err.message);
-			next && next(err);
-		}
+	// this.verifyCommunication(function(err, response) {
+	// 	if (err) {
+	// 		console.log("ERROR: Could not establish comms with BLE...");
+	// 		console.log(err.message);
+	// 		next && next(err);
+	// 	}
 
-		else {
+	// 	else {
 
-			console.log("Comms established with BLE!");
-			self.connected = true;
-			self.emit('connected');
-			next && next(null);
-		}
-	});
+	// 		console.log("Comms established with BLE!");
+	// 		self.connected = true;
+	// 		self.emit('connected');
+	// 		next && next(null);
+	// 	}
+	// });
 }
 
 util.inherits(BluetoothController, EventEmitter);
@@ -118,7 +118,7 @@ BluetoothController.prototype.verifyCommunication = function(next) {
 }
 
 function BluetoothMessenger(hardware) {
-	this.uart = hardware.UART({baudrate:38000});
+	this.uart = hardware.UART({baudrate:9600});
 	// this.uart = tessel.port('GPIO').UART();
 	this.uart.on('data', this.parseIncomingPackets);
 
