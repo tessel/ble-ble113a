@@ -2,24 +2,18 @@
 
 ##Under Development
 
-The BLE Library is still under heavy development and most functionality isn't available but the functions outlined below work. There are two big hurdles we're working on to make this library work as intended:
-
- * The Tessel CLI is running into USB packet sending issues which limit it to code packets of about 12kB (sometimes it works up to ~16kB). The CLI will just hang on pushing. We're actively working on this one because it really sucks. 
-
- You will probably want to delete this README and the example folder from your local repo to save space.
-
- * The Runtime runs out of memory if a script is left running long enough. This should be a quick fix, so expect it soon.
+The BLE Library is still under heavy development and most functionality isn't available but the functions outlined below work. __You will need to update your firmware to our [January 3 release](https://github.com/tessel/firmware/releases/tag/2014-01-03) (or later) in order to use this library__. That's because this is a relatively bulky code package and our old USB driver code didn't allocate enough memory.
 
 You can add more functionality if you want to look at the [BlueGiga BLE113 Datasheet](http://www.bluegiga.com/en-US/products/bluetooth-4.0-modules/ble113-bluetooth--smart-module/documentation/). You'll have to make an account on their website.
 
-This module uses the bglib npm module which is a node port of the BlueGiga API. It is also under heavy development. You will need to 
+###Installation
 ```
-npm install
-``` 
-after cloning.	
+npm install ble-ble113
+```
 
 If you are using Tessel V1 (should say TM-00-00 on the back), you should wire the module to the GPIO port because UART isn't routed to the module ports in that hardware revision. GPIO 3, 2, and 1 on GPIO port goes to GPIO 3, 2, and 1 on module, respectively. 
 
+If you have Tessel V2, you can use module port a, b, or d.
 
 ###Example
 ```
