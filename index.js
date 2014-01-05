@@ -6,6 +6,7 @@ var util = require('util');
 
 var DEBUG = 1;
 
+
 // This needs to become a property on Bluetooth Messenger
 // Associative Array of packet objects to timeoutIDs
 // Actually, since we don't have clearTimeout, it's an 
@@ -45,25 +46,25 @@ function BluetoothController(hardware, next) {
 	this.hardware = hardware;
 	this.isAdvertising = false;
 	this.messenger = new BluetoothMessenger(hardware);
-	// this.connected = false;
+	this.connected = false;
 
-	// var self = this;
+	var self = this;
 
-	// this.verifyCommunication(function(err, response) {
-	// 	if (err) {
-	// 		console.log("ERROR: Could not establish comms with BLE...");
-	// 		console.log(err.message);
-	// 		next && next(err);
-	// 	}
+	this.verifyCommunication(function(err, response) {
+		if (err) {
+			console.log("ERROR: Could not establish comms with BLE...");
+			console.log(err.message);
+			next && next(err);
+		}
 
-	// 	else {
+		else {
 
-	// 		console.log("Comms established with BLE!");
-	// 		self.connected = true;
-	// 		self.emit('connected');
-	// 		next && next(null);
-	// 	}
-	// });
+			console.log("Comms established with BLE!");
+			self.connected = true;
+			self.emit('connected');
+			next && next(null);
+		}
+	});
 }
 
 util.inherits(BluetoothController, EventEmitter);
