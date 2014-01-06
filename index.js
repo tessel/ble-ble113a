@@ -1,10 +1,10 @@
 var tessel = require('tessel');
-var bg = require('bglib');
-var bgLib  = new bg.bglib(bg.PACKET_MODE);
+var bgLib = require('bglib');
+bgLib.setPacketMode(1);
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 
-var DEBUG = 1;
+var DEBUG = 0;
 
 
 // This needs to become a property on Bluetooth Messenger
@@ -15,8 +15,7 @@ var DEBUG = 1;
 var awaitingResponse = [];
 
 // This is a global var so that I can access the controllers'
-// events. Not sure why it's not working atm. Will go away
-// Once we fix 'this' issues/
+// events. 
 var controller;
 var TX_HANDLE=20;
 
@@ -47,7 +46,6 @@ function BluetoothController(hardware, next) {
 	this.isAdvertising = false;
 	this.messenger = new BluetoothMessenger(hardware);
 	this.connected = false;
-
 	var self = this;
 
 	this.verifyCommunication(function(err, response) {
