@@ -19,46 +19,47 @@ bleController.on('booted', function() {
 });
 
 function beginReadingPeripheral() {
+	bleController.startAdvertising();
 	// bleController.scanForPeripherals();
-	bleController.connectToPeripheral([108, 189, 40, 93, 28, 216], 1, 25, 50, 500, 8, function(err, response) {
-		if (err) return console.log(err);
-		else console.log("Connect response:", response);
-	})
+	// bleController.connectToPeripheral([108, 189, 40, 93, 28, 216], 1, 25, 50, 500, 8, function(err, response) {
+	// 	if (err) return console.log(err);
+	// 	else console.log("Connect response:", response);
+	// })
 }
 
-bleController.on('connectionStatus', function(peripheral) {
-	console.log("Connection Status!", peripheral);
-	bleController.findInformation(peripheral.connection, 01, 63000, function(err, response) {
-		if (err) return console.log("Err", err);
-		console.log("Find info response", response);
-	})
-})
+// bleController.on('connectionStatus', function(peripheral) {
+// 	console.log("Connection Status!", peripheral);
+// 	bleController.findInformation(peripheral.connection, 01, 63000, function(err, response) {
+// 		if (err) return console.log("Err", err);
+// 		console.log("Find info response", response);
+// 	})
+// })
 
-bleController.on('disconnectedPeripheral', function(response) {
-	console.log("Disconnected from peripheral.");
-	if (!response.handle) {
-		console.log("reason: ", response.reason);
-	}
-});
+// bleController.on('disconnectedPeripheral', function(response) {
+// 	console.log("Disconnected from peripheral.");
+// 	if (!response.handle) {
+// 		console.log("reason: ", response.reason);
+// 	}
+// });
 
-bleController.on('discoveredPeripheral', function(peripheral) {
-	console.log("Found Peripheral!", peripheral);
-})
+// bleController.on('discoveredPeripheral', function(peripheral) {
+// 	console.log("Found Peripheral!", peripheral);
+// })
 
-bleController.on('foundInformation', function(information) {
-	console.log("Found information!", information);
-	// bleController.readRemoteHandle(information.connection, information.chrhandle, function(err, response) {
-	// 	if (err) return console.log("Err", err);
-	// 	else console.log(response);
-	// })
-});
+// bleController.on('foundInformation', function(information) {
+// 	console.log("Found information!", information);
+// 	// bleController.readRemoteHandle(information.connection, information.chrhandle, function(err, response) {
+// 	// 	if (err) return console.log("Err", err);
+// 	// 	else console.log(response);
+// 	// })
+// });
 
-bleController.on('completedProcedure', function(procedure) {
-	console.log('completed procedure', procedure);
-})
-bleController.on('remoteValue', function(reading) {
-	console.log("Reading: ", reading);
-})
+// bleController.on('completedProcedure', function(procedure) {
+// 	console.log('completed procedure', procedure);
+// })
+// bleController.on('remoteValue', function(reading) {
+// 	console.log("Reading: ", reading);
+// })
 
 
 

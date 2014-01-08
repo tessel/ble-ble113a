@@ -4,7 +4,7 @@ bgLib.setPacketMode(1);
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 
-var DEBUG = 0;
+var DEBUG = 1;
 
 
 // This needs to become a property on Bluetooth Messenger
