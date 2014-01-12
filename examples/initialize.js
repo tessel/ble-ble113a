@@ -9,23 +9,23 @@ var bleController = ble.connect(hardware, function(err) {
 	if (err) return console.log(err);
 	if (!connected) {
 		console.log("Connected!");
-		beginReadingPeripheral();
+		bleController.startAdvertising();
 	}
 });
 
-bleController.on('booted', function() {
+bleController.on('booted', function(parsedPacket) {
 	console.log("Just rebooted...");
 	beginReadingPeripheral();
 });
 
-function beginReadingPeripheral() {
-	bleController.startAdvertising();
+// function beginReadingPeripheral() {
+// 	bleController.startAdvertising();
 	// bleController.scanForPeripherals();
 	// bleController.connectToPeripheral([108, 189, 40, 93, 28, 216], 1, 25, 50, 500, 8, function(err, response) {
 	// 	if (err) return console.log(err);
 	// 	else console.log("Connect response:", response);
 	// })
-}
+// }
 
 // bleController.on('connectionStatus', function(peripheral) {
 // 	console.log("Connection Status!", peripheral);

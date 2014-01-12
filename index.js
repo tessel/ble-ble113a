@@ -47,6 +47,7 @@ function BluetoothController(hardware, next) {
 	this.messenger = new BluetoothMessenger(hardware);
 	this.connected = false;
 	var self = this;
+	controller = self;
 
 	this.verifyCommunication(function(err, response) {
 		if (err) {
@@ -116,6 +117,14 @@ BluetoothController.prototype.verifyCommunication = function(next) {
 	this.messenger.execute(bgLib.api.systemHello, next);
 }
 
+BluetoothController.prototype.rebootInDFU = function() {
+	this.messenger.execute(bgLib.api.dfuReset, [1]);
+}
+
+BluetoothController.prototype.setDFUFlashAddress = function(address, next) {
+	this.messenger.execute(bgLib.api.dfuFlashSetAddress, [address], next);
+}
+
 function BluetoothMessenger(hardware) {
 	this.uart = hardware.UART({baudrate:9600});
 	// this.uart = tessel.port('GPIO').UART();
@@ -174,42 +183,51 @@ BluetoothMessenger.prototype.execute = function(command, params, callback) {
 				if (DEBUG) console.log("Byte Array to be sent: ", bArray);
 
 				// Pull up the wake up pin 
-				// self.wakeBLE(1);
+				self.wakeBLE(1);
 
-				// Send it along
-				var numSent = self.uart.write(bArray); 
+				controller.once('hardwareIOPortStatusChange', function() {
+					if (DEBUG) console.log("Port Change. Sending Packet");
+					self.sendBytes(packet, bArray, callback);
+				});
 
-				// Pull wake pin back down
-				// self.wakeBLE(0);
-
-				// If we didn't send every byte, something went wrong
-				// Return immediately
-				if (bArray.length != numSent) {
-
-					// Not enough bytes sent, somethign went wrong
-					callback && callback(new Error("Not all bytes were sent..."), null);
-
-				// Add the callback to the packet and set it to waiting
-				} else {
-
-					// Add the callback to the packet for later
-					if (callback) {
-						// Set the callback the packet should respond to
-						packet.callback = callback;
-
-						// Add a timeout
-						timeout = packet.timeout = setTimeout(function() {
-							self.commandPacketTimeout(packet);
-						}, self.commandPacketTimeoutDuration);
-
-
-						// Push packet into awaiting queue
-						awaitingResponse.push(packet);
-					}
-				}
 			});
 		}
 	});
+}
+
+BluetoothMessenger.prototype.sendBytes = function(packet, bArray, callback) {
+	// Send it along
+	var numSent = this.uart.write(bArray); 
+
+	// Pull wake pin back down
+	this.wakeBLE(0);
+
+	// If we didn't send every byte, something went wrong
+	// Return immediately
+	if (bArray.length != numSent) {
+
+		// Not enough bytes sent, somethign went wrong
+		callback && callback(new Error("Not all bytes were sent..."), null);
+
+	// Add the callback to the packet and set it to waiting
+	} else {
+
+		// Add the callback to the packet for later
+		if (callback) {
+			// Set the callback the packet should respond to
+			packet.callback = callback;
+
+			// Add a timeout
+			var self = this;
+			packet.timeout = setTimeout(function() {
+				self.commandPacketTimeout(packet);
+			}, this.commandPacketTimeoutDuration);
+
+
+			// Push packet into awaiting queue
+			awaitingResponse.push(packet);
+		}
+	}
 }
 
 BluetoothMessenger.prototype.commandPacketTimeout = function(commandPacket) {
