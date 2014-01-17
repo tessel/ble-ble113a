@@ -4,7 +4,7 @@ bgLib.setPacketMode(1);
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 
-var DEBUG = 1;
+var DEBUG = 0;
 
 
 // This needs to become a property on Bluetooth Messenger
@@ -19,7 +19,7 @@ var awaitingResponse = [];
 var controller;
 var TX_HANDLE=20;
 
-
+var characteristicHandles = [21, 25, 29, 33, 37, 41, 45, 49, 53, 57, 61, 65];
 
 /*************************************************************
 Function: 		connect
@@ -109,20 +109,19 @@ BluetoothController.prototype.readRemoteHandle = function(connection, handle, ne
 	this.messenger.execute(bgLib.api.attClientReadByHandle, [connection, handle], next);
 }
 
-BluetoothController.prototype.writeValue = function(value, next) {
-	this.messenger.execute(bgLib.api.attributesWrite, [TX_HANDLE, 0, value], next);
+BluetoothController.prototype.writeValue = function(handle, value, next) {
+	// Quick hack to get around folks who haven't updated their firmware
+	if (!next) {
+		handle = TX_HANDLE;
+	}
+	else {
+		handle = characteristicHandles[handle];
+	}
+	this.messenger.execute(bgLib.api.attributesWrite, [handle, 0, value], next);
 }
 
 BluetoothController.prototype.verifyCommunication = function(next) {
 	this.messenger.execute(bgLib.api.systemHello, next);
-}
-
-BluetoothController.prototype.rebootInDFU = function() {
-	this.messenger.execute(bgLib.api.dfuReset, [1]);
-}
-
-BluetoothController.prototype.setDFUFlashAddress = function(address, next) {
-	this.messenger.execute(bgLib.api.dfuFlashSetAddress, [address], next);
 }
 
 function BluetoothMessenger(hardware) {
