@@ -4,7 +4,7 @@ bgLib.setPacketMode(1);
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 
-var DEBUG = 0;
+var DEBUG = 1;
 
 
 // This needs to become a property on Bluetooth Messenger
@@ -14,9 +14,6 @@ var DEBUG = 0;
 // of whether the timeout should be acted upon once fired...
 var awaitingResponse = [];
 
-// This is a global var so that I can access the controllers'
-// events. 
-var controller;
 var TX_HANDLE=20;
 
 var characteristicHandles = [21, 25, 29, 33, 37, 41, 45, 49, 53, 57, 61, 65];
@@ -29,7 +26,7 @@ Params: 		hardware - the module port ble was plugged in to
 				next - a callback for what happens after connecting
 *************************************************************/
 function connect(hardware, next) {
-	controller = new BluetoothController(hardware, next);
+	var controller = new BluetoothController(hardware, next);
 
 	return controller;
 }
@@ -44,10 +41,8 @@ Params: 		hardware - the module port ble was plugged in to
 function BluetoothController(hardware, next) {
 	this.hardware = hardware;
 	this.isAdvertising = false;
-	this.messenger = new BluetoothMessenger(hardware);
-	this.connected = false;
+	this.messenger = new BluetoothMessenger(hardware, this);
 	var self = this;
-	controller = self;
 
 	this.verifyCommunication(function(err, response) {
 		if (err) {
@@ -59,7 +54,6 @@ function BluetoothController(hardware, next) {
 		else {
 
 			console.log("Comms established with BLE!");
-			self.connected = true;
 			self.emit('connected');
 			next && next(null);
 		}
@@ -124,10 +118,10 @@ BluetoothController.prototype.verifyCommunication = function(next) {
 	this.messenger.execute(bgLib.api.systemHello, next);
 }
 
-function BluetoothMessenger(hardware) {
+function BluetoothMessenger(hardware, controller) {
 	this.uart = hardware.UART({baudrate:9600});
-	// this.uart = tessel.port('GPIO').UART();
-	this.uart.on('data', this.parseIncomingPackets);
+	this.controller = controller;
+	this.uart.on('data', this.parseIncomingPackets.bind(this));
 
 	this.commandPacketTimeoutDuration = 10000;
 
@@ -184,7 +178,7 @@ BluetoothMessenger.prototype.execute = function(command, params, callback) {
 				// Pull up the wake up pin 
 				self.wakeBLE(1);
 
-				controller.once('hardwareIOPortStatusChange', function() {
+				self.controller.once('hardwareIOPortStatusChange', function() {
 					if (DEBUG) console.log("Port Change. Sending Packet");
 					self.sendBytes(packet, bArray, callback);
 				});
@@ -280,7 +274,7 @@ var popMatchingResponsePacket = function(parsedPacket, callback) {
 BluetoothMessenger.prototype.parseIncomingPackets = function(data) {
 
 	if (DEBUG) console.log("Just received this data: ", data);
-	
+	var self = this;
 	// Grab the one or more responses from the library
 	var incomingPackets = bgLib.parseIncoming(data, function(err, parsedPackets) {
 		if (DEBUG) console.log("And that turned into ", parsedPackets.length, "packets")
@@ -301,28 +295,28 @@ BluetoothMessenger.prototype.parseIncomingPackets = function(data) {
                 case 0x80: 
                 	if (parsedPacket.response) {
 						if (cClass == 0x07 && cID == 0x00) {
-							controller.emit("hardwareIOPortStatusChange", parsedPacket.response);
+							self.controller.emit("hardwareIOPortStatusChange", parsedPacket.response);
 						}
 						else if (cClass == 0x06 && cID == 0x00) {
-							controller.emit("discoveredPeripheral", parsedPacket.response);
+							self.controller.emit("discoveredPeripheral", parsedPacket.response);
 						}
 						else if (cClass == 0x00 && cID == 0x00) {
-							controller.emit("booted");
+							self.controller.emit("booted");
 						}
 						else if (cClass == 0x03 && cID == 0x00) {
-							controller.emit("connectionStatus", parsedPacket.response);
+							self.controller.emit("connectionStatus", parsedPacket.response);
 						}
 						else if (cClass == 0x03 && cID == 0x04) {
-							controller.emit('disconnectedPeripheral', parsedPacket.response);
+							self.controller.emit('disconnectedPeripheral', parsedPacket.response);
 						}
 						else if (cClass == 0x04 && cID == 0x04) {
-							controller.emit('foundInformation', parsedPacket.response);
+							self.controller.emit('foundInformation', parsedPacket.response);
 						}
 						else if (cClass == 0x04 && cID == 0x01) {
-							controller.emit('completedProcedure', parsedPacket.response);
+							self.controller.emit('completedProcedure', parsedPacket.response);
 						}
 						else if (cClass == 0x04 && cID == 0x05) {
-							controller.emit('readValue', parsedPacket.response);
+							self.controller.emit('readValue', parsedPacket.response);
 						}
 					}
 
