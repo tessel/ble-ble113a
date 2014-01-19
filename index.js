@@ -6,14 +6,6 @@ var util = require('util');
 
 var DEBUG = 1;
 
-
-// This needs to become a property on Bluetooth Messenger
-// Associative Array of packet objects to timeoutIDs
-// Actually, since we don't have clearTimeout, it's an 
-// associative array of packet objects to a boolean
-// of whether the timeout should be acted upon once fired...
-var awaitingResponse = [];
-
 var TX_HANDLE=20;
 
 var characteristicHandles = [21, 25, 29, 33, 37, 41, 45, 49, 53, 57, 61, 65];
@@ -121,6 +113,7 @@ BluetoothController.prototype.verifyCommunication = function(next) {
 function BluetoothMessenger(hardware, controller) {
 	this.uart = hardware.UART({baudrate:9600});
 	this.controller = controller;
+	this.awaitingResponse = [];
 	this.uart.on('data', this.parseIncomingPackets.bind(this));
 
 	this.commandPacketTimeoutDuration = 10000;
@@ -213,19 +206,19 @@ BluetoothMessenger.prototype.sendBytes = function(packet, bArray, callback) {
 			// Add a timeout
 			var self = this;
 			packet.timeout = setTimeout(function() {
-				self.commandPacketTimeout(packet);
+				self.commandPacketTimeout.bind(self, packet)();
 			}, this.commandPacketTimeoutDuration);
 
 
 			// Push packet into awaiting queue
-			awaitingResponse.push(packet);
+			this.awaitingResponse.push(packet);
 		}
 	}
 }
 
 BluetoothMessenger.prototype.commandPacketTimeout = function(commandPacket) {
 
-	popMatchingResponsePacket(commandPacket, function(err, packet) {
+	this.popMatchingResponsePacket(commandPacket, function(err, packet) {
 
 		if (err) return console.log(err);
 		if (packet) {
@@ -239,14 +232,14 @@ BluetoothMessenger.prototype.commandPacketTimeout = function(commandPacket) {
 	})
 }
 
-var popMatchingResponsePacket = function(parsedPacket, callback) {
+BluetoothMessenger.prototype.popMatchingResponsePacket = function(parsedPacket, callback) {
 
 	// Grab the first packet that matches the command and class
 	var matchedPacket;
 	// Iterating through packets waiting response
-	for (var i in awaitingResponse) {
+	for (var i in this.awaitingResponse) {
 		// Grab the packet
-		var packet = awaitingResponse[i]; 
+		var packet = this.awaitingResponse[i]; 
 
 		// If the class and ID are the same, we have a match
 		if (packet.packetHeader.cClass == parsedPacket.packetHeader.cClass
@@ -256,7 +249,7 @@ var popMatchingResponsePacket = function(parsedPacket, callback) {
 			clearTimeout(packet.timeout);
 
 			// Delete it from the array
-			awaitingResponse.splice(i, 1);
+			this.awaitingResponse.splice(i, 1);
 
 			// Save the command and break the loop
 			matchedPacket = packet;
