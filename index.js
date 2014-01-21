@@ -147,7 +147,7 @@ BluetoothMessenger.prototype.execute = function(command, params, callback) {
 		return;
 	}
 
-		// If they didn't enter any params and only a function
+	// If they didn't enter any params and only a function
 	// Assume there are no params
 	if (typeof params == 'function') {
 		callback = params;
@@ -158,23 +158,24 @@ BluetoothMessenger.prototype.execute = function(command, params, callback) {
 
 		if (err) {
 			// If we got a problem, let me hear it
-			throw err;
+			return callback && callback(err);
 		}
 		// Else we're going to send it down the wire
 		else {
 			// Get the bytes for the packet
 			packet.getByteArray(function(bArray) {
 
-
 				if (DEBUG) console.log("Byte Array to be sent: ", bArray);
 
 				// Pull up the wake up pin 
 				self.wakeBLE(1);
 
-				self.controller.once('hardwareIOPortStatusChange', function() {
+				// Wait for the BLE to say that the port has changed
+				// self.controller.once('hardwareIOPortStatusChange', function() {
 					if (DEBUG) console.log("Port Change. Sending Packet");
+					// Send the message
 					self.sendBytes(packet, bArray, callback);
-				});
+				// });
 
 			});
 		}
@@ -196,23 +197,19 @@ BluetoothMessenger.prototype.sendBytes = function(packet, bArray, callback) {
 		callback && callback(new Error("Not all bytes were sent..."), null);
 
 	// Add the callback to the packet and set it to waiting
-	} else {
+	} else if (callback) {
 
-		// Add the callback to the packet for later
-		if (callback) {
-			// Set the callback the packet should respond to
-			packet.callback = callback;
+		// Set the callback the packet should respond to
+		packet.callback = callback;
 
-			// Add a timeout
-			var self = this;
-			packet.timeout = setTimeout(function() {
-				self.commandPacketTimeout.bind(self, packet)();
-			}, this.commandPacketTimeoutDuration);
+		// Add a timeout
+		var self = this;
+		packet.timeout = setTimeout(function() {
+			self.commandPacketTimeout.bind(self, packet)();
+		}, this.commandPacketTimeoutDuration);
 
-
-			// Push packet into awaiting queue
-			this.awaitingResponse.push(packet);
-		}
+		// Push packet into awaiting queue
+		this.awaitingResponse.push(packet);
 	}
 }
 
@@ -267,14 +264,18 @@ BluetoothMessenger.prototype.popMatchingResponsePacket = function(parsedPacket, 
 BluetoothMessenger.prototype.parseIncomingPackets = function(data) {
 
 	if (DEBUG) console.log("Just received this data: ", data);
+
 	var self = this;
+
 	// Grab the one or more responses from the library
 	var incomingPackets = bgLib.parseIncoming(data, function(err, parsedPackets) {
 		if (DEBUG) console.log("And that turned into ", parsedPackets.length, "packets")
+		
 		if (err){
 			console.log(err);
 			return;
 		} 
+
 		//For each response
 		for (var i in parsedPackets) {
 			var parsedPacket = parsedPackets[i];
@@ -318,7 +319,7 @@ BluetoothMessenger.prototype.parseIncomingPackets = function(data) {
                 // It's a response
                 case 0x00:
                     // Find the command that requested it
-                   	popMatchingResponsePacket(parsedPacket.packet, function(err, packet) {
+                   	self.popMatchingResponsePacket(parsedPacket.packet, function(err, packet) {
 
                         // Call the original callback
                         if (packet && packet.callback) packet.callback(err, parsedPacket.response);
@@ -326,7 +327,7 @@ BluetoothMessenger.prototype.parseIncomingPackets = function(data) {
                     });
                     break;
                 default:
-                        throw new Error("Malformed packet returned...");
+                        console.log("Malformed packet returned...");
             }                
 		}
 	});
