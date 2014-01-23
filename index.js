@@ -106,6 +106,26 @@ BluetoothController.prototype.writeValue = function(handle, value, next) {
 	this.messenger.execute(bgLib.api.attributesWrite, [handle, 0, value], next);
 }
 
+BluetoothController.prototype.setAdvertisementData = function(data, next) {
+	var length = data.length;
+
+	var arr = [];
+	arr.push(length);
+	arr.push(0x09); // Flag for a name
+	if (typeof data == "string") {
+		for (var i = 0; i < data.length; i++) {
+			arr.push(data.charCodeAt(i));
+		}
+	}
+	else if (Array.isArray(data)) {
+		arr = arr.concat(data);
+	};
+
+	console.log("Setting data: ", arr);
+
+	this.messenger.execute(bgLib.api.gapSetAdvData, [1, data], next);
+}
+
 BluetoothController.prototype.verifyCommunication = function(next) {
 	this.messenger.execute(bgLib.api.systemHello, next);
 }
@@ -139,9 +159,6 @@ BluetoothMessenger.prototype.wakeBLE = function(wakeBool) {
 
 BluetoothMessenger.prototype.execute = function(command, params, callback) {
 
-	// Shouldn't need to do this once bind is fixed
-	var self = this;
-
 	if (!command || command == 'undefined') {
 		callback && callback (new Error("Invalid API call."), null);
 		return;
@@ -153,6 +170,9 @@ BluetoothMessenger.prototype.execute = function(command, params, callback) {
 		callback = params;
 		params = [];
 	}
+
+	var self = this;
+
 	// Grab the packet from the library
 	bgLib.getPacket(command, params, function(err, packet) {
 
@@ -171,11 +191,11 @@ BluetoothMessenger.prototype.execute = function(command, params, callback) {
 				self.wakeBLE(1);
 
 				// Wait for the BLE to say that the port has changed
-				// self.controller.once('hardwareIOPortStatusChange', function() {
+				self.controller.once('hardwareIOPortStatusChange', function() {
 					if (DEBUG) console.log("Port Change. Sending Packet");
 					// Send the message
 					self.sendBytes(packet, bArray, callback);
-				// });
+				});
 
 			});
 		}
@@ -183,7 +203,8 @@ BluetoothMessenger.prototype.execute = function(command, params, callback) {
 }
 
 BluetoothMessenger.prototype.sendBytes = function(packet, bArray, callback) {
-	// Send it along
+
+	// // Send it along
 	var numSent = this.uart.write(bArray); 
 
 	// Pull wake pin back down
@@ -239,8 +260,8 @@ BluetoothMessenger.prototype.popMatchingResponsePacket = function(parsedPacket, 
 		var packet = this.awaitingResponse[i]; 
 
 		// If the class and ID are the same, we have a match
-		if (packet.packetHeader.cClass == parsedPacket.packetHeader.cClass
-			&& packet.packetHeader.cID == parsedPacket.packetHeader.cID) {
+		if (packet.cClass == parsedPacket.cClass
+			&& packet.cID == parsedPacket.cID) {
 
 			// Clear the packet timeout
 			clearTimeout(packet.timeout);
@@ -279,12 +300,12 @@ BluetoothMessenger.prototype.parseIncomingPackets = function(data) {
 		//For each response
 		for (var i in parsedPackets) {
 			var parsedPacket = parsedPackets[i];
-			var cClass = parsedPacket.packet.packetHeader.cClass;
-			var cID = parsedPacket.packet.packetHeader.cID;
+			var cClass = parsedPacket.packet.cClass;
+			var cID = parsedPacket.packet.cID;
 
 			// If it's an event, emit the event
 			// Find the type of packet
-            switch (parsedPacket.packet.packetHeader.mType & 0x80) {
+            switch (parsedPacket.packet.mType & 0x80) {
                 // It's an event
                 case 0x80: 
                 	if (parsedPacket.response) {
