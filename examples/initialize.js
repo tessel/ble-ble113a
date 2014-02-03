@@ -8,5 +8,5 @@ var ble = require('../index').connect(blePort, function(err) {
 		if (!err) {
 			console.log("Began advertising.");
 		}
-	})
-})
+	});
+});
