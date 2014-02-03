@@ -10,6 +10,7 @@
     "type": "git",
     "url": "git@github.com:tessel/beta.git"
   },
+
   "author": "Jon McKay <jon@technical.io>",
   "license": "MIT",
   "readmeFilename": "README.md",
@@ -24,5 +25,5 @@
   ],
   "dependencies": {
     "bglib" : "*"
-  }
+  },
 }
