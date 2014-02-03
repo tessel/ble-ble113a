@@ -19,7 +19,3 @@ ble.on('discover', function(peripheral) {
   // peripheral.connect();
   ble.stopScanning();
 });
-
-ble.on('connect', function() {
-
-})
