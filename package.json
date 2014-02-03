@@ -1,6 +1,6 @@
 {
   "name": "ble-ble113",
-  "version": "0.0.27",
+  "version": "0.0.14",
   "description": "Library to run the Bluetooth BLE113 Tessel Module.",
   "main": "index.js",
   "scripts": {
@@ -24,6 +24,6 @@
     "ble113"
   ],
   "dependencies": {
-    "bglib" : "*"
-  },
+    "bglib" : "0.0.14"
+  }
 }
