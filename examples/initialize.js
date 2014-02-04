@@ -1,21 +1,69 @@
 var tessel = require('tessel');
 var blePort = tessel.port('a');
 
-var ble = require('../').connect(blePort);
-ble.on('connected', function(err) {
+var moosh;
+
+var ble = require('../').init(blePort);
+ble.on('ready', function(err) {
 	if (err) return console.log(err);
-  ble.startScanning();
+  console.log("Connected!");
+  ble.startScanning(false);
+});
+
+ble.on('error', function(err) {
+  console.log("Could not connect to module: ", err);
 });
 
 ble.on('scanStart', function(err, result) {
-  console.log("start", err, result);
-  console.log("Scan started!", result);
+  if (result == 0) {
+    console.log("Looking for Moosh. Moosh, where are you?");
+  }
+});
+
+ble.on('scanStop', function(err, result) {
+  if (result == 0) {
+    console.log("Call off the search!");
+  }
 });
 
 ble.on('discover', function(peripheral) {
-  console.log("Discovered peripheral: ", peripheral);
-  console.log("Data: ", peripheral.data);
-  // if (peripheral.name == "")
-  // peripheral.connect();
-  ble.stopScanning();
+  console.log("Discovered peripheral! Address: ", peripheral.address, ", RSSI: ", peripheral.rssi);
+  console.log("Could it be Moosh?");
+
+  detectMoosh(peripheral, function(isMoosh) {
+    if (isMoosh) {
+      console.log("Found Moosh!");
+
+      moosh = peripheral;
+
+      ble.stopScanning();
+
+      moosh.connect(); 
+      
+      moosh.on('connected', mooshConnected);
+    }
+    else 
+    {
+      console.log("Damn, it's not Moosh.");
+    }
+  });
 });
+
+function mooshConnected() {
+  console.log("We're connected to mooshimeter!");
+
+  
+}
+
+function detectMoosh(peripheral, callback) {
+  for (var i = 0; i < peripheral.advertisingData.length; i++) {
+    var packet = peripheral.advertisingData[i];
+
+    if (packet.type = 'Incomplete List of 16-bit Service Class UUIDs'
+        && packet.data[0] == '0xffa0') {
+      return callback && callback(true);
+    }
+  }
+
+  return callback && callback(false);
+}

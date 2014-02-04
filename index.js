@@ -18,7 +18,7 @@ Description:  Set the module port of the Bluetooth module
 Params:     hardware - the module port ble was plugged in to
         next - a callback for what happens after connecting
 *************************************************************/
-function connect(hardware, next) {
+function init(hardware, next) {
   var controller = new BluetoothController(hardware, next);
 
   return controller;
@@ -37,14 +37,20 @@ function BluetoothController(hardware, next) {
   this.messenger = new Messenger(hardware);
   this.connected;
   this._peripherals = {};
+  this._services = {};
+  this._characteristics = {};
+  this._descriptors = {};
+  this._discoveredPeripheralsAddresses = [];
 
-  this.messenger.on('connected', this.onConnected.bind(this));
+  this.messenger.on('ready', this.onReady.bind(this));
+  this.messenger.on('error', this.onError.bind(this));
   this.messenger.on('advertiseStarted', this.onAdvertiseStarted.bind(this));
   this.messenger.on('valueRead', this.onValueRead.bind(this));
   this.messenger.on('valueWritten', this.onValueWritten.bind(this));
   this.messenger.on('scanStart', this.onScanStart.bind(this));
   this.messenger.on('scanStop', this.onScanStop.bind(this));
   this.messenger.on('discover', this.onDiscover.bind(this));
+  this.messenger.on('connectionStatus', this.onConnectionStatus.bind(this));
 
 
   this.messenger.verifyCommunication(next);
@@ -56,12 +62,13 @@ util.inherits(BluetoothController, events.EventEmitter);
  Event Handlers
 **********************************************************/
 
-BluetoothController.prototype.onConnected = function(err) {
-  if (!err) {
-    this.connected = true;
-  }
-
-  this.emit('connected', err);
+BluetoothController.prototype.onReady = function(err) {
+  this.connected = true;
+  this.emit('ready', err);
+}
+BluetoothController.prototype.onError = function(err) {
+  this.connected = false;
+  this.emit('error', err);
 }
 
 BluetoothController.prototype.onAdvertiseStarted = function(err, response) {
@@ -70,19 +77,39 @@ BluetoothController.prototype.onAdvertiseStarted = function(err, response) {
 }
 
 BluetoothController.prototype.onDiscover = function(peripheralData) {
-  // var peripheral = this._peripherals[peripheral.sender];
 
-  // if (!peripheral) {
-    peripheral = new Peripheral(peripheralData.rssi, 
+  var tempKey = peripheralData.sender[0];
+
+  var peripheral = this._peripherals[tempKey];
+
+  if (!peripheral) {
+    peripheral = new Peripheral(
+                this,
+                peripheralData.rssi, 
                 peripheralData.data,
+                // BlueGiga's version of address
                 peripheralData.sender,
                 peripheralData.address_type,
                 peripheralData.packet_type);
-    // this._peripherals[peripheral.address] = peripheral;
-  // }
 
-  this.emit('discover', peripheral);
+    // TODO: Take out after buffer property issue is resolved
+    this._peripherals[tempKey] = peripheral;
+    this._services[tempKey] = {};
+    this._characteristics[tempKey] = {};
+    this._descriptors[tempKey] = {};
+  }
+
+  var previouslyDiscovered = (this._discoveredPeripheralsAddresses.indexOf(tempKey) !== -1);
+
+  if (!previouslyDiscovered) {
+    this._discoveredPeripheralsAddresses.push(tempKey);
+  }
+
+  if (this._allowDuplicates || !previouslyDiscovered) {
+    this.emit('discover', peripheral);
+  }
 }
+
 BluetoothController.prototype.onValueRead = function(err, value) {
   this.emit('valueRead', err, value);
 }
@@ -97,14 +124,25 @@ BluetoothController.prototype.onScanStop = function(err, result) {
   this.emit('scanStop', err, result);
 }
 
+BluetoothController.prototype.onConnectionStatus = function(status) {
+  var tempKey = status.address[0];
+  var peripheral = this._peripherals[tempKey];
+  if (peripheral) {
+    peripheral.connection = status.connection;
+    peripheral.flags = status.flags;
+    peripheral.connInterval = status.conn_interval;
+    peripheral.timeout = status.timeout;
+    peripheral.latenct = status.latency;
+    peripheral.bonding = status.bonding;
+  }
 
-// BluetoothController.prototype.connectToPeripheral = function(address, address_type, conn_interval_min, conn_interval_max, timeout, latency, next) {
-//   this.messenger.execute(bgLib.api.gapConnectDirect, [address, address_type, conn_interval_min, conn_interval_max, timeout, latency], next);
-// }
+  if (peripheral.flags & (1 << 2)) {
+    peripheral.emit('connected');
+    this.emit('connected', peripheral);
+  }
 
-// BluetoothController.prototype.disconnectFromPeripheral = function(handle, next) {
-//   this.messenger.execute(bgLib.api.connectionDisconnect, [handle], next);
-// }
+}
+
 
 // BluetoothController.prototype.findInformation = function(connection, start, end, next) {
 //   this.messenger.execute(bgLib.api.attClientFindInformation, [connection, start, end], next);
@@ -137,7 +175,9 @@ BluetoothController.prototype.onScanStop = function(err, result) {
 /**********************************************************
  Bluetooth API
 **********************************************************/
-BluetoothController.prototype.startScanning = function(next) {
+BluetoothController.prototype.startScanning = function(allowDuplicates, next) {
+  this._discoveredPeripheralsAddresses = [];
+  this._allowDuplicates = allowDuplicates;
   this.messenger.startScanning(next);
 }
 BluetoothController.prototype.stopScanning = function(next) {
@@ -157,6 +197,13 @@ BluetoothController.prototype.writeValue = function(index, value, next) {
   this.messenger.writeValue(characteristicHandles[index], value, next);
 }
 
+BluetoothController.prototype.connect = function(peripheral, next) {
+  this.messenger.connect(peripheral.address, peripheral.addressType, next);
+}
+
+BluetoothController.prototype.disconnect = function(peripheral, next) {
+  this.messenger.disconnect(peripheral.connection, next);
+}
 
 
 // /*************************************************************
@@ -201,6 +248,6 @@ BluetoothController.prototype.writeValue = function(index, value, next) {
 /*************************************************************
 PUBLIC API
 *************************************************************/
-module.exports.connect = connect;
+module.exports.init = init;
 module.exports.BluetoothController = BluetoothController;
 module.exports.Events = Events;
