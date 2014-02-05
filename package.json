@@ -25,5 +25,9 @@
   ],
   "dependencies": {
     "bglib" : "0.0.14"
+  },
+  "hardware" : {
+    "./firmware_update" : "false",
+    "./examples" : "false"
   }
 }

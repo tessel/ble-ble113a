@@ -62,10 +62,10 @@ scanForPeripherals(callback);
 stopScanning(callback);
 startAdvertising(callback);
 writeValue(value, callback); // Write the value to be read by a master (only 1 value available now, will increase to 64 soon)
-connectToPeripheral(address, address_type, conn_interval_min, conn_interval_max, timeout, latency, next);
-disconnectFromPeripheral(connection_handle, next);
-findInformation(connection_handle, start_handle, end_handle, next); // Used to find services/characteristics used by peripheral
-readRemoteHandle(connection_handle, attHandle, next); // Used to read a remote value being advertised by slave.
+connectToPeripheral(address, address_type, conn_interval_min, conn_interval_max, timeout, latency, callback);
+disconnectFromPeripheral(connection_handle, callback);
+findInformation(connection_handle, start_handle, end_handle, callback); // Used to find services/characteristics used by peripheral
+readRemoteHandle(connection_handle, attHandle, callback); // Used to read a remote value being advertised by slave.
 ```
 
 When used in Master mode, typically, you connect to a peripheral, call `findInformation` to get a list of available characteristics to read, then call `readRemoteHandle` with the handle returned from the foundInformation event.

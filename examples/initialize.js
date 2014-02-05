@@ -6,7 +6,7 @@ var moosh;
 var ble = require('../').init(blePort);
 ble.on('ready', function(err) {
 	if (err) return console.log(err);
-  console.log("Connected!");
+  console.log("Module ready but wait... where did Moosh go!?");
   ble.startScanning(false);
 });
 
@@ -16,7 +16,7 @@ ble.on('error', function(err) {
 
 ble.on('scanStart', function(err, result) {
   if (result == 0) {
-    console.log("Looking for Moosh. Moosh, where are you?");
+    console.log("Moosh, where are you?");
   }
 });
 
@@ -40,7 +40,7 @@ ble.on('discover', function(peripheral) {
 
       moosh.connect(); 
       
-      moosh.on('connected', mooshConnected);
+      moosh.on('connected', mooshConnected.bind(moosh));
     }
     else 
     {
@@ -51,8 +51,11 @@ ble.on('discover', function(peripheral) {
 
 function mooshConnected() {
   console.log("We're connected to mooshimeter!");
+  console.log("End of story.");
 
-  
+  // this.discoverAllCharacteristics(function(err, response) {
+  //   console.log("Successfully sent find request", !response.result);
+  // });
 }
 
 function detectMoosh(peripheral, callback) {
