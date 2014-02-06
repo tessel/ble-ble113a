@@ -140,7 +140,6 @@ BluetoothController.prototype.onConnectionStatus = function(status) {
     peripheral.emit('connected');
     this.emit('connected', peripheral);
   }
-
 }
 
 
@@ -213,13 +212,14 @@ BluetoothController.prototype.discoverAllCharacteristics = function(peripheral, 
       return callback && callback(new Error("Error sending discover services command to module."));
     }
     else {
+      console.log("Discover command sent successfully...")
       // Could this cause a bug if multiple peripherals have their services requested?
       this.once('findInformationFound', function(information) {
         console.log("Found information!");
         // If this is for the correct peripheral
         if (information.connection == peripheral.connection) {
           console.log("And it's for this peripheral.");
-          peripheral.chararacteristics[information.uuid] = information.handle;
+          peripheral.characteristics[information.uuid] = information.handle;
         }
       });
 
@@ -231,7 +231,7 @@ BluetoothController.prototype.discoverAllCharacteristics = function(peripheral, 
         }
       })
     }
-  });
+  }.bind(this));
 }
 
 

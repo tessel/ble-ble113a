@@ -27,7 +27,8 @@ ble.on('scanStop', function(err, result) {
 });
 
 ble.on('discover', function(peripheral) {
-  console.log("Discovered peripheral! Address: ", peripheral.address, ", RSSI: ", peripheral.rssi);
+  console.log("Discovered peripheral!", peripheral);
+  // console.log("Discovered peripheral! Address: ", peripheral.address, ", RSSI: ", peripheral.rssi);
   console.log("Could it be Moosh?");
 
   detectMoosh(peripheral, function(isMoosh) {
@@ -53,9 +54,9 @@ function mooshConnected() {
   console.log("We're connected to mooshimeter!");
   console.log("End of story.");
 
-  // this.discoverAllCharacteristics(function(err, response) {
-  //   console.log("Successfully sent find request", !response.result);
-  // });
+  this.discoverAllCharacteristics(function(err, response) {
+    console.log("Successfully sent find request", !response.result);
+  });
 }
 
 function detectMoosh(peripheral, callback) {
