@@ -27,6 +27,26 @@ ble.on('scanStop', function(err, result) {
 });
 
 ble.on('discover', function(peripheral) {
+
+});
+
+
+
+function mooshConnected() {
+  ble.removeListener('discover', connectIfMoosh);
+  console.log("We're connected to mooshimeter!");
+  console.log("Disconnecting.");
+  moosh.disconnect(function(err) {
+    if (!err) {
+      console.log("Finished disconnecting.");
+    }
+  });
+
+  // this.discoverAllCharacteristics(function(err, response) {
+  //   console.log("Successfully sent find request", !response.result);
+  // });
+}
+function connectIfMoosh(peripheral) {
   console.log("Discovered peripheral!", peripheral);
   // console.log("Discovered peripheral! Address: ", peripheral.address, ", RSSI: ", peripheral.rssi);
   console.log("Could it be Moosh?");
@@ -48,17 +68,7 @@ ble.on('discover', function(peripheral) {
       console.log("Damn, it's not Moosh.");
     }
   });
-});
-
-function mooshConnected() {
-  console.log("We're connected to mooshimeter!");
-  console.log("End of story.");
-
-  this.discoverAllCharacteristics(function(err, response) {
-    console.log("Successfully sent find request", !response.result);
-  });
 }
-
 function detectMoosh(peripheral, callback) {
   for (var i = 0; i < peripheral.advertisingData.length; i++) {
     var packet = peripheral.advertisingData[i];

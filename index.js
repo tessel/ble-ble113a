@@ -5,8 +5,6 @@ var Messenger = require('./lib/messenger');
 var events = require('events');
 var util = require('util');
 
-var DEBUG = 0;
-
 var TX_HANDLE=20;
 
 var characteristicHandles = [21, 25, 29, 33, 37, 41, 45, 49, 53, 57, 61, 65];
@@ -18,7 +16,7 @@ Description:  Set the module port of the Bluetooth module
 Params:     hardware - the module port ble was plugged in to
         callback - a callback for what happens after connecting
 *************************************************************/
-function init(hardware, callback) {
+function use(hardware, callback) {
   var controller = new BluetoothController(hardware, callback);
 
   return controller;
@@ -51,6 +49,7 @@ function BluetoothController(hardware, callback) {
   this.messenger.on('scanStop', this.onScanStop.bind(this));
   this.messenger.on('discover', this.onDiscover.bind(this));
   this.messenger.on('connectionStatus', this.onConnectionStatus.bind(this));
+  this.messenger.on('disconnected', this.onDisconnect.bind(this));
 
 
   this.messenger.verifyCommunication(callback);
@@ -127,14 +126,31 @@ BluetoothController.prototype.onScanStop = function(err, result) {
 BluetoothController.prototype.onConnectionStatus = function(status) {
   var tempKey = status.address[0];
   var peripheral = this._peripherals[tempKey];
-  if (peripheral) {
-    peripheral.connection = status.connection;
-    peripheral.flags = status.flags;
-    peripheral.connInterval = status.conn_interval;
-    peripheral.timeout = status.timeout;
-    peripheral.latenct = status.latency;
-    peripheral.bonding = status.bonding;
+
+  if (!peripheral) {
+    peripheral = new Peripheral(
+            this,
+            null, 
+            null,
+            // BlueGiga's version of address
+            status.bd_addr,
+            status.address_type,
+            null);
+
+    // TODO: Take out after buffer property issue is resolved
+    this._peripherals[tempKey] = peripheral;
+    this._services[tempKey] = {};
+    this._characteristics[tempKey] = {};
+    this._descriptors[tempKey] = {};
+
   }
+
+  peripheral.connection = status.connection;
+  peripheral.flags = status.flags;
+  peripheral.connInterval = status.conn_interval;
+  peripheral.timeout = status.timeout;
+  peripheral.latenct = status.latency;
+  peripheral.bonding = status.bonding;
 
   if (peripheral.flags & (1 << 2)) {
     peripheral.emit('connected');
@@ -142,6 +158,10 @@ BluetoothController.prototype.onConnectionStatus = function(status) {
   }
 }
 
+BluetoothController.prototype.onDisconnect = function(response) {
+  // TODO: Get corresponding peripheral somehow, set connected property to false
+  this.emit('disconnect', response.reason);
+}
 
 // BluetoothController.prototype.findInformation = function(connection, start, end, callback) {
 //   this.messenger.execute(bgLib.api.attClientFindInformation, [connection, start, end], callback);
@@ -151,25 +171,25 @@ BluetoothController.prototype.onConnectionStatus = function(status) {
 //   this.messenger.execute(bgLib.api.attClientReadByHandle, [connection, handle], callback);
 // }
 
-// BluetoothController.prototype.setAdvertisementData = function(data, callback) {
-//   var length = data.length;
+BluetoothController.prototype.setTestAdvertisementData = function(callback) {
+  
+  // Test String to read
+  var testString = "Tessel BLE113A Module Suckas";
 
-//   var arr = [];
-//   arr.push(length);
-//   arr.push(0x09); // Flag for a name
-//   if (typeof data == "string") {
-//     for (var i = 0; i < data.length; i++) {
-//       arr.push(data.charCodeAt(i));
-//     }
-//   }
-//   else if (Array.isArray(data)) {
-//     arr = arr.concat(data);
-//   };
+  // Data array
+  var data = [];
+  // Put entire packet length
+  data.push(testString.length + 1);
+  data.push(0x09); // Flag for a name
 
-//   console.log("Setting data: ", arr);
+  for (var i = 0; i < testString.length; i++) {
+    data.push(testString.charCodeAt(i));
+  }
 
-//   this.messenger.execute(bgLib.api.gapSetAdvData, [1, data], callback);
-// }
+  console.log("Setting data: ", data);
+
+  this.messenger.setAdvertisementData(0, data, callback);
+}
 
 /**********************************************************
  Bluetooth API
@@ -234,7 +254,22 @@ BluetoothController.prototype.discoverAllCharacteristics = function(peripheral, 
   }.bind(this));
 }
 
+BluetoothController.prototype.getAddress = function(callback) {
+  this.messenger.getAddress(function(err, response) {
+    callback && callback(err, response.address);
+  });
+}
 
+BluetoothController.prototype.whitelistAppend = function(address, callback) {
+  this.messenger.whitelistAppend(address, callback);
+}
+
+BluetoothController.prototype.clearWhitelist = function(callback) {
+  this.messenger.clearWhitelist(callback);
+}
+BluetoothController.prototype.connectSelective = function(callback) {
+  this.messenger.connectSelective(callback);
+}
 // /*************************************************************
 // Function:    connectPeripheral (Central Role)
 // Description:   Establish a connection with a peripheral
@@ -277,6 +312,5 @@ BluetoothController.prototype.discoverAllCharacteristics = function(peripheral, 
 /*************************************************************
 PUBLIC API
 *************************************************************/
-module.exports.init = init;
+module.exports.use = use;
 module.exports.BluetoothController = BluetoothController;
-module.exports.Events = Events;
