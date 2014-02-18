@@ -3,7 +3,7 @@ var blePort = tessel.port('a');
 
 var moosh;
 
-var ble = require('../').init(blePort);
+var ble = require('../').use(blePort);
 ble.on('ready', function(err) {
 	if (err) return console.log(err);
   console.log("Module ready but wait... where did Moosh go!?");
@@ -26,28 +26,26 @@ ble.on('scanStop', function(err, result) {
   }
 });
 
-ble.on('discover', function(peripheral) {
-
-});
-
-
+ble.on('discover', connectIfMoosh);
 
 function mooshConnected() {
   ble.removeListener('discover', connectIfMoosh);
   console.log("We're connected to mooshimeter!");
-  console.log("Disconnecting.");
-  moosh.disconnect(function(err) {
-    if (!err) {
-      console.log("Finished disconnecting.");
-    }
-  });
 
-  // this.discoverAllCharacteristics(function(err, response) {
-  //   console.log("Successfully sent find request", !response.result);
-  // });
+  this.discoverAllServices(function(err, response) {
+    console.log("Services we've discovered: ", response);
+    this.disconnect(function(err) {
+      console.log("Disconnected from moosh");
+    });
+  }.bind(this));
+
+  // this.readRemoteHandle(0xFAF6, function(err, value) {
+  //   if (err) console.log("Error on handle read: ", err);
+  //   else console.log("Remote handle read: ", value);
+  // })
 }
 function connectIfMoosh(peripheral) {
-  console.log("Discovered peripheral!", peripheral);
+  console.log("Discovered peripheral!");
   // console.log("Discovered peripheral! Address: ", peripheral.address, ", RSSI: ", peripheral.rssi);
   console.log("Could it be Moosh?");
 

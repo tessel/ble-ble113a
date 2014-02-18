@@ -33,7 +33,7 @@ function BluetoothController(hardware, callback) {
   this.hardware = hardware;
   this.isAdvertising = false;
   this.messenger = new Messenger(hardware);
-  this.connected;
+  this._connectedPeripherals = {};
   this._peripherals = {};
   this._services = {};
   this._characteristics = {};
@@ -50,9 +50,10 @@ function BluetoothController(hardware, callback) {
   this.messenger.on('discover', this.onDiscover.bind(this));
   this.messenger.on('connectionStatus', this.onConnectionStatus.bind(this));
   this.messenger.on('disconnected', this.onDisconnect.bind(this));
+  this.messenger.on('findInformationFound', this.onFindInformationFound.bind(this));
+  this.messenger.on('groupFound', this.onGroupFound.bind(this));
 
-
-  this.messenger.verifyCommunication(callback);
+  this.messenger.on('booted', this.messenger.verifyCommunication.bind(this.messenger, callback));
 }
 
 util.inherits(BluetoothController, events.EventEmitter);
@@ -149,8 +150,10 @@ BluetoothController.prototype.onConnectionStatus = function(status) {
   peripheral.flags = status.flags;
   peripheral.connInterval = status.conn_interval;
   peripheral.timeout = status.timeout;
-  peripheral.latenct = status.latency;
+  peripheral.latency = status.latency;
   peripheral.bonding = status.bonding;
+
+  this._connectedPeripherals[peripheral.connection] = peripheral;
 
   if (peripheral.flags & (1 << 2)) {
     peripheral.emit('connected');
@@ -163,32 +166,32 @@ BluetoothController.prototype.onDisconnect = function(response) {
   this.emit('disconnect', response.reason);
 }
 
-// BluetoothController.prototype.findInformation = function(connection, start, end, callback) {
-//   this.messenger.execute(bgLib.api.attClientFindInformation, [connection, start, end], callback);
-// }
+BluetoothController.prototype.onFindInformationFound = function(information) {
+  console.log("Found information!", information);
+  // If this is for the correct peripheral
+  // Get the correct peripheral that this is for
+  var peripheral = this._connectedPeripherals[information.connection];
 
-// BluetoothController.prototype.readRemoteHandle = function(connection, handle, callback) {
-//   this.messenger.execute(bgLib.api.attClientReadByHandle, [connection, handle], callback);
-// }
+  if (peripheral) {
+    console.log("Found UUID: ", information.uuid);
+    var stringUUID = /*this.uuidToString(*/information.uuid/*)*/;
 
-BluetoothController.prototype.setTestAdvertisementData = function(callback) {
-  
-  // Test String to read
-  var testString = "Tessel BLE113A Module Suckas";
+    peripheral.characteristics[stringUUID] = new Characteristic(this, peripheral, stringUUID, information.handle);
+  }
+}
 
-  // Data array
-  var data = [];
-  // Put entire packet length
-  data.push(testString.length + 1);
-  data.push(0x09); // Flag for a name
+BluetoothController.prototype.onGroupFound = function(group) {
+  console.log("Found a group!", group);
 
-  for (var i = 0; i < testString.length; i++) {
-    data.push(testString.charCodeAt(i));
+  var peripheral = this._connectedPeripherals[information.connection];
+
+  if (peripheral) {
+    console.log("Found UUID: ", information.uuid);
+    var stringUUID = /*this.uuidToString(*/information.uuid/*)*/;
+
+    peripheral.characteristics[stringUUID] = new Characteristic(this, peripheral, stringUUID, information.handle);
   }
 
-  console.log("Setting data: ", data);
-
-  this.messenger.setAdvertisementData(0, data, callback);
 }
 
 /**********************************************************
@@ -208,6 +211,52 @@ BluetoothController.prototype.startAdvertising = function(callback) {
   this.messenger.startAdvertising(callback);
 }
 
+BluetoothController.prototype.readRemoteHandle = function(peripheral, uuid, callback) {
+
+  // Once the handle is read
+  this.messenger.once('handleRead', function(attribute) {
+    console.log("Oh shit, we're reading a handle", attribute);
+    // If it is for the same connection as this peripheral
+    if (attribute.connection == peripheral.connection) {
+      // Try to grab a pre-exisiting characterisitc
+      var characteristic = peripheral.characteristics[uuid];
+      // If it doesn't exist
+      if (!characteristic) {
+        // Create it 
+        characteristic = new Characteristic(this, peripheral.uuid, attribute.type, attribute.atthandle);
+      }
+      // Save the last value
+      characteristic.lastReadValue = attribute.value;
+
+      // Wait for the procedure to complete...
+    }
+  }.bind(this));
+
+  console.log("Setting the event...");
+  // Once the procedure completes
+  this.messenger.once('completedProcedure', function(result) {
+
+    console.log("Procedure completed!");
+    console.log("Uuid: ", uuid);
+    setImmediate(function() {
+      // Emit the event with
+      this.emit('handleRead' + uuid, peripheral.characteristics[uuid].lastReadValue);
+    }.bind(this));
+
+  }.bind(this));
+
+  this.messenger.readRemoteHandle(peripheral, uuid, function(err, response) {
+    if (err) {
+      if (err) console.log("Error sending read request: ", err);
+      else callback && callback(err);
+    }
+  }.bind(this));
+}
+
+BluetoothController.prototype.writeRemoteHandle = function(peripheral, uuid, callback) {
+
+}
+
 BluetoothController.prototype.readValue = function(index, callback) {
   this.messenger.readValue(characteristicHandles[index], callback);
 }
@@ -224,32 +273,36 @@ BluetoothController.prototype.disconnect = function(peripheral, callback) {
   this.messenger.disconnect(peripheral.connection, callback);
 }
 
-BluetoothController.prototype.discoverAllCharacteristics = function(peripheral, callback) {
-  this.messenger.discoverAllCharacteristics(peripheral, function(err, response) {
-    console.log("In callback...");
-    if (err || !response || response.result != 0) {
-      console.log("Error: ", err);
-      return callback && callback(new Error("Error sending discover services command to module."));
+BluetoothController.prototype.discoverAllServices = function(peripheral, callback) {
+  this.messenger.once('completedProcedure', function(procedure) {
+    console.log("COMPLETED SERIVICE DISCOVERY PROCEDURE...");
+    if (procedure.connection == peripheral.connection) {
+      callback && callback(null, peripheral.services);
     }
-    else {
-      console.log("Discover command sent successfully...")
-      // Could this cause a bug if multiple peripherals have their services requested?
-      this.once('findInformationFound', function(information) {
-        console.log("Found information!");
-        // If this is for the correct peripheral
-        if (information.connection == peripheral.connection) {
-          console.log("And it's for this peripheral.");
-          peripheral.characteristics[information.uuid] = information.handle;
-        }
-      });
-
-      this.once('procedureCompleted', function(procedure) {
-        console.log("Procedure has completed!");
-        if (procedure.connection == peripheral.connection) {
-          console.log("And it's this peripheral.");
-          callback && callback(null, peripheral.chararacteristics);
-        }
-      })
+  });
+  this.messenger.discoverAllServices(peripheral, function(err, response) {
+    console.log("Sent: ", err, response);
+    if (err || response.result != 0) {
+      if (!err) err = response.result;
+      console.log("Error: ", err, response.result);
+      return callback && callback(err);
+    }
+  }.bind(this));
+}
+BluetoothController.prototype.discoverAllCharacteristics = function(peripheral, callback) {
+  // Potential source of bugs. If another procedure is sent out after this and completed
+  // before this, we could call callback too early
+  this.messenger.once('completedProcedure', function(procedure) {
+    console.log("COMPLETED PROCEDURE...");
+    if (procedure.connection == peripheral.connection) {
+      callback && callback(null, peripheral.characteristics);
+    }
+  });
+  this.messenger.discoverAllCharacteristics(peripheral, function(err, response) {
+    if (err || response.result != 0) {
+      if (!err) err = response.result;
+      console.log("Error: ", err);
+      return callback && callback(new Error("Error sending discover characteristics command to module."));
     }
   }.bind(this));
 }
@@ -270,45 +323,38 @@ BluetoothController.prototype.clearWhitelist = function(callback) {
 BluetoothController.prototype.connectSelective = function(callback) {
   this.messenger.connectSelective(callback);
 }
-// /*************************************************************
-// Function:    connectPeripheral (Central Role)
-// Description:   Establish a connection with a peripheral
-// Params:    peripheral - the Peripheral to connect to
-//        callback - A callback that should expect to receive
-//        an array of available devices.
-// *************************************************************/
-// BluetoothController.prototype.connectPeripheral = function(peripheral, callback) {
+
+BluetoothController.prototype.updateRssi = function(peripheral, callback) {
+  this.messenger.updateRssi(peripheral, function(err, rssi) {
+    if (!err) {
+      setImmediate(function() {
+        this.emit('rssiUpdate', rssi);
+        peripheral.emit('rssiUpdate', rssi);
+      }.bind(this));
+    }
+    callback && callback(err, rssi);
+  }.bind(this));
+}
+
+// BluetoothController.prototype.uuidToString = function(uuidBuffer) {
+//   var str = "0x";
+//   var length = uuidBuffer.length;
+//   var elem;
+//   for (var i = 0; i < length; i++) {
+//      elem = uuidBuffer.readUInt8(length-1-i).toString(16);
     
+//     if (elem.length == 1) {
+//       elem = "0" + elem;
+//     }
+//     console.log("elem", elem);
+//     str += elem;
 
+//   }
+
+//   console.log("str", str);
+
+//   return str;
 // }
-
-// /*************************************************************
-// Function:    disconnectPeripheral (Central Role)
-// Description:   End a connection with a peripheral
-// Params:    peripheral - the Peripheral to connect to
-//        callback - A callback that should expect to receive
-//        an array of available devices.
-// *************************************************************/
-// BluetoothController.prototype.disconnectPeripheral = function(peripheral, callback) {
-    
-
-// }
-
-// /*************************************************************
-// Function:    getSignalStrength (Central Role)
-// Description:   Get the signal strength (0.0-1.0) of a peripheral
-// Params:    peripheral - the device to get the signal strength of.    
-//        callback - A callback that should expect to receive
-//        an array of available devices.
-// *************************************************************/
-// BluetoothController.prototype.getSignalStrength = function(peripheral, callback) {
-
-// }
-
-
-
-
-
 /*************************************************************
 PUBLIC API
 *************************************************************/
