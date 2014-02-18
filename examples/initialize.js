@@ -32,18 +32,20 @@ function mooshConnected() {
   ble.removeListener('discover', connectIfMoosh);
   console.log("We're connected to mooshimeter!");
 
-  this.discoverAllServices(function(err, response) {
-    console.log("Services we've discovered: ", response);
+  this.discoverAllServices(function(err, services) {
+    if (err) console.log("Couldn't discover services: ", err);
+    else {
+      console.log("Found services:");
+      for (var service in services) {
+        console.log(service);
+      }
+    }
     this.disconnect(function(err) {
       console.log("Disconnected from moosh");
     });
   }.bind(this));
-
-  // this.readRemoteHandle(0xFAF6, function(err, value) {
-  //   if (err) console.log("Error on handle read: ", err);
-  //   else console.log("Remote handle read: ", value);
-  // })
 }
+
 function connectIfMoosh(peripheral) {
   console.log("Discovered peripheral!");
   // console.log("Discovered peripheral! Address: ", peripheral.address, ", RSSI: ", peripheral.rssi);
@@ -79,3 +81,7 @@ function detectMoosh(peripheral, callback) {
 
   return callback && callback(false);
 }
+
+setInterval(function() {
+
+}, 20000);  
