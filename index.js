@@ -52,6 +52,7 @@ function BluetoothController(hardware, callback) {
   this.messenger.on('disconnected', this.onDisconnect.bind(this));
   this.messenger.on('findInformationFound', this.onFindInformationFound.bind(this));
   this.messenger.on('groupFound', this.onGroupFound.bind(this));
+  this.messenger.on('attributeValue', this.onAttributeValue.bind(this));
 
   this.messenger.on('booted', this.messenger.verifyCommunication.bind(this.messenger, callback));
 }
@@ -174,17 +175,31 @@ BluetoothController.prototype.onFindInformationFound = function(information) {
 
   if (peripheral) {
     console.log("Found UUID: ", information.uuid);
-    var stringUUID = /*this.uuidToString(*/information.uuid/*)*/;
+    var stringUUID = this.uuidToString(information.uuid);
 
     peripheral.characteristics[stringUUID] = new Characteristic(this, peripheral, stringUUID, information.handle);
   }
 }
+
+// how should we structure the code? What are the keys in object structures?
+// Should it be handles or UUIDs? Can we get UUIDs of characteristics? What are descriptors?
 
 /* 
  Called when services or groups found
 */
 BluetoothController.prototype.onGroupFound = function(group) {
   this.emit('groupFound', group);
+}
+
+BluetoothController.prototype.onAttributeValue = function(attribute) {
+  console.log("Found this attribute: ", attribute);
+
+  // var peripheral = this._connectedPeripherals[information.connection];
+
+  // if (peripheral) {
+
+  // }
+
 }
 
 /**********************************************************
@@ -308,19 +323,36 @@ BluetoothController.prototype.discoverAllServices = function(peripheral, callbac
   }.bind(this));
 }
 BluetoothController.prototype.discoverAllCharacteristics = function(peripheral, callback) {
-  // Potential source of bugs. If another procedure is sent out after this and completed
-  // before this, we could call callback too early
+  // The 'completed Procedure' event is called when we're done looking for services
   this.messenger.once('completedProcedure', function(procedure) {
-    console.log("COMPLETED PROCEDURE...");
-    if (procedure.connection == peripheral.connection) {
-      callback && callback(null, peripheral.characteristics);
+    console.log("PROCEDURE COMPLETED");
+    // If it didn't succeed
+    if (procedure.result != 0) {
+      console.log("Procedure failed: ", procedure.result);
+      callback && callback(procedure.result, null);
     }
-  });
-  this.messenger.discoverAllCharacteristics(peripheral, function(err, response) {
+    // If this was called for this peripheral
+    else if (procedure.connection == peripheral.connection) {
+      // Call the callback
+      callback && callback(null, peripheral.characteristics);
+      // Prepare event emission
+      setImmediate(function() {
+        // Emit to any listeners on controller object
+        this.emit('characteristicsDiscovered', peripheral, peripheral.characteristics);
+        // Emit for peripheral itself
+        peripheral.emit('characteristicsDiscovered', peripheral.characteristics);
+      }.bind(this));
+    }
+  }.bind(this));
+  // Request the messenger to start discovering services
+  this.messenger.discoverCharacteristics(peripheral, 0x0001, 0xFFFF, function(err, response) {
+    // If there was a problem with the request
     if (err || response.result != 0) {
+      // If it was an error reported by module, set that as error
       if (!err) err = response.result;
-      console.log("Error: ", err);
-      return callback && callback(new Error("Error sending discover characteristics command to module."));
+      console.log("Was there  problem officer", err);
+      // Call callback immediately
+      return callback && callback(err);
     }
   }.bind(this));
 }

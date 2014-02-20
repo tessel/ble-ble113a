@@ -1,7 +1,7 @@
 var tessel = require('tessel');
 var blePort = tessel.port('a');
 
-var moosh;
+
 
 var ble = require('../').use(blePort);
 ble.on('ready', function(err) {
@@ -32,7 +32,7 @@ function mooshConnected() {
   ble.removeListener('discover', connectIfMoosh);
   console.log("We're connected to mooshimeter!");
 
-  this.discoverAllServices(function(err, services) {
+  this.discoverAllCharacteristics(function(err, services) {
     if (err) console.log("Couldn't discover services: ", err);
     else {
       console.log("Found services:");
