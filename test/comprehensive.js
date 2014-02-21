@@ -11,28 +11,47 @@ var failedLED = tessel.led(2);
 var failed = false;
 var failTimeout;
 
-function moduleConnectTest(callback) {
+function discoverTest(callback) {
+
+  failTimeout = setTimeout(failModule.bind(null, "Discover Test"), 30000);
+  bluetooth.startScanning(function(err) {
+    if (err) {
+      
+    }
+  });
+}
+
+function portTest(callback) {
 
   var wrongPort = tessel.port('b');
 
-  var wrongBLE = bleDriver.use(wrongPort);
+  failTimeout = setTimeout(failModule.bind(null, "Port Test"), 20000);
 
-  failTimeout = setTimeout(failModule.bind(null, "Connecting to module"), 10000);
+  bleDriver.use(wrongPort, function(err) {
+    if (!err) {
+      return failModule("Callback to 'use'");
+    }
 
-  wrongBLE.on('error', function(err) {
-    console.log("Successfully detected wrong module port", err);
-    bluetooth = bleDriver.use(blePort);
+    var wrongBLE = bleDriver.use(wrongPort);
 
-    bluetooth.on('error', failModule.bind(null, 'Connecting to correct module port'));
+    wrongBLE.on('error', function(err) {
+      console.log("Successfully detected wrong module port.");
+      bluetooth = bleDriver.use(blePort);
 
-    bluetooth.on('ready', function() {
-      clearTimeout(failTimeout);
-      console.log("Ready to go!");
-      passModule();
+      bluetooth.on('error', failModule.bind(null, 'Connecting to correct module port'));
+
+      bluetooth.on('ready', function() {
+        clearTimeout(failTimeout);
+        console.log("Successfully connected to correct module port.");
+        callback && callback();
+      });
     });
+
+    wrongBLE.on('ready', failModule.bind(null, "Checking that incorrect port is not connected"));
+
   });
 
-  wrongBLE.on('ready', failModule.bind(null, "Checking that incorrect port is not ready."));
+
 }
 
 function failModule(test)
@@ -52,6 +71,8 @@ function passModule()
   }
 }
 
-moduleConnectTest(function() {
-  console.log("Tests finished.");
+portTest(function() {
+  discoverTest(function() {
+    passModule();
+  });
 });
