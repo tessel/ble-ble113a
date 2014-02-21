@@ -40,8 +40,6 @@ function BluetoothController(hardware, callback) {
   this._descriptors = {};
   this._discoveredPeripheralsAddresses = [];
 
-  this.messenger.on('ready', this.onReady.bind(this));
-  this.messenger.on('error', this.onError.bind(this));
   this.messenger.on('advertiseStarted', this.onAdvertiseStarted.bind(this));
   this.messenger.on('valueRead', this.onValueRead.bind(this));
   this.messenger.on('valueWritten', this.onValueWritten.bind(this));
@@ -54,7 +52,21 @@ function BluetoothController(hardware, callback) {
   this.messenger.on('groupFound', this.onGroupFound.bind(this));
   this.messenger.on('attributeValue', this.onAttributeValue.bind(this));
 
-  this.messenger.on('booted', this.messenger.verifyCommunication.bind(this.messenger, callback));
+  this.messenger.once('ready', function() {
+    setImmediate(function() {
+      this.emit('ready');
+      callback && callback();
+    }.bind(this));
+  }.bind(this));
+
+  this.messenger.once('error', function(err) {
+    setImmediate(function() {
+      this.emit('error', err);
+      callback && callback(err);
+    }.bind(this));
+  }.bind(this));
+
+
 }
 
 util.inherits(BluetoothController, events.EventEmitter);
@@ -62,15 +74,6 @@ util.inherits(BluetoothController, events.EventEmitter);
 /**********************************************************
  Event Handlers
 **********************************************************/
-
-BluetoothController.prototype.onReady = function(err) {
-  this.connected = true;
-  this.emit('ready', err);
-}
-BluetoothController.prototype.onError = function(err) {
-  this.connected = false;
-  this.emit('error', err);
-}
 
 BluetoothController.prototype.onAdvertiseStarted = function(err, response) {
   this.isAdvertising = true;
@@ -176,7 +179,6 @@ BluetoothController.prototype.onFindInformationFound = function(information) {
   if (peripheral) {
     console.log("Found UUID: ", information.uuid);
     var stringUUID = this.uuidToString(information.uuid);
-
     peripheral.characteristics[stringUUID] = new Characteristic(this, peripheral, stringUUID, information.handle);
   }
 }
