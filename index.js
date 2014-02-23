@@ -271,7 +271,6 @@ BluetoothController.prototype.connect = function(peripheral, callback) {
     } 
     // If there wasn't
     else {
-      var listener = this.connectHelper.bind(this, peripheral, callback);
       // Wait for a connection Update
       this.on('connectionUpdate', function(updatedPeripheral) {
         if (updatedPeripheral === peripheral) {
@@ -293,10 +292,6 @@ BluetoothController.prototype.connect = function(peripheral, callback) {
       }.bind(this));
     }
   }.bind(this));
-}
-
-BluetoothController.prototype.connectHelper = function(peripheral, callback, listenerToRemove) {
-
 }
 
 BluetoothController.prototype.disconnect = function(peripheral, callback) {
