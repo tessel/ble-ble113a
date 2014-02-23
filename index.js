@@ -34,11 +34,7 @@ function BluetoothController(hardware, callback) {
   this.isAdvertising = false;
   this.messenger = new Messenger(hardware);
   this._connectedPeripherals = {};
-  this._peripherals = {};
-  this._services = {};
-  this._characteristics = {};
-  this._descriptors = {};
-  this._discoveredPeripheralsAddresses = [];
+  this._discoveredPeripherals = {};
 
   this.messenger.on('scanStart', this.onScanStart.bind(this));
   this.messenger.on('scanStop', this.onScanStop.bind(this));
@@ -47,7 +43,7 @@ function BluetoothController(hardware, callback) {
   // this.messenger.on('valueRead', this.onValueRead.bind(this));
   // this.messenger.on('valueWritten', this.onValueWritten.bind(this));
   // this.messenger.on('connectionStatus', this.onConnectionStatus.bind(this));
-  // this.messenger.on('disconnected', this.onDisconnect.bind(this));
+  // this.messenger.on('disconnect', this.onDisconnect.bind(this));
   // this.messenger.on('findInformationFound', this.onFindInformationFound.bind(this));
   // this.messenger.on('groupFound', this.onGroupFound.bind(this));
   // this.messenger.on('attributeValue', this.onAttributeValue.bind(this));
@@ -87,8 +83,9 @@ BluetoothController.prototype.onScanStop = function(err, result) {
 }
 
 BluetoothController.prototype.onDiscover = function(peripheralData) {
+  console.log("Discover!", peripheralData);
 
-  var peripheral = this._peripherals[peripheralData.sender];
+  var peripheral = this._discoveredPeripherals[peripheralData.sender];
 
   if (!peripheral) {
     peripheral = new Peripheral(
@@ -100,20 +97,11 @@ BluetoothController.prototype.onDiscover = function(peripheralData) {
                 peripheralData.address_type,
                 peripheralData.packet_type);
 
-    // TODO: Take out after buffer property issue is resolved
-    this._peripherals[peripheralData.sender] = peripheral;
-    this._services[peripheralData.sender] = {};
-    this._characteristics[peripheralData.sender] = {};
-    this._descriptors[peripheralData.sender] = {};
+    this._discoveredPeripherals[peripheral.address] = peripheral;
+
+    this.emit('discover', peripheral);
   }
-
-  var previouslyDiscovered = (this._discoveredPeripheralsAddresses.indexOf(peripheralData.sender) !== -1);
-
-  if (!previouslyDiscovered) {
-    this._discoveredPeripheralsAddresses.push(peripheralData.sender);
-  }
-
-  if (this._allowDuplicates || !previouslyDiscovered) {
+  else if (this._allowDuplicates) {
     this.emit('discover', peripheral);
   }
 }
@@ -210,15 +198,74 @@ BluetoothController.prototype.onDiscover = function(peripheralData) {
  Bluetooth API
 **********************************************************/
 BluetoothController.prototype.startScanning = function(allowDuplicates, callback) {
-  this._discoveredPeripheralsAddresses = [];
+
+  // If the user just passed in a function, make allow duplicates a null
+  if (typeof allowDuplicates == "function") {
+    callback = allowDuplicates;
+    allowDuplicates = null;
+  }
+
   this._allowDuplicates = allowDuplicates;
-  this.messenger.startScanning(callback);
+
+  // Start scanning
+  this.messenger.startScanning(this.manageRequestResult.bind(this, 'scanStart', callback));
 }
 BluetoothController.prototype.stopScanning = function(callback) {
-  this.messenger.stopScanning(callback);
+  this.messenger.stopScanning(this.manageRequestResult.bind(this, 'scanStop', callback));
 }
 
-BluetoothController.prototype.filterDiscover
+BluetoothController.prototype.manageRequestResult = function(event, callback, err, response) {
+   // If there wasn't error with comms but with ble113 logic
+  if (!err && response.result) {
+    // Set result as error
+    err = response.result;
+  } 
+  // If there wasn't an error
+  if (!err) {
+    // Emit the event
+    setImmediate(function() {
+      this.emit(event);
+    }.bind(this));
+  }
+  // Call the callback
+  callback && callback(err);
+}
+
+BluetoothController.prototype.filterDiscover = function(filter, callback) {
+
+  // Cancel the normal discover event
+  this.messenger.removeAllListeners('discover');
+
+  // When we discover a peripheral, have our filter matcher test it
+  this.messenger.on('discover', this.filterMatcher.bind(this, filter, callback));
+}
+
+BluetoothController.prototype.stopFilterDiscover = function() {
+
+  // Remove our discover listener
+  this.messenger.removeListener('discover', this.filterMatcher);
+
+  // Make the normal discover listener the default
+  this.messenger.on('discover', this.onDiscover.bind(this));
+}
+
+BluetoothController.prototype.filterMatcher = function(filter, callback, peripheralData) {
+  console.log("Found, checking with filter", peripheralData);
+
+  var peripheral = new Peripheral(
+                this,
+                peripheralData.rssi, 
+                peripheralData.data,
+                peripheralData.sender,
+                peripheralData.address_type,
+                peripheralData.packet_type);
+
+  filter(peripheral, function(match) {
+    if (match) {
+      this.onDiscover(peripheralData);
+    }
+  }.bind(this));
+}
 
 // BluetoothController.prototype.startAdvertising = function(callback) {
 //   this.advertising = true;

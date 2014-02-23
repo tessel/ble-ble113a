@@ -22,19 +22,34 @@ var failTimeout;
 Test surrounding filtering peripherals
 */
 function filterTest(callback) {
+  var gate = 0;
+
+  failTimeout = setTimeout(failModule.bind(null, "Filter Test"), 20000);
+
+  bluetooth.filterDiscover(filter, function(err, matched) {
+    console.log("In filter callback");
+  });
+
   bluetooth.startScanning(function(err) {
     if (err) {
       return failModule("Starting scan in filter test");
     }
 
-    bluetooth.filterDiscover(filter, function(err, matched) {
-
+    bluetooth.once('discover', function(peripheral) {
+      console.log("Filter test passed.");
+      clearTimeout(failTimeout);
+      callback && callback();
     });
   });
 }
 
-function filter(peripheral) {
-
+function filter(peripheral, callback) {
+  if (peripheral.advertisingData.length) {
+    return callback && callback(true);
+  } 
+  else {
+    return callback && callback(false);
+  }
 }
 
 /*
@@ -42,19 +57,20 @@ Test surrounding scanning for peripheral
 */
 function scanTest(callback) {
 
-  failTimeout = setTimeout(failModule.bind(null, "Discover Test"), 30000);
+  failTimeout = setTimeout(failModule.bind(null, "Discover Test"), 20000);
 
   var gate = 0;
 
   bluetooth.on('scanStart', function() {
-    console.log("Scan started!");
+    console.log("In scan start");
     gate++;
   });
 
   bluetooth.on('scanStop', function() {
     console.log("In scan stop", gate);
-    if (gate == 2) {
+    if (gate == 3) {
       console.log("Scan tests passed.");
+      bluetooth.removeAllListeners();
       clearTimeout(failTimeout);
       callback && callback();
     }
@@ -69,7 +85,6 @@ function scanTest(callback) {
       if (err) {
         return failModule("Stopping scan");
       }
-
     });
   });
 
@@ -79,7 +94,8 @@ function scanTest(callback) {
       // If there was an error, fail
       return failModule("Start scanning for peripherals");
     }
-    // 
+    console.log("Started scanning");
+    gate++;
   });
 }
 
@@ -110,7 +126,8 @@ function portTest(callback) {
       // Connect to the correct port
       bluetooth = bleDriver.use(blePort, function(err) {
         if (err) {
-          return failModule("Callback to 'use' on correct port")
+
+          return failModule("Callback to 'use' on correct port", err);
         }
 
         // If there was an error connecting to the real port, fail the test
@@ -137,12 +154,12 @@ function portTest(callback) {
 
 }
 
-function failModule(test)
+function failModule(test, err)
 {
   failed = true;
   clearTimeout(failTimeout);
   passedLED.low();
-  console.log(test, " failed.");
+  console.log(test, " failed.", err);
   failedLED.high();
 }
 
@@ -156,7 +173,9 @@ function passModule()
 
 portTest(function() {
   scanTest(function() {
-    passModule();
+    filterTest(function() {
+      passModule();
+    });
   });
 });
 
