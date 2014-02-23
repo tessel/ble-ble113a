@@ -2,6 +2,10 @@
 Configuration:
 Connect a BLE port to port A on the Tessel.
 Place any BLE peripheral within a few feet of the Tessel.
+
+Missing Tests:
+The ability to test whether _allowDuplicates works on scanning. Would need more BLE peripherals
+in setup
 */
 
 var tessel = require('tessel');
@@ -18,37 +22,111 @@ var failedLED = tessel.led(2);
 var failed = false;
 var failTimeout;
 
+function connectTest(callback) {
+
+}
 /*
 Test surrounding filtering peripherals
+filterDiscover with impassable filter
+stopFilterDiscover
+filterDiscover with passable filter
 */
 function filterTest(callback) {
   var gate = 0;
 
   failTimeout = setTimeout(failModule.bind(null, "Filter Test"), 20000);
 
-  bluetooth.filterDiscover(filter, function(err, matched) {
-    console.log("In filter callback");
+  impassableFilterAndStopTest(5000, function() {
+    passableFilterTest(10000, callback);
+  });
+}
+
+function passableFilterTest(timeout, callback) {
+  var passTimeout = setTimeout(failModule.bind(null, "Passable filter test"), timeout);
+
+  var gate = 0;
+
+  bluetooth.filterDiscover(passableFilter, function(err, matched) {
+    if (err) {
+      return failModule("Passable filter discover callback");
+    }
+
+    gate++;
+  });
+
+  bluetooth.on('discover', function(peripheral) {
+    if (gate) {
+      clearTimeout(passTimeout);
+      bluetooth.stopFilterDiscover();
+      bluetooth.removeAllListeners();
+      console.log("Passable Filter Test Passed.");
+      callback && callback();
+    }
+    else {
+      return failModule("Passable filter event");
+    }
+  });
+
+  bluetooth.startScanning();
+
+}
+
+function impassableFilterAndStopTest(timeout, callback) {
+  successTimeout = setTimeout(function() {
+    if (!failed) {
+      bluetooth.stopScanning(function(err) {
+        if (err) {
+          return failModule("Cancelling filter in stop test", err);
+        }
+        bluetooth.removeAllListeners();
+        console.log("Impassable Filter Test Passed.");
+        stopFilterHelper(callback);
+      });
+    }
+  }, timeout);
+
+  bluetooth.filterDiscover(impassableFilter, function(err, matched) {
+    failModule('Impassable discover filter');
   });
 
   bluetooth.startScanning(function(err) {
     if (err) {
-      return failModule("Starting scan in filter test");
+      return failModule("Starting scan in impassable filter test", err);
     }
 
     bluetooth.once('discover', function(peripheral) {
-      console.log("Filter test passed.");
-      clearTimeout(failTimeout);
-      callback && callback();
+      return failModule("Not discovering in impassable filter test");
     });
   });
 }
 
-function filter(peripheral, callback) {
-  if (peripheral.advertisingData.length) {
-    return callback && callback(true);
+function stopFilterHelper(callback) {
+  // Start scanning again
+  bluetooth.stopFilterDiscover(function(err) {
+    // Once we discover, we know the filter was removed
+    // In the future, if we have multiple devices, we should have a better test
+    bluetooth.once('discover', function(peripheral) {
+      bluetooth.removeAllListeners();
+      callback && callback();
+    });
+    bluetooth.startScanning(function(err) {
+      if (err) {
+        return failModule("Starting scan in stop filter test", err);
+      }
+    });
+  });
+}
+
+function impassableFilter(peripheral, callback) {
+  callback(false);
+}
+
+function passableFilter(peripheral, callback) {
+  if (peripheral.advertisingData.length >= 2) {
+    return callback(true);
   } 
   else {
-    return callback && callback(false);
+    return callback(false);
   }
 }
 
@@ -57,35 +135,34 @@ Test surrounding scanning for peripheral
 */
 function scanTest(callback) {
 
+  // Set timeout for failure
   failTimeout = setTimeout(failModule.bind(null, "Discover Test"), 20000);
 
+  // Flag to keep track of functions that must be hit
   var gate = 0;
 
+  // When the scan starts, trip the gate
   bluetooth.on('scanStart', function() {
-    console.log("In scan start");
     gate++;
   });
 
+  // When the scan stops
   bluetooth.on('scanStop', function() {
-    console.log("In scan stop", gate);
+    // We should have had three gates tripped
     if (gate == 3) {
-      console.log("Scan tests passed.");
-      bluetooth.removeAllListeners();
+      // clear failure timeout
       clearTimeout(failTimeout);
+
+      console.log("Scan tests passed.");
+      // remove any existing listeners
+      bluetooth.removeAllListeners();
+
+      // Continue with tests
       callback && callback();
     }
     else {
       return failModule("Stop scan event");
     }
-  })
-
-  bluetooth.on('discover', function(peripheral) {
-    bluetooth.stopScanning(function(err) {
-      gate++;
-      if (err) {
-        return failModule("Stopping scan");
-      }
-    });
   });
 
   // Start scanning
@@ -94,8 +171,17 @@ function scanTest(callback) {
       // If there was an error, fail
       return failModule("Start scanning for peripherals");
     }
-    console.log("Started scanning");
     gate++;
+
+    // When we discover a peripheral, stop the scan
+    bluetooth.on('discover', function(peripheral) {
+      bluetooth.stopScanning(function(err) {
+        gate++;
+        if (err) {
+          return failModule("Stopping scan");
+        }
+      });
+    });
   });
 }
 

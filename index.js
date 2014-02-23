@@ -83,27 +83,16 @@ BluetoothController.prototype.onScanStop = function(err, result) {
 }
 
 BluetoothController.prototype.onDiscover = function(peripheralData) {
-  console.log("Discover!", peripheralData);
+  // Try to grab this peripheral from list of previously discovered peripherals
+  this.getPeripheralFromData(peripheralData, function(peripheral, undiscovered) {
 
-  var peripheral = this._discoveredPeripherals[peripheralData.sender];
-
-  if (!peripheral) {
-    peripheral = new Peripheral(
-                this,
-                peripheralData.rssi, 
-                peripheralData.data,
-                // BlueGiga's version of address
-                peripheralData.sender,
-                peripheralData.address_type,
-                peripheralData.packet_type);
-
-    this._discoveredPeripherals[peripheral.address] = peripheral;
-
-    this.emit('discover', peripheral);
-  }
-  else if (this._allowDuplicates) {
-    this.emit('discover', peripheral);
-  }
+  // If this peripheral hasn't been discovered or we allow duplicates
+  if (undiscovered || (this._allowDuplicates)) {
+      setImmediate(function() {
+        this.emit('discover', peripheral);
+      }.bind(this));
+    }
+  }.bind(this));
 }
 
 // BluetoothController.prototype.onAdvertiseStarted = function(err, response) {
@@ -233,38 +222,66 @@ BluetoothController.prototype.manageRequestResult = function(event, callback, er
 
 BluetoothController.prototype.filterDiscover = function(filter, callback) {
 
-  // Cancel the normal discover event
+  // Cancel the previous discover event
   this.messenger.removeAllListeners('discover');
 
   // When we discover a peripheral, have our filter matcher test it
   this.messenger.on('discover', this.filterMatcher.bind(this, filter, callback));
 }
 
-BluetoothController.prototype.stopFilterDiscover = function() {
+BluetoothController.prototype.stopFilterDiscover = function(callback) {
 
   // Remove our discover listener
-  this.messenger.removeListener('discover', this.filterMatcher);
+  this.messenger.removeAllListeners('discover');
 
   // Make the normal discover listener the default
   this.messenger.on('discover', this.onDiscover.bind(this));
+
+  callback && callback();
 }
 
 BluetoothController.prototype.filterMatcher = function(filter, callback, peripheralData) {
-  console.log("Found, checking with filter", peripheralData);
+  // Get saved for peripheral or make a new one
+  this.getPeripheralFromData(peripheralData, function(peripheral, undiscovered) {
+    // Apply the filter to the peripheral
+    filter(peripheral, function(match) {
+      // If we've got a match and it's undiscovered (or if it's old and we allow duplicated)
+      if (match && (undiscovered || this._allowDuplicates)) {
+        // Emit the event
+        setImmediate(function() {
+          this.emit('discover', peripheral);
+        }.bind(this));
 
-  var peripheral = new Peripheral(
+        // Call the callback
+        callback && callback(null, peripheral);
+      }
+    }.bind(this));
+  }.bind(this));
+}
+
+BluetoothController.prototype.getPeripheralFromData = function(peripheralData, callback) {
+  // Try to grab this peripheral from list of previously discovered peripherals
+  var peripheral = this._discoveredPeripherals[peripheralData.sender];
+
+  // If it hasn't been discovered yet
+  if (!peripheral) {
+    // Make a peripheral object from the data
+    peripheral = new Peripheral(
                 this,
                 peripheralData.rssi, 
                 peripheralData.data,
+                // BlueGiga's version of address
                 peripheralData.sender,
                 peripheralData.address_type,
                 peripheralData.packet_type);
 
-  filter(peripheral, function(match) {
-    if (match) {
-      this.onDiscover(peripheralData);
-    }
-  }.bind(this));
+    // Put it in our discovered data structure
+    this._discoveredPeripherals[peripheral.address] = peripheral;
+
+    callback && callback(peripheral, true);
+  }
+
+  callback && callback(peripheral, false);
 }
 
 // BluetoothController.prototype.startAdvertising = function(callback) {
