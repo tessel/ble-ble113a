@@ -22,8 +22,63 @@ var failedLED = tessel.led(2);
 var failed = false;
 var failTimeout;
 
+/* 
+Tests surrounding connecting to peripherals
+connect
+disconnect
+*/
 function connectTest(callback) {
 
+  failTimeout = setTimeout(failModule.bind(null, "Connect Test"), 20000);
+
+  var gate = 0;
+  bluetooth.startScanning(function(err) {
+    if (err) {
+      return failModule("Starting connect test scan", err);
+    }
+    console.log("Started scanning!")
+    bluetooth.once('discover', function(peripheral) {
+      console.log("Discovered!")
+      bluetooth.stopScanning(function(err) {
+        console.log("Stopped the scan!");
+        if (err) {
+          return failModule("Stopping scan in connect test", err);
+        }
+      });
+      bluetooth.once('connect', function(connectedPeripheral) {
+        console.log("bluetooth connect event");
+        gate++;
+        if (connectedPeripheral != peripheral) {
+          return failModule("Connect controller event equalty test");
+        }
+      });
+      peripheral.once('connect', function() {
+        console.log("peripheral connect event");
+        if (gate == 2) {
+          peripheral.disconnect(function(err) {
+            if (err) {
+              return failModule("Disconnecting from peripheral", err);
+            }
+            clearTimeout(failTimeout);
+            console.log("Connect Test Passed");
+            callback && callback();
+          });
+        }
+        else {
+          return failModule("Passing gate in peripheral connect event");
+        }
+      })
+      console.log("Calling connect");
+      peripheral.connect(function(err) {
+        console.log("peripheral connect callback");
+        if (err) {
+          return failModule("Connect callback", err);
+        }
+        gate++;
+      });
+    });
+
+  })
 }
 /*
 Test surrounding filtering peripherals
@@ -59,6 +114,7 @@ function passableFilterTest(timeout, callback) {
       clearTimeout(passTimeout);
       bluetooth.stopFilterDiscover();
       bluetooth.removeAllListeners();
+      bluetooth.stopScanning();
       console.log("Passable Filter Test Passed.");
       callback && callback();
     }
@@ -245,7 +301,10 @@ function failModule(test, err)
   failed = true;
   clearTimeout(failTimeout);
   passedLED.low();
-  console.log(test, " failed.", err);
+  console.log(test, " failed.");
+  if (err) {
+    console.log(err);
+  }
   failedLED.high();
 }
 
@@ -258,11 +317,12 @@ function passModule()
 }
 
 portTest(function() {
-  scanTest(function() {
-    filterTest(function() {
-      passModule();
-    });
-  });
+  connectTest();
+  // scanTest(function() {
+  //   filterTest(function() {
+  //     passModule();
+  //   });
+  // });
 });
 
 setInterval(function() {

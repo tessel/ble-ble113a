@@ -39,11 +39,11 @@ function BluetoothController(hardware, callback) {
   this.messenger.on('scanStart', this.onScanStart.bind(this));
   this.messenger.on('scanStop', this.onScanStop.bind(this));
   this.messenger.on('discover', this.onDiscover.bind(this));
+  this.messenger.on('connectionStatus', this.onConnectionStatus.bind(this));
+  this.messenger.on('disconnect', this.onDisconnect.bind(this));
   // this.messenger.on('advertiseStarted', this.onAdvertiseStarted.bind(this));
   // this.messenger.on('valueRead', this.onValueRead.bind(this));
   // this.messenger.on('valueWritten', this.onValueWritten.bind(this));
-  // this.messenger.on('connectionStatus', this.onConnectionStatus.bind(this));
-  // this.messenger.on('disconnect', this.onDisconnect.bind(this));
   // this.messenger.on('findInformationFound', this.onFindInformationFound.bind(this));
   // this.messenger.on('groupFound', this.onGroupFound.bind(this));
   // this.messenger.on('attributeValue', this.onAttributeValue.bind(this));
@@ -84,7 +84,7 @@ BluetoothController.prototype.onScanStop = function(err, result) {
 
 BluetoothController.prototype.onDiscover = function(peripheralData) {
   // Try to grab this peripheral from list of previously discovered peripherals
-  this.getPeripheralFromData(peripheralData, function(peripheral, undiscovered) {
+  this.getPeripheralFromData(peripheralData.rssi, peripheralData.data, peripheralData.sender, function(peripheral, undiscovered) {
 
   // If this peripheral hasn't been discovered or we allow duplicates
   if (undiscovered || (this._allowDuplicates)) {
@@ -95,10 +95,24 @@ BluetoothController.prototype.onDiscover = function(peripheralData) {
   }.bind(this));
 }
 
-// BluetoothController.prototype.onAdvertiseStarted = function(err, response) {
-//   this.isAdvertising = true;
-//   this.emit('advertising', err, response.result);
-// }
+BluetoothController.prototype.onConnectionStatus = function(status) {
+  this.getPeripheralFromData(null, null, status.address, function(peripheral, undiscovered) {
+      
+    peripheral.connection = status.connection;
+    peripheral.flags = status.flags;
+
+    this._connectedPeripherals[peripheral.connection] = peripheral;
+
+    // If this new connection was just made
+    // Let any listeners know
+    this.emit('connectionUpdate', peripheral);
+  }.bind(this));
+}
+
+BluetoothController.prototype.onDisconnect = function(response) {
+  // TODO: Get corresponding peripheral somehow, set connected property to false
+  this.emit('disconnect', response.reason);
+}
 
 // BluetoothController.prototype.onValueRead = function(err, value) {
 //   this.emit('valueRead', err, value);
@@ -107,46 +121,9 @@ BluetoothController.prototype.onDiscover = function(peripheralData) {
 //   this.emit('valueWritten', err, value);
 // }
 
-// BluetoothController.prototype.onConnectionStatus = function(status) {
-//   var tempKey = status.address[0];
-//   var peripheral = this._peripherals[tempKey];
-
-//   if (!peripheral) {
-//     peripheral = new Peripheral(
-//             this,
-//             null, 
-//             null,
-//             // BlueGiga's version of address
-//             status.bd_addr,
-//             status.address_type,
-//             null);
-
-//     // TODO: Take out after buffer property issue is resolved
-//     this._peripherals[tempKey] = peripheral;
-//     this._services[tempKey] = {};
-//     this._characteristics[tempKey] = {};
-//     this._descriptors[tempKey] = {};
-
-//   }
-
-//   peripheral.connection = status.connection;
-//   peripheral.flags = status.flags;
-//   peripheral.connInterval = status.conn_interval;
-//   peripheral.timeout = status.timeout;
-//   peripheral.latency = status.latency;
-//   peripheral.bonding = status.bonding;
-
-//   this._connectedPeripherals[peripheral.connection] = peripheral;
-
-//   if (peripheral.flags & (1 << 2)) {
-//     peripheral.emit('connected');
-//     this.emit('connected', peripheral);
-//   }
-// }
-
-// BluetoothController.prototype.onDisconnect = function(response) {
-//   // TODO: Get corresponding peripheral somehow, set connected property to false
-//   this.emit('disconnect', response.reason);
+// BluetoothController.prototype.onAdvertiseStarted = function(err, response) {
+//   this.isAdvertising = true;
+//   this.emit('advertising', err, response.result);
 // }
 
 // BluetoothController.prototype.onFindInformationFound = function(information) {
@@ -242,7 +219,7 @@ BluetoothController.prototype.stopFilterDiscover = function(callback) {
 
 BluetoothController.prototype.filterMatcher = function(filter, callback, peripheralData) {
   // Get saved for peripheral or make a new one
-  this.getPeripheralFromData(peripheralData, function(peripheral, undiscovered) {
+  this.getPeripheralFromData(peripheralData.rssi, peripheralData.data, peripheralData.sender, function(peripheral, undiscovered) {
     // Apply the filter to the peripheral
     filter(peripheral, function(match) {
       // If we've got a match and it's undiscovered (or if it's old and we allow duplicated)
@@ -259,29 +236,71 @@ BluetoothController.prototype.filterMatcher = function(filter, callback, periphe
   }.bind(this));
 }
 
-BluetoothController.prototype.getPeripheralFromData = function(peripheralData, callback) {
+BluetoothController.prototype.getPeripheralFromData = function(rssi, data, address, callback) {
   // Try to grab this peripheral from list of previously discovered peripherals
-  var peripheral = this._discoveredPeripherals[peripheralData.sender];
+  var peripheral = this._discoveredPeripherals[address];
 
   // If it hasn't been discovered yet
   if (!peripheral) {
     // Make a peripheral object from the data
     peripheral = new Peripheral(
                 this,
-                peripheralData.rssi, 
-                peripheralData.data,
-                // BlueGiga's version of address
-                peripheralData.sender,
-                peripheralData.address_type,
-                peripheralData.packet_type);
+                rssi, 
+                data,
+                address);
 
     // Put it in our discovered data structure
-    this._discoveredPeripherals[peripheral.address] = peripheral;
+    this._discoveredPeripherals[address] = peripheral;
 
     callback && callback(peripheral, true);
   }
 
   callback && callback(peripheral, false);
+}
+
+BluetoothController.prototype.connect = function(peripheral, callback) {
+  this.messenger.connect(peripheral.address, peripheral.addressType, function(err, response) {
+    if (!err && response.result) {
+      // Set result as error
+      err = response.result;
+    } 
+    // If there was an error
+    if (err) {
+      // Call the callback
+      return callback && callback(err);
+    } 
+    // If there wasn't
+    else {
+      var listener = this.connectHelper.bind(this, peripheral, callback);
+      // Wait for a connection Update
+      this.on('connectionUpdate', function(updatedPeripheral) {
+        if (updatedPeripheral === peripheral) {
+          // If this new connection was just made
+          if (peripheral.flags & (1 << 2)) {
+
+            // Remove this listener somehow?
+            this.removeAllListeners('connectionUpdate');
+
+            setImmediate(function() {
+              // Let any listeners know
+              this.emit('connect', peripheral);
+              peripheral.emit('connect');
+            }.bind(this));
+
+            callback && callback();
+          }
+        }
+      }.bind(this));
+    }
+  }.bind(this));
+}
+
+BluetoothController.prototype.connectHelper = function(peripheral, callback, listenerToRemove) {
+
+}
+
+BluetoothController.prototype.disconnect = function(peripheral, callback) {
+  this.messenger.disconnect(peripheral.connection, callback);
 }
 
 // BluetoothController.prototype.startAdvertising = function(callback) {
@@ -341,14 +360,6 @@ BluetoothController.prototype.getPeripheralFromData = function(peripheralData, c
 
 // BluetoothController.prototype.writeValue = function(index, value, callback) {
 //   this.messenger.writeValue(characteristicHandles[index], value, callback);
-// }
-
-// BluetoothController.prototype.connect = function(peripheral, callback) {
-//   this.messenger.connect(peripheral.address, peripheral.addressType, callback);
-// }
-
-// BluetoothController.prototype.disconnect = function(peripheral, callback) {
-//   this.messenger.disconnect(peripheral.connection, callback);
 // }
 
 // BluetoothController.prototype.discoverAllServices = function(peripheral, callback) {
