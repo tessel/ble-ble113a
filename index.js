@@ -327,6 +327,55 @@ BluetoothController.prototype.disconnect = function(peripheral, callback) {
   }.bind(this));
 }
 
+BluetoothController.prototype.discoverServices = function(peripheral, services, callback)
+{
+  var counter = 0;
+  var firstError;
+  var discoveredServices = [];
+  // For each service
+  services.forEach(function(service) {
+    // Ask the messenger to discover it
+    this.messenger.discoverService(service, function(err, result) {
+
+      // If there wasn't a comms err but a module err
+      if (!err && response.result != 0) {
+        // set module err as the error
+        err = response.result;
+      }
+
+      // If this is the first error
+      if (!firstError && err) {
+        // Set it
+        firstError = err;
+
+        // Call the callback with the error
+        callback && callback(firstError);
+
+        // Emit the error
+        setImmediate(function() {
+          this.emit('error', firstError);
+          peripheral.emit('error', firstError);
+        }.bind(this));
+      }
+
+      if (firstError) {
+        return;
+      }
+      // If there are no errors, increment num completed service detail requests
+      counter++;
+
+      // If we have collected all of them
+      if (counter == (services.length-1)) {
+
+        // Call our callback
+        callback && callback();
+
+        // Emit the deets
+      }
+    }.bind(this));
+  });
+}
+
 // BluetoothController.prototype.startAdvertising = function(callback) {
 //   this.advertising = true;
 //   this.messenger.startAdvertising(callback);

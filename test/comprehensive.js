@@ -22,6 +22,55 @@ var failedLED = tessel.led(2);
 var failed = false;
 var failTimeout;
 
+
+/*
+Tests surrounding reading services
+  discovering specific services
+  discovering all services
+  discovering included services
+*/
+function serviceDiscoveryTest(callback) {
+
+  // Set the timeout for failure
+  failTimeout = setTimeout(failModule.bind(null, "Service Discovery Test"), 30000);
+
+  bluetooth.filterDiscover(mooshFilter, function(err, moosh) {
+    bluetooth.connect(moosh, function(err) {
+      if (err) {
+        return failModule("Connecting to peripheral in service discovery", err);
+      }
+      console.log("Moosh: ", moosh.toString());
+      var reqServices = ["0x1800"]
+      moosh.discoverServices(reqServices, function(services) {
+        if (services.length == reqServices.length) {
+          clearTimeout(failTimeout);
+          bluetooth.removeAllListeners();
+          callback && callback();
+        }
+        
+      });
+      
+    })
+  });
+  bluetooth.startScanning(function(err) {
+    if (err) {
+      return failModule("Scan start in service discovery", err);
+    }
+  });
+}
+
+function mooshFilter(peripheral, callback) {
+  for (var i = 0; i < peripheral.advertisingData.length; i++) {
+    var packet = peripheral.advertisingData[i];
+
+    if (packet.type = 'Incomplete List of 16-bit Service Class UUIDs'
+        && packet.data[0] == '0xffa0') {
+      return callback(true);
+    }
+  }
+
+  return  callback(false);
+}
 /* 
 Tests surrounding connecting to peripherals
 connect
@@ -283,54 +332,70 @@ Test surrounding instantiation of module
 */
 function portTest(callback) {
 
+  // Set timeout for this test
+  failTimeout = setTimeout(failModule.bind(null, "Port Test"), 30000);
+
+  wrongPortTest(function() {
+    rightPortTest(function() {
+      clearTimeout(failTimeout);
+      callback && callback();
+    })
+  })
+}
+
+function wrongPortTest(callback) {
+  console.log("Testing Wrong Port Detection...");
   // No BLEs connected to this port
   var wrongPort = tessel.port('b');
-
-  // Set timeout for this test
-  failTimeout = setTimeout(failModule.bind(null, "Port Test"), 20000);
-
-  // Try to use the wrong port, testing callback
+   // Try to use the wrong port, testing callback
   bleDriver.use(wrongPort, function(err) {
     // If there wasn't an error, fail the test
     if (!err) {
       return failModule("Callback to 'use' on false port");
     }
-
     // Connect to the wrong port again, this time testing events
     var wrongBLE = bleDriver.use(wrongPort);
 
     // If there was an error, continue with test
-    wrongBLE.on('error', function(err) {
+    wrongBLE.once('error', function(err) {
       console.log("Successfully detected wrong module port.");
-      // Connect to the correct port
-      bluetooth = bleDriver.use(blePort, function(err) {
-        if (err) {
+      wrongBLE.messenger.removeAllListeners();
+      wrongBLE.removeAllListeners();
 
-          return failModule("Callback to 'use' on correct port", err);
-        }
-
-        // If there was an error connecting to the real port, fail the test
-        bluetooth.on('error', failModule.bind(null, 'Connecting to correct module port'));
-
-        // If the module connected
-        bluetooth.on('ready', function() {
-          // Cancel the timeout
-          clearTimeout(failTimeout);
-
-          console.log("Successfully connected to correct module port.");
-
-          // Continue with the next test
-          callback && callback();
-        });
-      });
+      callback();
     });
 
     // If the module connected somehow, fail the test
-    wrongBLE.on('ready', failModule.bind(null, "Checking that incorrect port is not connected"));
-
+    wrongBLE.once('ready', failModule.bind(null, "Checking that incorrect port is not connected"));
   });
+}
 
+function rightPortTest(callback) {
 
+  console.log("Testing Right Port Detection...");
+
+  var rightBLE = bleDriver.use(blePort, function(err) {
+
+    if (err) {
+      return failModule("Callback to 'use' on correct port", err);
+    }
+
+    // If there was an error connecting to the real port, fail the test
+    rightBLE.once('error', failModule.bind(null, 'Connecting to correct module port'));
+
+    // If the module connected
+    rightBLE.once('ready', function() {
+      // Cancel the timeout
+      clearTimeout(failTimeout);
+
+      console.log("Successfully connected to correct module port.");
+      rightBLE.messenger.removeAllListeners();
+      // Continue with the next test
+      rightBLE.removeAllListeners();
+
+      callback();
+    });
+  });
 }
 
 function failModule(test, err)
@@ -353,15 +418,34 @@ function passModule()
   }
 }
 
-portTest(function() {
-  scanTest(function() {
-    filterTest(function() {
-      connectTest(function() {
-        passModule();
-      });
-    });
-  });
+console.log("Setting up tests...");
+
+bluetooth = bleDriver.use(blePort, function(err) {
+  if (err) {
+    return failModule("Connecting to BLE Test Module on Port A prior to commence", err);
+  }
+  else {
+    beginTesting();
+  }
 });
+
+function beginTesting() {
+  console.log("Commencing tests.");
+  portTest(function() {
+    // scanTest(function() {
+    //   filterTest(function() {
+    //     connectTest(function() {
+    //       passModule();
+    //     });
+    //   });
+    // });
+    // serviceDiscoveryTest(function() {
+    //   passModule();
+    // });
+    passModule();
+  });
+}
+
 
 setInterval(function() {
 
