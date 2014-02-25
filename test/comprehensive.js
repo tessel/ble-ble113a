@@ -35,31 +35,64 @@ function serviceDiscoveryTest(callback) {
   failTimeout = setTimeout(failModule.bind(null, "Service Discovery Test"), 30000);
 
   bluetooth.filterDiscover(mooshFilter, function(err, moosh) {
+    console.log("Moosh detected. Attempting Connect...");
     bluetooth.connect(moosh, function(err) {
       if (err) {
         return failModule("Connecting to peripheral in service discovery", err);
       }
-      console.log("Moosh: ", moosh.toString());
-
-      var reqServices = ["1800"]
-      moosh.discoverServices(reqServices, function(err, services) {
-        if (err) {
-          return failModule("Discover services", err);
-        }
-        console.log("Returned: ", services);
-        if (services.length == reqServices.length) {
+      peripheral = moosh;
+      discoverSpecificServices(function() {
+        discoverAllServices(function() {
           clearTimeout(failTimeout);
-          bluetooth.removeAllListeners();
           callback && callback();
-        }
+        });
       });
-      
     });
   });
   bluetooth.startScanning(function(err) {
     if (err) {
       return failModule("Scan start in service discovery", err);
     }
+  });
+}
+
+function discoverAllServicesTest(callback) {
+  var gate = 0;
+  bluetooth.once('servicesDiscovered', function(p, services) {
+    console.log("controller service event hit.");
+    if (p === peripheral) {
+      return gate++;
+    }
+    else {
+      return failModule("Testing Peripheral equivalence in service discovery");
+    }
+    
+  });
+  peripheral.once('servicesDiscovered', function(services) {
+    console.log("peripheral service hit.");
+    if (gate === 2 && services.length > 2) {
+      console.log("Complete service discovery test passed.");
+      callback && callback();
+    }
+  });
+  bluetooth.discoverAllServices(peripheral, function(services) {
+    console.log("Callback called");
+    gate++;
+  });
+}
+
+function discoverSpecificServicesTest(callback) {
+  var reqServices = ["1800", "1801"];
+  peripheral.discoverServices(reqServices, function(err, services) {
+      if (err) {
+        return failModule("Discover services", err);
+      }
+
+      if (services.length === reqServices.length) {
+        bluetooth.removeAllListeners();
+        console.log("Subset service discovery test passed.");
+        callback && callback();
+      }
   });
 }
 
