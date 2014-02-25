@@ -32,7 +32,7 @@ Params:     hardware - the module port ble was plugged in to
 function BluetoothController(hardware, callback) {
   this.hardware = hardware;
   this.isAdvertising = false;
-  this.messenger = new Messenger(hardware);
+  this.messenger = new Messenger(hardware, name);
   this._connectedPeripherals = {};
   this._discoveredPeripherals = {};
 
@@ -48,28 +48,37 @@ function BluetoothController(hardware, callback) {
   // this.messenger.on('groupFound', this.onGroupFound.bind(this));
   // this.messenger.on('attributeValue', this.onAttributeValue.bind(this));
 
-  // Once the messenger says we're ready
-  this.messenger.once('ready', function() {
-    // Tell any ble listeners
+  // Once the messenger says we're ready, call callback and emit event
+  this.messenger.once('ready', this.bootSequence.bind(this, callback));
+
+  // If there was an error, let us know
+  this.messenger.once('error', this.bootSequence.bind(this, callback));
+}
+
+util.inherits(BluetoothController, events.EventEmitter);
+
+BluetoothController.prototype.bootSequence = function(callback, err) {
+
+// Tell any ble listeners
+  if (!err) {
     setImmediate(function() {
       this.emit('ready');
     }.bind(this));
-    // Call the callback
-    callback && callback();
-  }.bind(this));
-
-  // If there was an error
-  this.messenger.once('error', function(err) {
+  }
+  else {
     // Emit the error
     setImmediate(function() {
       this.emit('error', err);
     }.bind(this));
-    // Call the callback
-    callback && callback(err);
-  }.bind(this));
-}
+  }
 
-util.inherits(BluetoothController, events.EventEmitter);
+  // Temporary hacks until #179 is fixed
+  this.messenger.removeAllListeners('error');
+  this.messenger.removeAllListeners('ready');
+
+  // Call the callback
+  callback && callback(err);
+}
 
 /**********************************************************
  Event Handlers
@@ -186,20 +195,26 @@ BluetoothController.prototype.stopScanning = function(callback) {
 
 BluetoothController.prototype.manageRequestResult = function(event, callback, err, response) {
    // If there wasn't error with comms but with ble113 logic
+   console.log("Your request has finished!", event);
   if (!err && response.result) {
     // Set result as error
     err = response.result;
   } 
   // If there wasn't an error
   if (!err) {
-    // Call the callback
-    callback && callback(err);
-
     // Emit the event
     setImmediate(function() {
       this.emit(event);
     }.bind(this));
   }
+  else {
+    setImmediate(function() {
+      this.emit('error', err);
+    }.bind(this));
+  }
+
+  // Call the callback
+  callback && callback(err);
 }
 
 BluetoothController.prototype.filterDiscover = function(filter, callback) {
@@ -329,50 +344,28 @@ BluetoothController.prototype.disconnect = function(peripheral, callback) {
 
 BluetoothController.prototype.discoverServices = function(peripheral, services, callback)
 {
-  var counter = 0;
-  var firstError;
-  var discoveredServices = [];
-  // For each service
-  services.forEach(function(service) {
-    // Ask the messenger to discover it
-    this.messenger.discoverService(service, function(err, result) {
+  console.log("About to discover some services!");
+  this.serviceDiscovery(peripheral, function(err, allServices) {
+    if (err) {
+      callback && callback(err);
+    }
+    else {
+      var ret = [];
+      console.log("All services: ", allServices);
+      for (var i = 0; i < services.length; i++) {
+        var i = allServices.indexOf(services[i]);
 
-      // If there wasn't a comms err but a module err
-      if (!err && response.result != 0) {
-        // set module err as the error
-        err = response.result;
+        if (i != -1) {
+          ret.push(allServices[i]);
+        }
       }
+      callback && callback(null, ret);
 
-      // If this is the first error
-      if (!firstError && err) {
-        // Set it
-        firstError = err;
-
-        // Call the callback with the error
-        callback && callback(firstError);
-
-        // Emit the error
-        setImmediate(function() {
-          this.emit('error', firstError);
-          peripheral.emit('error', firstError);
-        }.bind(this));
-      }
-
-      if (firstError) {
-        return;
-      }
-      // If there are no errors, increment num completed service detail requests
-      counter++;
-
-      // If we have collected all of them
-      if (counter == (services.length-1)) {
-
-        // Call our callback
-        callback && callback();
-
-        // Emit the deets
-      }
-    }.bind(this));
+      setImmediate(function() {
+        this.emit('servicesDiscover', ret);
+        peripheral.emit('servicesDiscover', ret);
+      }.bind(this));
+    }
   });
 }
 
@@ -435,47 +428,41 @@ BluetoothController.prototype.discoverServices = function(peripheral, services, 
 //   this.messenger.writeValue(characteristicHandles[index], value, callback);
 // }
 
-// BluetoothController.prototype.discoverAllServices = function(peripheral, callback) {
-//   // The 'groupFound' event is called when we find a service
-//   this.on('groupFound', function(groupItem) {
-//     // If this is the right peripheral
-//     if (groupItem.connection == peripheral.connection) {
-//       // Convert the UUID to a string instead of buffer
-//       var strUUID = this.uuidToString(groupItem.uuid);
-//       // Create a new service
-//       var service = new Service(this, peripheral, strUUID, groupItem.start, groupItem.end);
-//       // Add this services to the peripherals data structure
-//       peripheral.services[service.uuid] = service;
-//       console.log(service.toString());
-//     }
-//   }.bind(this));
-//   // The 'completed Procedure' event is called when we're done looking for services
-//   this.messenger.once('completedProcedure', function(procedure) {
-//     // If this was called for this peripheral
-//     if (procedure.connection == peripheral.connection) {
-//       // Call the callback
-//       callback && callback(null, peripheral.services);
-//       // Prepare event emission
-//       setImmediate(function() {
-//         // Emit to any listeners on controller object
-//         this.emit('servicesDiscovered', peripheral, peripheral.services);
-//         // Emit for peripheral itself
-//         peripheral.emit('servicesDiscovered', peripheral.services);
-//       }.bind(this));
-//     }
-//   }.bind(this));
-//   // Request the messenger to start discovering services
-//   this.messenger.discoverAllServices(peripheral, function(err, response) {
-//     // If there was a problem with the request
-//     if (err || response.result != 0) {
-//       // If it was an error reported by module, set that as error
-//       if (!err) err = response.result;
+BluetoothController.prototype.serviceDiscovery = function(peripheral, callback) {
+  console.log("Initiating service discovery...");
+  // The 'groupFound' event is called when we find a service
+  this.on('groupFound', function(groupItem) {
+    // If this is the right peripheral
+    if (groupItem.connection == peripheral.connection) {
+      // Convert the UUID to a string instead of buffer
+      var strUUID = this.uuidToString(groupItem.uuid);
+      // Create a new service
+      var service = new Service(this, peripheral, strUUID, groupItem.start, groupItem.end);
+      // Add this services to the peripherals data structure
+      peripheral.services[service.uuid] = service;
+      console.log(service.toString());
+    }
+  }.bind(this));
+  // The 'completed Procedure' event is called when we're done looking for services
+  this.messenger.once('completedProcedure', function(procedure) {
+    // If this was called for this peripheral
+    if (procedure.connection == peripheral.connection) {
+      // Call the callback
+      callback && callback(null, peripheral.services);
+    }
+  }.bind(this));
+  // Request the messenger to start discovering services
+  this.messenger.discoverAllServices(peripheral, function(err, response) {
+    // If there was a problem with the request
+    if (err || response.result != 0) {
+      // If it was an error reported by module, set that as error
+      if (!err) err = response.result;
 
-//       // Call callback immediately
-//       return callback && callback(err);
-//     }
-//   }.bind(this));
-// }
+      // Call callback immediately
+      return callback && callback(err);
+    }
+  }.bind(this));
+}
 // BluetoothController.prototype.discoverAllCharacteristics = function(peripheral, callback) {
 //   // The 'completed Procedure' event is called when we're done looking for services
 //   this.messenger.once('completedProcedure', function(procedure) {
@@ -561,7 +548,7 @@ BluetoothController.prototype.addressStringToBuffer = function(addressString) {
 }
 
 BluetoothController.prototype.uuidToString = function(uuidBuffer) {
-  var str = "0x";
+  var str = "";
   var length = uuidBuffer.length;
   var elem;
   for (var i = 0; i < length; i++) {

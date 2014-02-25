@@ -40,17 +40,21 @@ function serviceDiscoveryTest(callback) {
         return failModule("Connecting to peripheral in service discovery", err);
       }
       console.log("Moosh: ", moosh.toString());
-      var reqServices = ["0x1800"]
-      moosh.discoverServices(reqServices, function(services) {
+
+      var reqServices = ["1800"]
+      moosh.discoverServices(reqServices, function(err, services) {
+        if (err) {
+          return failModule("Discover services", err);
+        }
+        console.log("Returned: ", services);
         if (services.length == reqServices.length) {
           clearTimeout(failTimeout);
           bluetooth.removeAllListeners();
           callback && callback();
         }
-        
       });
       
-    })
+    });
   });
   bluetooth.startScanning(function(err) {
     if (err) {
@@ -375,7 +379,6 @@ function rightPortTest(callback) {
   console.log("Testing Right Port Detection...");
 
   var rightBLE = bleDriver.use(blePort, function(err) {
-
     if (err) {
       return failModule("Callback to 'use' on correct port", err);
     }
@@ -421,6 +424,7 @@ function passModule()
 console.log("Setting up tests...");
 
 bluetooth = bleDriver.use(blePort, function(err) {
+  console.log("Callback called...");
   if (err) {
     return failModule("Connecting to BLE Test Module on Port A prior to commence", err);
   }
@@ -431,7 +435,7 @@ bluetooth = bleDriver.use(blePort, function(err) {
 
 function beginTesting() {
   console.log("Commencing tests.");
-  portTest(function() {
+  // portTest(function() {
     // scanTest(function() {
     //   filterTest(function() {
     //     connectTest(function() {
@@ -439,11 +443,10 @@ function beginTesting() {
     //     });
     //   });
     // });
-    // serviceDiscoveryTest(function() {
-    //   passModule();
-    // });
-    passModule();
-  });
+    serviceDiscoveryTest(function() {
+      passModule();
+    });
+  // });
 }
 
 
