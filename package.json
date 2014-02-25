@@ -24,10 +24,20 @@
     "ble113"
   ],
   "dependencies": {
-    "bglib" : "0.0.14"
+    "bglib" : "*",
+    "mocha" : "*",
+    "chai" : "*",
+    "sinon-chai" : "*"
   },
-  "hardware" : {
-    "./firmware_update" : "false",
-    "./examples" : "false"
+  "devDependencies" : 
+  {
+    "mocha" : "*",
+    "chai" : "*",
+    "sinon-chai" : "*"
+  },
+  "hardware" :
+  {
+    "./firmware_update" : false,
+    "./examples" : false
   }
 }

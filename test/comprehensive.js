@@ -7,7 +7,7 @@ Missing Tests:
 The ability to test whether _allowDuplicates works on scanning. Would need more BLE peripherals
 in setup
 */
-
+// Test frameworks
 var tessel = require('tessel');
 var blePort = tessel.port('a');
 var bleDriver = require('../');
@@ -22,33 +22,122 @@ var failedLED = tessel.led(2);
 var failed = false;
 var failTimeout;
 
+/*
+Tests surrounding discovering characteristics
+  discovering specific characteristics (from controller and peripheral)
+  discovering all characteristics
+  discovering all characteristics of a service
+*/
+function characteristicDiscoveryTest(callback) {
+  bluetooth.filterDiscover(mooshFilter, function(err, moosh) {
+    console.log("Filter passed");
+    bluetooth.stopScanning(function(err) {
+      console.log("Stopped scanning")
+      moosh.connect(function(err) {
+        console.log("Connected");
+        allCharacteristicDiscoveryTest(moosh, function() {
+          specificCharacteristicDiscoveryTest(moosh, function() {
+            serviceCharacteristicDiscoveryTest(moosh, function() {
+              bluetooth.reset(callback);
+            });
+          });
+        });
+      });
+    });
+  });
+
+  bluetooth.startScanning(function(err) {
+    if (err) {
+      failModule("Start scan in char disco", err);
+    }
+  });
+}
+
+function serviceCharacteristicDiscoveryTest(peripheral, callback) {
+  peripheral.discoverAllServices(function(err, services) {
+    services.forEach(function(service) {
+      if (service.uuid == "ffa0") {
+        console.log("Found it.");
+        var reqChar = ["ffa6"];
+        service.discoverAllCharacteristics(function(err, allChars) {
+          console.log("Discovered these: ", allChars);
+          if (allChars.length >= reqChar.length) {
+            service.discoverCharacteristics(reqChar, function(err, subsetChars) {
+              console.log("Then found these: ", subsetChars);
+              if (subsetChars.length > reqChar.length) {
+                callback();
+              }
+            });
+          }
+        });
+      }
+    })
+  });
+}
+
+function specificCharacteristicDiscoveryTest(peripheral, callback) {
+  var reqChar = ["ffa6, ffa5"];
+  console.log("Specific discovery test");
+  peripheral.discoverCharacteristics(reqChar, function(err, pc) {
+    bluetooth.discoverCharacteristics(peripheral, reqChar, function(err, mc) {
+      console.log("Here they are: ", mc);
+      if (pc.length == 0 && pc.length == reqChar.length) {
+        return failModule("Matching characteristics");
+      }
+      else {
+        callback();
+      }
+    });
+  });
+}
+
+
+function allCharacteristicDiscoveryTest(peripheral, callback) {
+  peripheral.discoverAllCharacteristics(function(err, pc) {
+    if (err) {
+      return failModule("discovering chars of peripheral - peripheral", err);
+    }
+    console.log("Here are all: ", pc);
+    bluetooth.discoverAllCharacteristics(peripheral, function(err, mc) {
+      if (err) {
+        return failModule("discovering chars of peripheral - master", err);
+      }
+      if (pc.length != mc.length) {
+        return failModule("Matching characteristics");
+      }
+      else {
+        callback();
+      }
+    });
+  });
+}
 
 /*
-Tests surrounding reading services
+Tests surrounding discovering services
   discovering specific services
   discovering all services
-  discovering included services
+  (still needs) discovering included services
 */
 function serviceDiscoveryTest(callback) {
 
   // Set the timeout for failure
-  failTimeout = setTimeout(failModule.bind(null, "Service Discovery Test"), 30000);
+  //failTimeout;// = setTimeout(failModule.bind(null, "Service Discovery Test"), 30000);
 
   bluetooth.filterDiscover(mooshFilter, function(err, moosh) {
-    console.log("Moosh detected. Attempting Connect...");
     bluetooth.connect(moosh, function(err) {
       if (err) {
         return failModule("Connecting to peripheral in service discovery", err);
       }
       peripheral = moosh;
-      discoverSpecificServices(function() {
-        discoverAllServices(function() {
+      discoverSpecificServicesTest(function() {
+        discoverAllServicesTest(function() {
           clearTimeout(failTimeout);
           callback && callback();
         });
       });
     });
   });
+
   bluetooth.startScanning(function(err) {
     if (err) {
       return failModule("Scan start in service discovery", err);
@@ -58,7 +147,7 @@ function serviceDiscoveryTest(callback) {
 
 function discoverAllServicesTest(callback) {
   var gate = 0;
-  bluetooth.once('servicesDiscovered', function(p, services) {
+  bluetooth.once('servicesDiscover', function(p, services) {
     console.log("controller service event hit.");
     if (p === peripheral) {
       return gate++;
@@ -68,14 +157,22 @@ function discoverAllServicesTest(callback) {
     }
     
   });
-  peripheral.once('servicesDiscovered', function(services) {
+  peripheral.once('servicesDiscover', function(services) {
     console.log("peripheral service hit.");
     if (gate === 2 && services.length > 2) {
       console.log("Complete service discovery test passed.");
+      peripheral.disconnect()
       callback && callback();
     }
+    else {
+      console.log("fail because gate is ", gate, "and service length is", services.length);
+    }
   });
-  bluetooth.discoverAllServices(peripheral, function(services) {
+  console.log("Attempting complete discovery test...");
+  bluetooth.discoverAllServices(peripheral, function(err, services) {
+    if (err) {
+      return failModule("Discovering all services callback", err);
+    }
     console.log("Callback called");
     gate++;
   });
@@ -83,16 +180,31 @@ function discoverAllServicesTest(callback) {
 
 function discoverSpecificServicesTest(callback) {
   var reqServices = ["1800", "1801"];
+  var gate = 0;
+  bluetooth.once('servicesDiscover', function(p, services) {
+    console.log("controller subset service event hit.");
+    if (p === peripheral) {
+      return gate++;
+    }
+    else {
+      return failModule("Testing Peripheral equivalence in subset service discovery");
+    }
+  });
+  peripheral.once('servicesDiscover', function(services) {
+    console.log("subset peripheral service hit.");
+    if (gate === 2 && services.length === 2) {
+      console.log("Subset service discovery test passed.");
+      bluetooth.removeAllListeners();
+      peripheral.removeAllListeners();
+      callback && callback();
+    }
+  });
+  console.log("Attempting subset discovery test");
   peripheral.discoverServices(reqServices, function(err, services) {
       if (err) {
         return failModule("Discover services", err);
       }
-
-      if (services.length === reqServices.length) {
-        bluetooth.removeAllListeners();
-        console.log("Subset service discovery test passed.");
-        callback && callback();
-      }
+      gate++;
   });
 }
 
@@ -116,23 +228,37 @@ disconnect
 function connectTest(callback) {
 
   // Set the timeout for failure
-  failTimeout = setTimeout(failModule.bind(null, "Connect Test"), 20000);
-
-  // Gate flag
+  console.log("Beginning connect test!");
+  //failTimeout;// = setTimeout(failModule.bind(null, "Connect Test"), 45000);
+   // Gate flag
   var gate = 0;
+
+  bluetooth.filterDiscover(mooshFilter);
+
   // Start scanning
   bluetooth.startScanning(function(err) {
     // If there was an error, fail
     if (err) {
       return failModule("Starting connect test scan", err);
     }
+    console.log("Started scan...");
     // Once we discover a peripheral
     bluetooth.once('discover', function(peripheral) {
+      console.log("Once we discover something")
       // Stop scanning
       bluetooth.stopScanning(function(err) {
+        console.log("Stop the scan");
         if (err) {
           return failModule("Stopping scan in connect test", err);
         }
+        console.log("Telling p to connect...");
+        peripheral.connect(function(err) {
+          if (err) {
+            return failModule("Connect callback", err);
+          }
+          console.log("connected callback!");
+          gate++;
+        });
       });
       // Once we are connected to it
       bluetooth.once('connect', function(connectedPeripheral) {
@@ -156,17 +282,18 @@ function connectTest(callback) {
             gate++;
           });
           // When the peripheral gets the disconnect event
-          peripheral.on('disconnect', function(reason) {
+          peripheral.once('disconnect', function(reason) {
             // Check the gate status
             if (gate != 4) {
               return failModule("Disconnecting from peripheral", err);
             }
+            bluetooth.removeAllListeners();
             // Stop the timeout
             clearTimeout(failTimeout);
             // Declare success
             console.log("Connect Test Passed");
             // Next test
-            callback && callback();
+            bluetooth.reset(callback);
           });
 
           // Tell the peripheral to disconnect
@@ -178,12 +305,6 @@ function connectTest(callback) {
         else {
           return failModule("Passing gate in peripheral connect event");
         }
-      })
-      peripheral.connect(function(err) {
-        if (err) {
-          return failModule("Connect callback", err);
-        }
-        gate++;
       });
     });
 
@@ -197,40 +318,45 @@ filterDiscover with passable filter
 */
 function filterTest(callback) {
   var gate = 0;
-
-  failTimeout = setTimeout(failModule.bind(null, "Filter Test"), 25000);
-
+  console.log("Starting filter test...");
   impassableFilterAndStopTest(5000, function() {
-    passableFilterTest(10000, function() {
+    passableFilterTest(15000, function() {
       clearTimeout(failTimeout);
-      callback && callback();
+      bluetooth.reset(callback);
     });
   });
 }
 
 function passableFilterTest(timeout, callback) {
-  var passTimeout = setTimeout(failModule.bind(null, "Passable filter test"), timeout);
+  //var passTimeout;// = setTimeout(failModule.bind(null, "Passable filter test"), timeout);
 
   var gate = 0;
 
   bluetooth.filterDiscover(passableFilter, function(err, matched) {
     if (err) {
-      return failModule("Passable filter discover callback");
+      return failModule("Passable filter discover callback", err);
     }
     gate++;
   });
 
-  bluetooth.on('discover', function(peripheral) {
+  bluetooth.once('discover', function(peripheral) {
     if (gate) {
-      clearTimeout(passTimeout);
-      bluetooth.stopFilterDiscover();
-      bluetooth.removeAllListeners();
-      bluetooth.stopScanning();
-      console.log("Passable Filter Test Passed.");
-      callback && callback();
+      bluetooth.stopScanning(function(err) {
+        if (err) {
+          return failModule("Stopping scan in passable filter test", err);
+        }
+        else {
+          clearTimeout(passTimeout);
+          bluetooth.stopFilterDiscover();
+          bluetooth.removeAllListeners();
+      
+          console.log("Passable Filter Test Passed.");
+          bluetooth.reset(callback);
+        }
+      });
     }
     else {
-      return failModule("Passable filter event");
+      return failModule("Passable filter event", "Gate = " + gate.toString());
     }
   });
 
@@ -285,7 +411,7 @@ function stopFilterHelper(callback) {
           return failModule("Stop scan filter stop");
         }
         bluetooth.removeAllListeners();
-        callback && callback();
+        bluetooth.reset(callback);
       });
     });
     bluetooth.startScanning(function(err) {
@@ -314,19 +440,21 @@ Test surrounding scanning for peripheral
 */
 function scanTest(callback) {
 
+  console.log("Starting scan test.");
   // Set timeout for failure
-  failTimeout = setTimeout(failModule.bind(null, "Discover Test"), 20000);
+  //failTimeout;// = setTimeout(failModule.bind(null, "Scan Test"), 40000);
 
   // Flag to keep track of functions that must be hit
   var gate = 0;
 
   // When the scan starts, trip the gate
-  bluetooth.on('scanStart', function() {
+  bluetooth.once('scanStart', function() {
+    console.log("Scan start ")
     gate++;
   });
 
   // When the scan stops
-  bluetooth.on('scanStop', function() {
+  bluetooth.once('scanStop', function() {
     // We should have had three gates tripped
     if (gate == 3) {
       // clear failure timeout
@@ -336,8 +464,8 @@ function scanTest(callback) {
       // remove any existing listeners
       bluetooth.removeAllListeners();
 
-      // Continue with tests
-      callback && callback();
+      // Continue with tests after resetting
+      bluetooth.reset(callback);
     }
     else {
       return failModule("Stop scan event");
@@ -346,6 +474,7 @@ function scanTest(callback) {
 
   // Start scanning
   bluetooth.startScanning(function(err) {
+    console.log("Started scanning!")
     if (err) {
       // If there was an error, fail
       return failModule("Start scanning for peripherals");
@@ -353,11 +482,12 @@ function scanTest(callback) {
     gate++;
 
     // When we discover a peripheral, stop the scan
-    bluetooth.on('discover', function(peripheral) {
+    bluetooth.once('discover', function(peripheral) {
       bluetooth.stopScanning(function(err) {
+        console.log("Stopped scanning!")
         gate++;
         if (err) {
-          return failModule("Stopping scan");
+          return failModule("Stopping scan", err);
         }
       });
     });
@@ -370,7 +500,7 @@ Test surrounding instantiation of module
 function portTest(callback) {
 
   // Set timeout for this test
-  failTimeout = setTimeout(failModule.bind(null, "Port Test"), 30000);
+  //failTimeout;// = setTimeout(failModule.bind(null, "Port Test"), 30000);
 
   wrongPortTest(function() {
     rightPortTest(function() {
@@ -469,17 +599,17 @@ bluetooth = bleDriver.use(blePort, function(err) {
 function beginTesting() {
   console.log("Commencing tests.");
   // portTest(function() {
-    // scanTest(function() {
-    //   filterTest(function() {
-    //     connectTest(function() {
-    //       passModule();
-    //     });
-    //   });
-    // });
-    serviceDiscoveryTest(function() {
-      passModule();
-    });
+  //   scanTest(function() {
+  //     filterTest(function() {
+        // connectTest(function() {
+        //   serviceDiscoveryTest(function() {
+        //     passModule();
+        //   });
+        // });
+  //     });
+  //   });
   // });
+  characteristicDiscoveryTest();
 }
 
 
