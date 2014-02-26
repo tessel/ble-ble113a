@@ -22,35 +22,8 @@ var failedLED = tessel.led(2);
 var failed = false;
 var failTimeout;
 
-/*
-Tests surrounding discovering characteristics
-  discovering specific characteristics (from controller and peripheral)
-  discovering all characteristics
-  discovering all characteristics of a service
-*/
-function characteristicDiscoveryTest(callback) {
-  bluetooth.filterDiscover(mooshFilter, function(err, moosh) {
-    console.log("Filter passed");
-    bluetooth.stopScanning(function(err) {
-      console.log("Stopped scanning")
-      moosh.connect(function(err) {
-        console.log("Connected");
-        allCharacteristicDiscoveryTest(moosh, function() {
-          specificCharacteristicDiscoveryTest(moosh, function() {
-            serviceCharacteristicDiscoveryTest(moosh, function() {
-              bluetooth.reset(callback);
-            });
-          });
-        });
-      });
-    });
-  });
+function characteristicServiceDiscovertTest(callback) {
 
-  bluetooth.startScanning(function(err) {
-    if (err) {
-      failModule("Start scan in char disco", err);
-    }
-  });
 }
 
 function serviceCharacteristicDiscoveryTest(peripheral, callback) {
@@ -75,13 +48,44 @@ function serviceCharacteristicDiscoveryTest(peripheral, callback) {
   });
 }
 
+/*
+Tests surrounding discovering characteristics
+  discovering specific characteristics (from controller and peripheral)
+  discovering all characteristics
+  discovering all characteristics of a service
+  characteristic sync when they're discovered before their service
+*/
+function characteristicDiscoveryTest(callback) {
+  bluetooth.filterDiscover(mooshFilter, function(err, moosh) {
+    console.log("Filter passed");
+    bluetooth.stopScanning(function(err) {
+      console.log("Stopped scanning")
+      moosh.connect(function(err) {
+        console.log("Connected");
+        // allCharacteristicDiscoveryTest(moosh, function() {
+          specificCharacteristicDiscoveryTest(moosh, function() {
+              bluetooth.reset(callback);
+          });
+        // });
+      });
+    });
+  });
+
+  bluetooth.startScanning(function(err) {
+    if (err) {
+      failModule("Start scan in char disco", err);
+    }
+  });
+}
+
 function specificCharacteristicDiscoveryTest(peripheral, callback) {
-  var reqChar = ["ffa6, ffa5"];
+  var reqChar = ["ffa6", "ffa5"];
   console.log("Specific discovery test");
   peripheral.discoverCharacteristics(reqChar, function(err, pc) {
     bluetooth.discoverCharacteristics(peripheral, reqChar, function(err, mc) {
-      console.log("Here they are: ", mc);
-      if (pc.length == 0 && pc.length == reqChar.length) {
+      console.log("pc length: ", pc.length);
+      console.log("mc length: ", mc.length);
+      if ((pc.length != reqChar.length) || (reqChar.length != mc.length)) {
         return failModule("Matching characteristics");
       }
       else {
@@ -97,7 +101,6 @@ function allCharacteristicDiscoveryTest(peripheral, callback) {
     if (err) {
       return failModule("discovering chars of peripheral - peripheral", err);
     }
-    console.log("Here are all: ", pc);
     bluetooth.discoverAllCharacteristics(peripheral, function(err, mc) {
       if (err) {
         return failModule("discovering chars of peripheral - master", err);
@@ -131,8 +134,15 @@ function serviceDiscoveryTest(callback) {
       peripheral = moosh;
       discoverSpecificServicesTest(function() {
         discoverAllServicesTest(function() {
-          clearTimeout(failTimeout);
-          callback && callback();
+          moosh.disconnect(function(err) {
+            if (err) {
+              return failModule("Disconnecting after service discovery", err);
+            }
+            else {
+              clearTimeout(failTimeout);
+              bluetooth.reset(callback);
+            }
+          })
         });
       });
     });
@@ -148,7 +158,6 @@ function serviceDiscoveryTest(callback) {
 function discoverAllServicesTest(callback) {
   var gate = 0;
   bluetooth.once('servicesDiscover', function(p, services) {
-    console.log("controller service event hit.");
     if (p === peripheral) {
       return gate++;
     }
@@ -159,6 +168,9 @@ function discoverAllServicesTest(callback) {
   });
   peripheral.once('servicesDiscover', function(services) {
     console.log("peripheral service hit.");
+    for (var i = 0; i < services.length; i++) {
+      console.log(services[i].toString());
+    }
     if (gate === 2 && services.length > 2) {
       console.log("Complete service discovery test passed.");
       peripheral.disconnect()
@@ -182,7 +194,6 @@ function discoverSpecificServicesTest(callback) {
   var reqServices = ["1800", "1801"];
   var gate = 0;
   bluetooth.once('servicesDiscover', function(p, services) {
-    console.log("controller subset service event hit.");
     if (p === peripheral) {
       return gate++;
     }
@@ -191,12 +202,18 @@ function discoverSpecificServicesTest(callback) {
     }
   });
   peripheral.once('servicesDiscover', function(services) {
-    console.log("subset peripheral service hit.");
+    console.log("subset peripheral service hit.", gate, services.length);
+    for (var i = 0; i < services.length; i++) {
+      console.log(services[i].toString());
+    }
     if (gate === 2 && services.length === 2) {
       console.log("Subset service discovery test passed.");
       bluetooth.removeAllListeners();
       peripheral.removeAllListeners();
       callback && callback();
+    }
+    else {
+      return failModule("Specific service peripheral event gate", new Error("Gate = " + gate.toString() + " not 2"));
     }
   });
   console.log("Attempting subset discovery test");
@@ -602,14 +619,16 @@ function beginTesting() {
   //   scanTest(function() {
   //     filterTest(function() {
         // connectTest(function() {
-        //   serviceDiscoveryTest(function() {
-        //     passModule();
-        //   });
+          serviceDiscoveryTest(function() {
+            characteristicDiscoveryTest(function() {
+               passModule();
+            })
+          });
         // });
   //     });
   //   });
   // });
-  characteristicDiscoveryTest();
+  // characteristicDiscoveryTest();
 }
 
 
