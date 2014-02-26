@@ -22,8 +22,49 @@ var failedLED = tessel.led(2);
 var failed = false;
 var failTimeout;
 
-function characteristicServiceDiscovertTest(callback) {
+console.log("Setting up tests...");
 
+bluetooth = bleDriver.use(blePort, function(err) {
+  console.log("Callback called...");
+  if (err) {
+    return failModule("Connecting to BLE Test Module on Port A prior to commence", err);
+  }
+  else {
+    beginTesting();
+  }
+});
+
+function beginTesting() {
+  console.log("Commencing tests.");
+  // portTest(function() {
+  //   scanTest(function() {
+  //     filterTest(function() {
+        // connectTest(function() {
+          // serviceDiscoveryTest(function() {
+            characteristicDiscoveryTest(function() {
+              characteristicServiceDiscoveryTest(function() {
+                passModule();
+              });    
+            });
+          // });
+        // });
+  //     });
+  //   });
+  // });
+  // characteristicDiscoveryTest();
+}
+
+function characteristicServiceDiscoveryTest(callback) {
+  connectToMoosh(function(moosh) {
+    serviceCharacteristicDiscoveryTest(moosh, function() {
+      moosh.disconnect(function(err) {
+        if (err) {
+          return failModule("Disconnect from moosh in char service disco test", err);
+        }
+        bluetooth.reset(callback);
+      })
+    })
+  });
 }
 
 function serviceCharacteristicDiscoveryTest(peripheral, callback) {
@@ -37,8 +78,11 @@ function serviceCharacteristicDiscoveryTest(peripheral, callback) {
           if (allChars.length >= reqChar.length) {
             service.discoverCharacteristics(reqChar, function(err, subsetChars) {
               console.log("Then found these: ", subsetChars);
-              if (subsetChars.length > reqChar.length) {
+              if (subsetChars.length == reqChar.length) {
                 callback();
+              }
+              else {
+                return failModule("Characteristic Length validation");
               }
             });
           }
@@ -56,27 +100,18 @@ Tests surrounding discovering characteristics
   characteristic sync when they're discovered before their service
 */
 function characteristicDiscoveryTest(callback) {
-  bluetooth.filterDiscover(mooshFilter, function(err, moosh) {
-    console.log("Filter passed");
-    bluetooth.stopScanning(function(err) {
-      console.log("Stopped scanning")
-      moosh.connect(function(err) {
-        console.log("Connected");
-        allCharacteristicDiscoveryTest(moosh, function() {
-          specificCharacteristicDiscoveryTest(moosh, function() {
-            moosh.disconnect(function(err) {
-              bluetooth.reset(callback);
-            });
-          });
+
+  connectToMoosh(function(moosh) {
+    allCharacteristicDiscoveryTest(moosh, function() {
+      specificCharacteristicDiscoveryTest(moosh, function() {
+        moosh.disconnect(function(err) {
+          if (err) {
+            return failModule("Disconnecting from moosh in char test", err);
+          }
+          bluetooth.reset(callback);
         });
       });
     });
-  });
-
-  bluetooth.startScanning(function(err) {
-    if (err) {
-      failModule("Start scan in char disco", err);
-    }
   });
 }
 
@@ -143,17 +178,12 @@ function serviceDiscoveryTest(callback) {
       });
     });
   });
+}
 
 function discoverAllServicesTest(peripheral, callback) {
   var gate = 0;
-  bluetooth.once('servicesDiscover', function(p, services) {
-    if (p === peripheral) {
-      return gate++;
-    }
-    else {
-      return failModule("Testing Peripheral equivalence in service discovery");
-    }
-    
+  bluetooth.once('servicesDiscover', function(services) {
+    return gate++;    
   });
   peripheral.once('servicesDiscover', function(services) {
     console.log("peripheral service hit.");
@@ -182,8 +212,8 @@ function discoverAllServicesTest(peripheral, callback) {
 function discoverSpecificServicesTest(peripheral, callback) {
   var reqServices = ["1800", "1801"];
   var gate = 0;
-  bluetooth.once('servicesDiscover', function(p, services) {
-    if (p === peripheral) {
+  bluetooth.once('servicesDiscover', function(services) {
+    if (services.length === reqServices.length) {
       return gate++;
     }
     else {
@@ -232,19 +262,15 @@ function connectToMoosh(callback) {
     if (err) {
       return failModule("Filtering moosh", err);
     }
-    console.log("Filter passed");
     bluetooth.stopScanning(function(err) {
       if (err) {
         return failModule("Stop scanning for moosh", err);
       }
 
-      console.log("Stopped scanning")
       moosh.connect(function(err) {
         if (err) {
           return failModule("Connecting to moosh", err);
         }
-
-        console.log("Connected");
         callback && callback(moosh);
       });
     });
@@ -619,37 +645,6 @@ function passModule()
     passedLED.high();
   }
 }
-
-console.log("Setting up tests...");
-
-bluetooth = bleDriver.use(blePort, function(err) {
-  console.log("Callback called...");
-  if (err) {
-    return failModule("Connecting to BLE Test Module on Port A prior to commence", err);
-  }
-  else {
-    beginTesting();
-  }
-});
-
-function beginTesting() {
-  console.log("Commencing tests.");
-  // portTest(function() {
-  //   scanTest(function() {
-  //     filterTest(function() {
-        // connectTest(function() {
-          serviceDiscoveryTest(function() {
-            characteristicDiscoveryTest(function() {
-               passModule();
-            })
-          });
-        // });
-  //     });
-  //   });
-  // });
-  // characteristicDiscoveryTest();
-}
-
 
 setInterval(function() {
 
