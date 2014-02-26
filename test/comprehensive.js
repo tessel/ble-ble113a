@@ -62,11 +62,13 @@ function characteristicDiscoveryTest(callback) {
       console.log("Stopped scanning")
       moosh.connect(function(err) {
         console.log("Connected");
-        // allCharacteristicDiscoveryTest(moosh, function() {
+        allCharacteristicDiscoveryTest(moosh, function() {
           specificCharacteristicDiscoveryTest(moosh, function() {
+            moosh.disconnect(function(err) {
               bluetooth.reset(callback);
+            });
           });
-        // });
+        });
       });
     });
   });
@@ -126,36 +128,23 @@ function serviceDiscoveryTest(callback) {
   // Set the timeout for failure
   //failTimeout;// = setTimeout(failModule.bind(null, "Service Discovery Test"), 30000);
 
-  bluetooth.filterDiscover(mooshFilter, function(err, moosh) {
-    bluetooth.connect(moosh, function(err) {
-      if (err) {
-        return failModule("Connecting to peripheral in service discovery", err);
-      }
-      peripheral = moosh;
-      discoverSpecificServicesTest(function() {
-        discoverAllServicesTest(function() {
-          moosh.disconnect(function(err) {
-            if (err) {
-              return failModule("Disconnecting after service discovery", err);
-            }
-            else {
-              clearTimeout(failTimeout);
-              bluetooth.reset(callback);
-            }
-          })
-        });
+  connectToMoosh(function(moosh) {
+    discoverSpecificServicesTest(moosh, function() {
+      discoverAllServicesTest(moosh, function() {
+        moosh.disconnect(function(err) {
+          if (err) {
+            return failModule("Disconnecting after service discovery", err);
+          }
+          else {
+            clearTimeout(failTimeout);
+            bluetooth.reset(callback);
+          }
+        })
       });
     });
   });
 
-  bluetooth.startScanning(function(err) {
-    if (err) {
-      return failModule("Scan start in service discovery", err);
-    }
-  });
-}
-
-function discoverAllServicesTest(callback) {
+function discoverAllServicesTest(peripheral, callback) {
   var gate = 0;
   bluetooth.once('servicesDiscover', function(p, services) {
     if (p === peripheral) {
@@ -190,7 +179,7 @@ function discoverAllServicesTest(callback) {
   });
 }
 
-function discoverSpecificServicesTest(callback) {
+function discoverSpecificServicesTest(peripheral, callback) {
   var reqServices = ["1800", "1801"];
   var gate = 0;
   bluetooth.once('servicesDiscover', function(p, services) {
@@ -236,6 +225,36 @@ function mooshFilter(peripheral, callback) {
   }
 
   return  callback(false);
+}
+
+function connectToMoosh(callback) {
+    bluetooth.filterDiscover(mooshFilter, function(err, moosh) {
+    if (err) {
+      return failModule("Filtering moosh", err);
+    }
+    console.log("Filter passed");
+    bluetooth.stopScanning(function(err) {
+      if (err) {
+        return failModule("Stop scanning for moosh", err);
+      }
+
+      console.log("Stopped scanning")
+      moosh.connect(function(err) {
+        if (err) {
+          return failModule("Connecting to moosh", err);
+        }
+
+        console.log("Connected");
+        callback && callback(moosh);
+      });
+    });
+  });
+
+  bluetooth.startScanning(function(err) {
+    if (err) {
+      failModule("Start scan in char disco", err);
+    }
+  });
 }
 /* 
 Tests surrounding connecting to peripherals
