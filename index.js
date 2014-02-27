@@ -406,7 +406,7 @@ BluetoothController.prototype.discoverCharacteristics = function(peripheral, fil
     this.attributeDiscoveryHandler(err, filter, allCharacteristics, function(err, characteristics) {
 
       callback && callback(err, characteristics);
-      
+
       // If we have characteristics to report
       if (characteristics.length) {
         // Also emit it from appropriate sources
@@ -428,7 +428,6 @@ BluetoothController.prototype.discoverCharacteristicsOfService = function(servic
   this.characteristicDiscovery(service._peripheral, service._startHandle, service._endHandle, function(err, allCharacteristics) {
     // Format results and report any errors
     this.attributeDiscoveryHandler(err, filter, allCharacteristics, function(err, characteristics) {
-      console.log("Got these: ", err, characteristics);
 
       callback && callback(err, characteristics);
       // If we have characteristics to report

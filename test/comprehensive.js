@@ -41,11 +41,11 @@ function beginTesting() {
   //     filterTest(function() {
         // connectTest(function() {
           // serviceDiscoveryTest(function() {
-            characteristicDiscoveryTest(function() {
+            // characteristicDiscoveryTest(function() {
               characteristicServiceDiscoveryTest(function() {
                 passModule();
               });    
-            });
+            // });
           // });
         // });
   //     });
@@ -55,19 +55,64 @@ function beginTesting() {
 }
 
 function characteristicServiceDiscoveryTest(callback) {
+  // connectToMoosh(function(moosh) {
+  //   completeServiceCharacteristicDiscoveryTest(moosh, function() {
+  //     moosh.disconnect(function(err) {
+  //       if (err) {
+  //         return failModule("Disconnect from moosh in char service disco test", err);
+  //       }
+        // connectToMoosh(function(moosh) {
+        //   subsetServiceCharacteristicDiscoveryTest(moosh, function() {
+        //     moosh.disconnect(function(err) {
+        //       if (err) {
+        //         return failModule("Disconnect from moosh in char service disco test", err);
+        //       }
+                serviceSyncingDiscoveryTest(function() {
+                    bluetooth.reset(callback); 
+                });   
+  //         });
+  //       });
+  //     });
+  //   });
+  // });
+}
+
+function serviceSyncingDiscoveryTest(callback) {
   connectToMoosh(function(moosh) {
-    serviceCharacteristicDiscoveryTest(moosh, function() {
-      moosh.disconnect(function(err) {
-        if (err) {
-          return failModule("Disconnect from moosh in char service disco test", err);
+    console.log("Moosh!", moosh.toString());
+    bluetooth.discoverAllCharacteristics(moosh, function() {
+      bluetooth.discoverAllServices(moosh, function() {
+        if (Object.keys(moosh._unassignedCharacteristics).length == 0) {
+          moosh.disconnect(function(err) {
+            if (err) {
+              return failModule("Disconnect from moosh in char service disco test", err);
+            }
+            bluetooth.reset(callback);
+          }); 
         }
-        bluetooth.reset(callback);
-      })
-    })
+        else {
+          return failModule("Still have unassigned characteristics after discovery", Object.keys(moosh.__unassignedCharacteristics).length);
+        }
+      });  
+    });
   });
 }
 
-function serviceCharacteristicDiscoveryTest(peripheral, callback) {
+function completeServiceCharacteristicDiscoveryTest(peripheral, callback) {
+  peripheral.discoverAllServices(function(err, services) {
+    if (err) {
+      return failModule("Discovering all services", err);
+    }
+    peripheral.discoverAllCharacteristics(function(err, characteristics) {
+      if (err) {
+        return failModule("Discovering all chars", err);
+      }
+      callback && callback();
+    });
+  });
+}
+
+function subsetServiceCharacteristicDiscoveryTest(peripheral, callback) {
   peripheral.discoverAllServices(function(err, services) {
     services.forEach(function(service) {
       if (service.uuid == "ffa0") {
