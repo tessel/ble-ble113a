@@ -40,18 +40,60 @@ function beginTesting() {
   //   scanTest(function() {
   //     filterTest(function() {
         // connectTest(function() {
-          serviceDiscoveryTest(function() {
-            characteristicDiscoveryTest(function() {
-              characteristicServiceDiscoveryTest(function() {
-                clearCacheTest(passModule);
-              });    
-            });
-          });
+          // serviceDiscoveryTest(function() {
+          //   characteristicDiscoveryTest(function() {
+          //     characteristicServiceDiscoveryTest(function() {
+          //       clearCacheTest(passModule);
+                   discoverAllTest(passModule);
+          //     });    
+          //   });
+          // });
         // });
   //     });
   //   });
   // });
   // characteristicDiscoveryTest();
+}
+
+function readCharacteristicTest(callback) {
+  connectToMoosh(function(moosh) {
+
+  });
+}
+
+function discoverAllTest(callback) {
+    connectToMoosh(function(moosh) {
+    var gate = 0;
+    moosh.on('servicesDiscover', function(services) {
+      gate++;
+    });
+    bluetooth.on('servicesDiscover', function(services) {
+      gate++;
+    });
+    moosh.on('characteristicsDiscover', function(characteristics) {
+      if (gate != 4) {
+        return failModule("Didn't hit all the gates" + gate.toString());
+      }
+      else {
+        moosh.disconnect(function(err) {
+          bluetooth.reset(callback);
+        });
+      }
+    });
+    bluetooth.on('characteristicsDiscover', function(characteristics) {
+      gate++
+    });
+    moosh.discoverAllServicesAndCharacteristics(function(err, result) {
+      if (err) {
+        return failModule("Discovering all services and chars", err);
+      }
+      else if (result.services.length != 0 && result.characteristics.length != 0) {
+        console.log("Heck yes!", result);
+      }
+
+      gate++;
+    });
+  });
 }
 
 function clearCacheTest(callback) {

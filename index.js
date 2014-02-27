@@ -316,6 +316,24 @@ BluetoothController.prototype.disconnect = function(peripheral, callback) {
     }
   }.bind(this));
 }
+
+BluetoothController.prototype.discoverAllServicesAndCharacteristics = function(peripheral, callback) {
+  this.discoverAllServices(peripheral, function(err, services) {
+    if (err) {
+      callback && callback(err);
+    }
+    else {
+      this.discoverAllCharacteristics(peripheral, function(err, characteristics) {
+        if (err) {
+          callback && callback(err);
+        }
+        else {
+          callback && callback(err, {services : services, characteristics : characteristics});
+        }
+      }.bind(this));
+    }
+  }.bind(this));
+}
 BluetoothController.prototype.discoverAllServices = function(peripheral, callback)
 {
   this.discoverServices(peripheral, [], callback);
@@ -326,13 +344,10 @@ BluetoothController.prototype.discoverServices = function(peripheral, filter, ca
 
   // Discover the services of this device
   this.serviceDiscovery(peripheral, function(err, allServices) {
-    console.log("Filtering", filter, "Out of", allServices);
     this.attributeDiscoveryHandler(err, filter, allServices, function(err, services) {
 
       // Set flag that we've received all services
       peripheral._allServicesCached = true;
-
-      console.log("Got these out: ", services);
 
       // Return the values
       callback && callback(err, services);
@@ -366,8 +381,6 @@ BluetoothController.prototype.serviceDiscovery = function(peripheral, callback) 
     for (var service in peripheral.services) {
       services.push(peripheral.services[service]);
     }
-
-    console.log("Returning this: ", services);
 
     return callback && callback(null, services);
 
@@ -439,8 +452,8 @@ BluetoothController.prototype.discoverCharacteristics = function(peripheral, fil
       if (characteristics.length) {
         // Also emit it from appropriate sources
         setImmediate(function() {
-          this.emit('characteristicsDiscover', ret);
-          peripheral.emit('characteristicsDiscover', ret);
+          this.emit('characteristicsDiscover', characteristics);
+          peripheral.emit('characteristicsDiscover', characteristics);
         }.bind(this));
       }
     }.bind(this));
@@ -457,6 +470,7 @@ BluetoothController.prototype.discoverCharacteristicsOfService = function(servic
     // Format results and report any errors
     this.attributeDiscoveryHandler(err, filter, allCharacteristics, function(err, characteristics) {
 
+      console.log("Resulting attributes: ", characteristics);
       callback && callback(err, characteristics);
       // If we have characteristics to report
       if (characteristics.length) {
@@ -508,10 +522,7 @@ BluetoothController.prototype.attributeDiscoveryHandler = function(err, filter, 
     }
     // If the consumer has requested all services
     else {
-      // Push each value in to the array
-      for (var attribute in attributes) {
-        ret.push(attributes[attribute]);
-      }
+      ret = attributes;
     }
 
     // Return the values
