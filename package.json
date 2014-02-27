@@ -38,6 +38,7 @@
   "hardware" :
   {
     "./firmware_update" : false,
-    "./examples" : false
+    "./examples" : false,
+    "./test" : false
   }
 }

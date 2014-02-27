@@ -44,7 +44,8 @@ function beginTesting() {
           //   characteristicDiscoveryTest(function() {
           //     characteristicServiceDiscoveryTest(function() {
           //       clearCacheTest(passModule);
-                   discoverAllTest(passModule);
+                   // discoverAllTest(passModule);
+                    readCharacteristicTest(passModule);
           //     });    
           //   });
           // });
@@ -55,9 +56,69 @@ function beginTesting() {
   // characteristicDiscoveryTest();
 }
 
+function writeCharacteristicTest(callback) {
+  connectToMoosh(function(moosh) {
+    meterSettingsUUID = "2a00";
+    moosh.discoverCharacteristics([meterSettingsUUID], function(err, characteristics) {
+      if (characteristics.length != 1) {
+        return failModule("Fetching moosh meter settings");
+      }
+      else{
+        var deviceName = characteristics[0];
+        deviceName.write('TM Meter', function(err, written) {
+
+        });
+      }
+    });
+  });
+}
+
 function readCharacteristicTest(callback) {
   connectToMoosh(function(moosh) {
-
+    meterSettingsUUID = "FFA6";
+    moosh.discoverCharacteristics([meterSettingsUUID], function(err, characteristics) {
+      if (characteristics.length != 1) {
+        return failModule("Fetching moosh meter settings");
+      }
+      else{
+        var gate = 0;
+        console.log(characteristics[0].toString());
+        var meterSettings = characteristics[0];
+        bluetooth.on('read', function(characteristic, value){
+          if (characteristic && value) {
+            gate++;
+          }
+        });
+        moosh.on('read', function(characteristic, value) {
+          if (characteristic && value) {
+            gate++;
+          }
+        })
+        meterSettings.on('read', function(value) {
+          if (value.length > 0 && gate == 3) {
+            moosh.disconnect(function(err) {
+              if (err) { 
+                return failModule("Couldn't disconnect on char read", err);
+              }
+              else {
+                console.log("Characteristic reading test passed!");
+                bluetooth.reset(callback);
+              }
+            })
+          }
+          else {
+            return failModule("Char read value and gate test");
+          }
+        });
+        meterSettings.read(function(err, value) {
+          if (err) {
+            return failModule("Reading meter settings", err);
+          }
+          console.log("Meter value: ", value);
+          gate++;
+        })
+      }
+    });
   });
 }
 

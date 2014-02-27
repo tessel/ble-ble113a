@@ -506,14 +506,11 @@ BluetoothController.prototype.attributeDiscoveryHandler = function(err, filter, 
       for (var i = 0; i < filter.length; i++) {
         // Convert filter to lower case
         var match = filter[i].toLowerCase();
-        console.log("Filter: ", match);
         // If the service details exist and was returned
         for (var j = 0; j < attributes.length; j++) {
           // If the attribute's uuid is the filter
-          console.log("Checking ", attributes[j].uuid);
           if (attributes[j].uuid == match) {
             // Add it to the array
-            console.log("Match");
             ret.push(attributes[j]); 
             break;
           }
@@ -615,6 +612,119 @@ BluetoothController.prototype.createCharacteristicFromInfo = function(peripheral
 BluetoothController.prototype.clearCache = function(peripheral, callback) {
   peripheral.clearCache(callback);
 }
+
+BluetoothController.prototype.read = function(characteristic, callback) {
+
+  var valueListener = this.setCharacteristicValue.bind(this, characteristic, 0);
+  
+  this.messenger.on('attributeValue', valueListener);
+
+   // The 'completed Procedure' event is called when we're done looking for services
+  this.messenger.once('completedProcedure', function(procedure) {
+
+    // If this was called for this peripheral
+    if (procedure.connection === characteristic._peripheral.connection) {
+
+      // Stop listening for more characteristics
+      this.removeListener('attributeValue', valueListener);
+
+      // If it didn't succeed
+      if (procedure.result != 0) {
+
+        callback && callback(procedure.result, null);
+      }
+      else {
+        // Call the callback
+        callback && callback(null, characteristic.lastReadValue);
+
+        setImmediate(function() {
+          this.emit('read', characteristic, characteristic.lastReadValue);
+          characteristic._peripheral.emit('read', characteristic, characteristic.lastReadValue);
+          characteristic.emit('read', characteristic.lastReadValue);
+        }.bind(this));
+      }
+    }
+  }.bind(this));
+
+    // Request the messenger to start discovering services
+  this.messenger.readCharacteristicValue(characteristic, function(err, response) {
+    // If there was a problem with the request
+    if (err || response.result != 0) {
+      // If it was an error reported by module, set that as error
+      if (!err) err = response.result;
+
+      // Call callback immediately
+      return callback && callback(err);
+    }
+  }.bind(this));
+}
+
+/*
+* Called when we get new values. May be called multiple times per value, which is why we have to
+* stitch buffers together.
+*/
+BluetoothController.prototype.setCharacteristicValue = function(characteristic, readNum, reading) {
+
+  // If this is our first read of several or if this will be the only read
+  if (readNum === 0 || (reading.type == 0)) {
+    // Assign the value
+    characteristic.lastReadValue = reading.value;
+  }
+  // If not
+  else {
+    // Concat the buffers
+    characteristic.lastReadValue = Buffer.concat([characteristic.lastReadValue, reading.value]);
+  }
+
+  readNum++;
+}
+
+BluetoothController.prototype.write = function(characteristic, callback) {
+
+  var valueListener = this.setCharacteristicValue.bind(this, characteristic, 0);
+  
+  this.messenger.on('attributeValue', valueListener);
+
+   // The 'completed Procedure' event is called when we're done looking for services
+  this.messenger.once('completedProcedure', function(procedure) {
+
+    // If this was called for this peripheral
+    if (procedure.connection === characteristic._peripheral.connection) {
+
+      // Stop listening for more characteristics
+      this.removeListener('attributeValue', valueListener);
+
+      // If it didn't succeed
+      if (procedure.result != 0) {
+
+        callback && callback(procedure.result, null);
+      }
+      else {
+        // Call the callback
+        callback && callback(null, characteristic.lastReadValue);
+
+        setImmediate(function() {
+          this.emit('read', characteristic, characteristic.lastReadValue);
+          characteristic._peripheral.emit('read', characteristic, characteristic.lastReadValue);
+          characteristic.emit('read', characteristic.lastReadValue);
+        }.bind(this));
+      }
+    }
+  }.bind(this));
+
+    // Request the messenger to start discovering services
+  this.messenger.readCharacteristicValue(characteristic, function(err, response) {
+    // If there was a problem with the request
+    if (err || response.result != 0) {
+      // If it was an error reported by module, set that as error
+      if (!err) err = response.result;
+
+      // Call callback immediately
+      return callback && callback(err);
+    }
+  }.bind(this));
+}
+
 
 // BluetoothController.prototype.startAdvertising = function(callback) {
 //   this.advertising = true;
