@@ -42,9 +42,9 @@ function beginTesting() {
         // connectTest(function() {
           // serviceDiscoveryTest(function() {
             // characteristicDiscoveryTest(function() {
-              characteristicServiceDiscoveryTest(function() {
-                passModule();
-              });    
+              // characteristicServiceDiscoveryTest(function() {
+                clearCacheTest(passModule);
+              // });    
             // });
           // });
         // });
@@ -52,6 +52,24 @@ function beginTesting() {
   //   });
   // });
   // characteristicDiscoveryTest();
+}
+
+function clearCacheTest(callback) {
+  connectToMoosh(function(moosh) {
+    moosh.discoverAllCharacteristics(function(err, characteristics) {
+      moosh.clearCache();
+      moosh.discoverAllCharacteristics(function(err, again) {
+        moosh.discoverAllServices(function(err, services) {
+          moosh.clearCache();
+          moosh.discoverAllServices(function(err, again) {
+            moosh.disconnect(function(err) {
+              bluetooth.reset(callback);
+            })
+          })
+        })
+      });
+    });
+  });
 }
 
 function characteristicServiceDiscoveryTest(callback) {
@@ -79,19 +97,20 @@ function characteristicServiceDiscoveryTest(callback) {
 
 function serviceSyncingDiscoveryTest(callback) {
   connectToMoosh(function(moosh) {
-    console.log("Moosh!", moosh.toString());
     bluetooth.discoverAllCharacteristics(moosh, function() {
       bluetooth.discoverAllServices(moosh, function() {
-        if (Object.keys(moosh._unassignedCharacteristics).length == 0) {
+        if (moosh._unassignedCharacteristics.length == 0) {
           moosh.disconnect(function(err) {
             if (err) {
               return failModule("Disconnect from moosh in char service disco test", err);
             }
+            console.log("Completed service syncing test.");
             bluetooth.reset(callback);
           }); 
         }
         else {
-          return failModule("Still have unassigned characteristics after discovery", Object.keys(moosh.__unassignedCharacteristics).length);
+          console.log("Shit length: ", moosh._unassignedCharacteristics.length);
+          return failModule("Still have unassigned characteristics after discovery");
         }
       });  
     });
@@ -99,10 +118,13 @@ function serviceSyncingDiscoveryTest(callback) {
 }
 
 function completeServiceCharacteristicDiscoveryTest(peripheral, callback) {
+  console.log("Discovering all services");
   peripheral.discoverAllServices(function(err, services) {
     if (err) {
       return failModule("Discovering all services", err);
     }
+    console.log("Done discovering all services", services);
+    console.log("From the horse's mouth: ", peripheral.services);
     peripheral.discoverAllCharacteristics(function(err, characteristics) {
       if (err) {
         return failModule("Discovering all chars", err);
@@ -116,7 +138,6 @@ function subsetServiceCharacteristicDiscoveryTest(peripheral, callback) {
   peripheral.discoverAllServices(function(err, services) {
     services.forEach(function(service) {
       if (service.uuid == "ffa0") {
-        console.log("Found it.");
         var reqChar = ["ffa6"];
         service.discoverAllCharacteristics(function(err, allChars) {
           console.log("Discovered these: ", allChars);
@@ -187,6 +208,8 @@ function allCharacteristicDiscoveryTest(peripheral, callback) {
       if (err) {
         return failModule("discovering chars of peripheral - master", err);
       }
+      console.log("PC Length: ", pc.length);
+      console.log("MC Length: ", mc.length);
       if (pc.length != mc.length) {
         return failModule("Matching characteristics");
       }

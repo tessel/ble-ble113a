@@ -69,7 +69,6 @@ BluetoothController.prototype.bootSequence = function(callback, err) {
     }.bind(this));
   }
 
-  // Temporary hacks until #179 is fixed
   this.messenger.removeAllListeners('error');
   this.messenger.removeAllListeners('ready');
 
@@ -324,9 +323,14 @@ BluetoothController.prototype.discoverAllServices = function(peripheral, callbac
 
 BluetoothController.prototype.discoverServices = function(peripheral, filter, callback)
 {
+
   // Discover the services of this device
   this.serviceDiscovery(peripheral, function(err, allServices) {
     this.attributeDiscoveryHandler(err, filter, allServices, function(err, services) {
+
+      // Set flag that we've received all services
+      peripheral._allServicesCached = true;
+
       // Return the values
       callback && callback(err, services);
 
@@ -350,35 +354,54 @@ BluetoothController.prototype.discoverIncludedServices = function(peripheral, se
 
 BluetoothController.prototype.serviceDiscovery = function(peripheral, callback) {
 
-  var services = {};
-  // The 'groupFound' event is called when we find a service
-  var groupFoundListener = this.createServiceFromGroup.bind(this, peripheral, services);
+  // If we've already discovered all services
+  if (peripheral._allServicesCached) {
 
-  this.on('groupFound', groupFoundListener);
+    var services = [];
 
-  // The 'completed Procedure' event is called when we're done looking for services
-  this.once('completedProcedure', function(procedure) {
-    // If this was called for this peripheral
-    if (procedure.connection === peripheral.connection) {
-      // Remove the listener
-      this.removeListener('groupFound', groupFoundListener);
-
-      // Call the callback
-      callback && callback(null, services);
+    // Just return all the services. No need to spend the time re-fetching
+    for (var service in peripheral.services) {
+      services.push(peripheral.services[service]);
     }
-  }.bind(this));
 
-  // Request the messenger to start discovering services
-  this.messenger.discoverServices(peripheral, function(err, response) {
-    // If there was a problem with the request
-    if (err || response.result != 0) {
-      // If it was an error reported by module, set that as error
-      if (!err) err = response.result;
+    console.log("Returning this: ", services);
 
-      // Call callback immediately
-      return callback && callback(err);
-    }
-  }.bind(this));
+    return callback && callback(null, services);
+
+  }
+  else {
+    
+    var services = [];
+
+    // The 'groupFound' event is called when we find a service
+    var groupFoundListener = this.createServiceFromGroup.bind(this, peripheral, services);
+
+    this.on('groupFound', groupFoundListener);
+
+    // The 'completed Procedure' event is called when we're done looking for services
+    this.once('completedProcedure', function(procedure) {
+      // If this was called for this peripheral
+      if (procedure.connection === peripheral.connection) {
+        // Remove the listener
+        this.removeListener('groupFound', groupFoundListener);
+
+        // Call the callback
+        callback && callback(null, services);
+      }
+    }.bind(this));
+
+    // Request the messenger to start discovering services
+    this.messenger.discoverServices(peripheral, function(err, response) {
+      // If there was a problem with the request
+      if (err || response.result != 0) {
+        // If it was an error reported by module, set that as error
+        if (!err) err = response.result;
+
+        // Call callback immediately
+        return callback && callback(err);
+      }
+    }.bind(this));
+  }
 }
 
 BluetoothController.prototype.createServiceFromGroup = function(peripheral, ret, groupItem) {
@@ -391,7 +414,7 @@ BluetoothController.prototype.createServiceFromGroup = function(peripheral, ret,
     // Add this services to the peripherals data structure
     peripheral.syncService(service);
     // Add to the service we will report as having discovered
-    ret[service.uuid] = service;
+    ret.push(service);
   }
 }
 
@@ -404,6 +427,8 @@ BluetoothController.prototype.discoverCharacteristics = function(peripheral, fil
   this.characteristicDiscovery(peripheral, 0x0001, 0xFFFF, function(err, allCharacteristics) {
     // Format results and report any errors
     this.attributeDiscoveryHandler(err, filter, allCharacteristics, function(err, characteristics) {
+
+      peripheral._allCharacteristicsCached = true;
 
       callback && callback(err, characteristics);
 
@@ -463,11 +488,11 @@ BluetoothController.prototype.attributeDiscoveryHandler = function(err, filter, 
       // Iterate through the services requested
       for (var i = 0; i < filter.length; i++) {
         // If the service details exist and was returned
-        var attribute = attributes[filter[i].toLowerCase()];
+        var index = attributes.indexOf(filter[i].toLowerCase());
 
-        if (attribute) {
+        if (index) {
           // Push it into the returned array
-          ret.push(attribute); 
+          ret.push(attributes[index]); 
         }
       }
     }
@@ -485,50 +510,70 @@ BluetoothController.prototype.attributeDiscoveryHandler = function(err, filter, 
 }
 
 BluetoothController.prototype.characteristicDiscovery = function(peripheral, startHandle, endHandle, callback) {
+    // If we've already discovered all services
+  if (peripheral._allCharacteristicsCached) {
 
-  var characteristics = {};
+    var characteristics = [];
 
-  // The 'groupFound' event is called when we find a service
-  var infoFoundListener = this.createCharacteristicFromInfo.bind(this, peripheral, characteristics);
-
-  this.on('findInformationFound', infoFoundListener);
-
-  // The 'completed Procedure' event is called when we're done looking for services
-  this.messenger.once('completedProcedure', function(procedure) {
-
-    // If this was called for this peripheral
-    if (procedure.connection === peripheral.connection) {
-
-      // Stop listening for more characteristics
-      this.removeListener('findInformationFound', infoFoundListener);
-
-      // If it didn't succeed
-      if (procedure.result != 0) {
-
-        callback && callback(procedure.result, null);
-      }
-      else {
-        // Call the callback
-        callback && callback(null, characteristics);
-      }
+    // Add all the matched characteristics
+    for (var characteristic in peripheral.services.characteristics) {
+      characteristics.push(peripheral.services.characteristics[characteristic]);
     }
-  }.bind(this));
 
-  // Request the messenger to start discovering services
-  this.messenger.discoverCharacteristicsInRange(peripheral, startHandle, endHandle, function(err, response) {
-    // If there was a problem with the request
-    if (err || response.result != 0) {
-      // If it was an error reported by module, set that as error
-      if (!err) err = response.result;
-
-      // Call callback immediately
-      callback && callback(err);
-
-      setImmediate(function() {
-        this.emit('error', err);
-      }.bind(this));
+    // Add all the unmatched characteristics
+    for (var unassigned in peripheral._unassignedCharacteristics) {
+      characteristics.push(peripheral._unassignedCharacteristics[unassigned]);
     }
-  }.bind(this));
+
+    return callback && callback(null, characteristics);
+
+  }
+  else {
+
+    var characteristics = [];
+
+    // The 'groupFound' event is called when we find a service
+    var infoFoundListener = this.createCharacteristicFromInfo.bind(this, peripheral, characteristics);
+
+    this.on('findInformationFound', infoFoundListener);
+
+    // The 'completed Procedure' event is called when we're done looking for services
+    this.messenger.once('completedProcedure', function(procedure) {
+
+      // If this was called for this peripheral
+      if (procedure.connection === peripheral.connection) {
+
+        // Stop listening for more characteristics
+        this.removeListener('findInformationFound', infoFoundListener);
+
+        // If it didn't succeed
+        if (procedure.result != 0) {
+
+          callback && callback(procedure.result, null);
+        }
+        else {
+          // Call the callback
+          callback && callback(null, characteristics);
+        }
+      }
+    }.bind(this));
+
+    // Request the messenger to start discovering services
+    this.messenger.discoverCharacteristicsInRange(peripheral, startHandle, endHandle, function(err, response) {
+      // If there was a problem with the request
+      if (err || response.result != 0) {
+        // If it was an error reported by module, set that as error
+        if (!err) err = response.result;
+
+        // Call callback immediately
+        callback && callback(err);
+
+        setImmediate(function() {
+          this.emit('error', err);
+        }.bind(this));
+      }
+    }.bind(this));
+  }
 }
 
 
@@ -542,10 +587,12 @@ BluetoothController.prototype.createCharacteristicFromInfo = function(peripheral
     // Add it to our peripheral
     peripheral.syncCharacteristic(characteristic);
     // Add to the characteristics we will report as having discovered
-    ret[characteristic.uuid] = characteristic;
-
-    console.log("Found char: ", characteristic.toString());
+    ret.push(characteristic);
   }
+}
+
+BluetoothController.prototype.clearCache = function(peripheral, callback) {
+  peripheral.clearCache(callback);
 }
 
 // BluetoothController.prototype.startAdvertising = function(callback) {
