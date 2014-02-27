@@ -45,7 +45,8 @@ function beginTesting() {
           //     characteristicServiceDiscoveryTest(function() {
           //       clearCacheTest(passModule);
                    // discoverAllTest(passModule);
-                    readCharacteristicTest(passModule);
+                    // readCharacteristicTest(passModule);
+                    writeCharacteristicTest(passModule);
           //     });    
           //   });
           // });
@@ -53,20 +54,33 @@ function beginTesting() {
   //     });
   //   });
   // });
-  // characteristicDiscoveryTest();
 }
 
 function writeCharacteristicTest(callback) {
   connectToMoosh(function(moosh) {
-    meterSettingsUUID = "2a00";
-    moosh.discoverCharacteristics([meterSettingsUUID], function(err, characteristics) {
+    var meterName = "ffa3";
+    moosh.discoverCharacteristics([meterName], function(err, characteristics) {
+      if (err) {
+        return failModule("Fetching characteristics for write", err);
+      }
       if (characteristics.length != 1) {
         return failModule("Fetching moosh meter settings");
       }
       else{
         var deviceName = characteristics[0];
-        deviceName.write('TM Meter', function(err, written) {
-
+        console.log(deviceName.toString());
+        deviceName.write('Jon\'s Meter\0\0\0\0\0', function(err, written) {
+          console.log("Result: ", err, written);
+          if (err) {
+            return failModule("Writing characteristic string", err);
+          }
+          console.log("We supposedly wrote this:", written);
+          moosh.disconnect(function(err) {
+            if (err) {
+              return failModule("Disconnecting after char write");
+            }
+            bluetooth.reset(callback);
+          })
         });
       }
     });

@@ -469,8 +469,6 @@ BluetoothController.prototype.discoverCharacteristicsOfService = function(servic
   this.characteristicDiscovery(service._peripheral, service._startHandle, service._endHandle, function(err, allCharacteristics) {
     // Format results and report any errors
     this.attributeDiscoveryHandler(err, filter, allCharacteristics, function(err, characteristics) {
-
-      console.log("Resulting attributes: ", characteristics);
       callback && callback(err, characteristics);
       // If we have characteristics to report
       if (characteristics.length) {
@@ -619,7 +617,7 @@ BluetoothController.prototype.read = function(characteristic, callback) {
   
   this.messenger.on('attributeValue', valueListener);
 
-   // The 'completed Procedure' event is called when we're done looking for services
+  // The 'completed Procedure' event is called when we're done looking for services
   this.messenger.once('completedProcedure', function(procedure) {
 
     // If this was called for this peripheral
@@ -679,20 +677,34 @@ BluetoothController.prototype.setCharacteristicValue = function(characteristic, 
   readNum++;
 }
 
-BluetoothController.prototype.write = function(characteristic, callback) {
+BluetoothController.prototype.write = function(characteristic, value, callback) {
 
-  var valueListener = this.setCharacteristicValue.bind(this, characteristic, 0);
-  
-  this.messenger.on('attributeValue', valueListener);
-
-   // The 'completed Procedure' event is called when we're done looking for services
+  // Write has to be in 20 byte increments
+  this.splitWriteIntoBuffers(value, function(err, buffers) {
+    if (err) {
+      return callback && callback(err);
+    }
+    else {
+      // If there is only one buffer
+      if (buffers.length == 1) {
+        // We can send it immediately
+        this.writeImmediately(characteristic, buffers[0], callback);
+      }
+      else {
+        // If there are multiple buffers, we've got to prepare several writes, then execute
+        this.prepareWrite(characteristic, buffers, callback);
+      }
+    }
+  });
+}
+BluetoothController.prototype.writeImmediately = function(characteristic, singleBuffer, callback) {
+  console.log("Writing immed", singleBuffer);
+  // The 'completed Procedure' event is called when we're done writing
   this.messenger.once('completedProcedure', function(procedure) {
 
     // If this was called for this peripheral
-    if (procedure.connection === characteristic._peripheral.connection) {
-
-      // Stop listening for more characteristics
-      this.removeListener('attributeValue', valueListener);
+    if (procedure.connection === characteristic._peripheral.connection && 
+          procedure.chrhandle === characteristic.handle) {
 
       // If it didn't succeed
       if (procedure.result != 0) {
@@ -701,19 +713,18 @@ BluetoothController.prototype.write = function(characteristic, callback) {
       }
       else {
         // Call the callback
-        callback && callback(null, characteristic.lastReadValue);
+        callback && callback(null, singleBuffer);
 
         setImmediate(function() {
-          this.emit('read', characteristic, characteristic.lastReadValue);
-          characteristic._peripheral.emit('read', characteristic, characteristic.lastReadValue);
-          characteristic.emit('read', characteristic.lastReadValue);
+          this.emit('write', characteristic, singleBuffer);
+          characteristic._peripheral.emit('write', characteristic, singleBuffer);
+          characteristic.emit('write', singleBuffer);
         }.bind(this));
       }
     }
   }.bind(this));
 
-    // Request the messenger to start discovering services
-  this.messenger.readCharacteristicValue(characteristic, function(err, response) {
+  this.messenger.writeImmediately(characteristic, singleBuffer, function(err, response) {
     // If there was a problem with the request
     if (err || response.result != 0) {
       // If it was an error reported by module, set that as error
@@ -722,59 +733,91 @@ BluetoothController.prototype.write = function(characteristic, callback) {
       // Call callback immediately
       return callback && callback(err);
     }
-  }.bind(this));
+  })
+}
+BluetoothController.prototype.prepareWrite = function(characteristic, multipleBuffers, callback) {
+  var bufSize = 20;
+  var offset = 0;
+
+  var bufferWrite = this.bufferWriteIterate.bind(this, characteristic, multipleBuffers, 0);
+
+  this.messenger.on('completedProcedure', function bufferWrite(procedure) {
+
+    
+  });
+
+  this.messenger.prepareWrite(characteristic, multipleBuffers, offset, function(err, response) {
+     // If there was a problem with the request
+    if (err || response.result != 0) {
+      // If it was an error reported by module, set that as error
+      if (!err) err = response.result;
+
+      // Call callback immediately
+      return callback && callback(err);
+    } 
+  });
+}
+
+BluetoothController.prototype.bufferWriteIterate = function(characteristic, multipleBuffers, offset, procedure) {
+
+}
+
+BluetoothController.prototype.splitWriteIntoBuffers = function(value, callback) {
+  // If nothing was passed in, just return an error
+  if (!value) {
+    return callback && callback(new Error("No value passed to write function"));
+  }
+  // If something was passed in
+  else {
+    var buf;
+
+    // If it is a string, make a buf with utf-8 encoding
+    if (typeof value === "string") {
+      buf = new Buffer(value);
+    }
+    // If it's a number
+    else if (!isNaN(value)) {
+      // Make a new buffer for the 32 bit number
+      buf = new Buffer(4);
+      buf.writeUInt32BE(value);
+    }
+    // If it's already a buffer, keep as is
+    else if (Buffer.isBuffer(value)) {
+      buf = value;
+    }
+    // If none of the above, it's invalid. Throw an error
+    else {
+      return callback && callback("Can only write strings, numbers, and buffers.");
+    }
+
+    // Max number of bytes per buffer
+    var maxBufLen = 20;
+    // Get the number of buffers we'll need
+    var iter = Math.ceil(buf.length/maxBufLen);
+
+    console.log("You need this many buffers", iter);
+    // Prepare array for buffers
+    var ret = new Array(iter);
+    // For each buffer
+    for (var i = 0; i < iter; i++) {
+      // Grab the start byte
+      var start = i * maxBufLen;
+      // Put that start plus next 20 bytes (or if it's the last, just grab remainder)
+      var end = (i == iter-1 ? buf.length % maxBufLen : maxBufLen);
+
+      // Slice it and throw it into our return array
+      ret[i] = buf.slice(start, start + end);
+    }
+    // Return array
+    callback && callback(null, ret);
+  }
+  
 }
 
 
 // BluetoothController.prototype.startAdvertising = function(callback) {
 //   this.advertising = true;
 //   this.messenger.startAdvertising(callback);
-// }
-
-// BluetoothController.prototype.readRemoteHandle = function(peripheral, uuid, callback) {
-
-//   // Once the handle is read
-//   this.messenger.once('handleRead', function(attribute) {
-//     console.log("Oh shit, we're reading a handle", attribute);
-//     // If it is for the same connection as this peripheral
-//     if (attribute.connection == peripheral.connection) {
-//       // Try to grab a pre-exisiting characterisitc
-//       var characteristic = peripheral.characteristics[uuid];
-//       // If it doesn't exist
-//       if (!characteristic) {
-//         // Create it 
-//         characteristic = new Characteristic(this, peripheral.uuid, attribute.type, attribute.atthandle);
-//       }
-//       // Save the last value
-//       characteristic.lastReadValue = attribute.value;
-
-//       // Wait for the procedure to complete...
-//     }
-//   }.bind(this));
-
-//   console.log("Setting the event...");
-//   // Once the procedure completes
-//   this.messenger.once('completedProcedure', function(result) {
-
-//     console.log("Procedure completed!");
-//     console.log("Uuid: ", uuid);
-//     setImmediate(function() {
-//       // Emit the event with
-//       this.emit('handleRead' + uuid, peripheral.characteristics[uuid].lastReadValue);
-//     }.bind(this));
-
-//   }.bind(this));
-
-//   this.messenger.readRemoteHandle(peripheral, uuid, function(err, response) {
-//     if (err) {
-//       if (err) console.log("Error sending read request: ", err);
-//       else callback && callback(err);
-//     }
-//   }.bind(this));
-// }
-
-// BluetoothController.prototype.writeRemoteHandle = function(peripheral, uuid, callback) {
-
 // }
 
 // BluetoothController.prototype.readValue = function(index, callback) {
