@@ -40,13 +40,13 @@ function beginTesting() {
   //   scanTest(function() {
   //     filterTest(function() {
         // connectTest(function() {
-          // serviceDiscoveryTest(function() {
-            // characteristicDiscoveryTest(function() {
-              // characteristicServiceDiscoveryTest(function() {
+          serviceDiscoveryTest(function() {
+            characteristicDiscoveryTest(function() {
+              characteristicServiceDiscoveryTest(function() {
                 clearCacheTest(passModule);
-              // });    
-            // });
-          // });
+              });    
+            });
+          });
         // });
   //     });
   //   });
@@ -290,6 +290,7 @@ function discoverSpecificServicesTest(peripheral, callback) {
   });
   peripheral.once('servicesDiscover', function(services) {
     console.log("subset peripheral service hit.", gate, services.length);
+    console.log("services", services);
     for (var i = 0; i < services.length; i++) {
       console.log(services[i].toString());
     }

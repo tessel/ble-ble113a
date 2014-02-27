@@ -326,15 +326,18 @@ BluetoothController.prototype.discoverServices = function(peripheral, filter, ca
 
   // Discover the services of this device
   this.serviceDiscovery(peripheral, function(err, allServices) {
+    console.log("Filtering", filter, "Out of", allServices);
     this.attributeDiscoveryHandler(err, filter, allServices, function(err, services) {
 
       // Set flag that we've received all services
       peripheral._allServicesCached = true;
 
+      console.log("Got these out: ", services);
+
       // Return the values
       callback && callback(err, services);
 
-      if (services.length) {
+      if (!err && services.length) {
         // Set the events to be emitted.
         setImmediate(function() {
           this.emit('servicesDiscover', services);
@@ -487,12 +490,19 @@ BluetoothController.prototype.attributeDiscoveryHandler = function(err, filter, 
     if (filter.length != 0) {
       // Iterate through the services requested
       for (var i = 0; i < filter.length; i++) {
+        // Convert filter to lower case
+        var match = filter[i].toLowerCase();
+        console.log("Filter: ", match);
         // If the service details exist and was returned
-        var index = attributes.indexOf(filter[i].toLowerCase());
-
-        if (index) {
-          // Push it into the returned array
-          ret.push(attributes[index]); 
+        for (var j = 0; j < attributes.length; j++) {
+          // If the attribute's uuid is the filter
+          console.log("Checking ", attributes[j].uuid);
+          if (attributes[j].uuid == match) {
+            // Add it to the array
+            console.log("Match");
+            ret.push(attributes[j]); 
+            break;
+          }
         }
       }
     }
