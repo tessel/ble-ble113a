@@ -25,7 +25,6 @@ var failTimeout;
 console.log("Setting up tests...");
 
 bluetooth = bleDriver.use(blePort, function(err) {
-  console.log("Callback called...");
   if (err) {
     return failModule("Connecting to BLE Test Module on Port A prior to commence", err);
   }
@@ -46,7 +45,8 @@ function beginTesting() {
           //       clearCacheTest(passModule);
                    // discoverAllTest(passModule);
                     // readCharacteristicTest(passModule);
-                    writeCharacteristicTest(passModule);
+                    // writeCharacteristicTest(passModule);
+                    writeLongCharacteristicTest(passModule);
           //     });    
           //   });
           // });
@@ -56,6 +56,36 @@ function beginTesting() {
   // });
 }
 
+function writeLongCharacteristicTest(callback) {
+  connectToMoosh(function(moosh) {
+    var meterName = "ffa3";
+    moosh.discoverCharacteristics([meterName], function(err, characteristics) {
+      if (err) {
+        return failModule("Fetching characteristics for write", err);
+      }
+      if (characteristics.length != 1) {
+        return failModule("Fetching moosh meter settings");
+      }
+      else{
+        var deviceName = characteristics[0];
+        console.log(deviceName.toString());
+          deviceName.write('abcdefghijklmnopqrstuvwxyz', function(err, written) {
+          console.log("Result: ", err, written);
+          if (err) {
+            return failModule("Writing characteristic string", err);
+          }
+          console.log("We supposedly wrote this:", written);
+          moosh.disconnect(function(err) {
+            if (err) {
+              return failModule("Disconnecting after char write");
+            }
+            bluetooth.reset(callback);
+          })
+        });
+      }
+    });
+  });
+}
 function writeCharacteristicTest(callback) {
   connectToMoosh(function(moosh) {
     var meterName = "ffa3";

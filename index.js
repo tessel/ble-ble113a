@@ -439,8 +439,10 @@ BluetoothController.prototype.discoverAllCharacteristics = function(peripheral, 
 }
 
 BluetoothController.prototype.discoverCharacteristics = function(peripheral, filter, callback) {
+  console.log("Listeners before: ", this.messenger.listeners('completedProcedure').length);
   // Discover the services of this device
   this.characteristicDiscovery(peripheral, 0x0001, 0xFFFF, function(err, allCharacteristics) {
+    console.log("Listeners after: ", this.messenger.listeners('completedProcedure').length);
     // Format results and report any errors
     this.attributeDiscoveryHandler(err, filter, allCharacteristics, function(err, characteristics) {
 
@@ -698,7 +700,6 @@ BluetoothController.prototype.write = function(characteristic, value, callback) 
   });
 }
 BluetoothController.prototype.writeImmediately = function(characteristic, singleBuffer, callback) {
-  console.log("Writing immed", singleBuffer);
   // The 'completed Procedure' event is called when we're done writing
   this.messenger.once('completedProcedure', function(procedure) {
 
@@ -739,14 +740,94 @@ BluetoothController.prototype.prepareWrite = function(characteristic, multipleBu
   var bufSize = 20;
   var offset = 0;
 
-  var bufferWrite = this.bufferWriteIterate.bind(this, characteristic, multipleBuffers, 0);
+  // Keep this around
+  var self = this;
 
-  this.messenger.on('completedProcedure', function bufferWrite(procedure) {
+  // Function for writing each subsequent buffer 
+  function bufferWriteIterate(procedure) {
+    // If this is for our connection
+    if (procedure.connection === characteristic._peripheral.connection
+      && procedure.chrhandle === characteristic.handle) {
+      // If there was an error, report it and cancel write
+      if (procedure.result != 0) {
+        // Cancel any previous writes
+        self.messenger.cancelWrite(characteristic, function(cancelErr, response) {
+          // Call callback immediately
+          return callback && callback(procedure.result);
+        });
+      }
+      // If there was no error
+      else {
+        // If we've completed the procedure but still have more to write
+        if (offset < multipleBuffers.length) {
 
-    
-  });
+          // Send another part of the buffer off 
+          self.messenger.prepareWrite(characteristic, multipleBuffers[offset], offset*bufSize, function(err, response) {
+            // If there was a problem with the request
+            if (err || response.result != 0) {
+              // Cancel any previous writes
+              self.messenger.cancelWrite(characteristic, function(cancelErr, response) {
+                // If it was an error reported by module, set that as error
+                if (!err) err = response.result;
 
-  this.messenger.prepareWrite(characteristic, multipleBuffers, offset, function(err, response) {
+                // Call callback immediately
+                return callback && callback(err);
+              });
+            }
+            // Increment offset so we send the next buffer next time
+            offset++;
+          });
+        }
+        // If we've sent all the prepare writes...
+        else if (offset === multipleBuffers.length) {
+          // Remove the buffer write iterator listener so we don't send any more packets
+          self.messenger.removeListener('completedProcedure', bufferWriteIterate);
+
+          // Once our write execution is complete
+          self.messenger.once('completedProcedure', function(procedure) {
+            // If there was an error
+            if (procedure.result != 0) {
+              // Report the error
+              callback && callback(procedure.result);
+            }
+            // If there was no error
+            else {
+              //Concat all the buffers into one
+              var ret;
+              for (var i = 0; i < multipleBuffers.length; i++) {
+                ret = Buffer.concat(ret, multipleBuffers[i]);
+              }
+
+              // Call callback
+              callback && callback(null, ret);
+
+              // Emit the events
+              setImmediate(function() {
+                self.emit('write', characteristic, ret);
+                characteristic._peripheral.emit('write', characteristic, ret);
+                characteristic.emit('write', ret);
+              });
+            }
+          });
+          // Execute the write of the packets
+          self.messenger.executeWrite(characteristic, function(err, response) {
+            // If there was a problem with the request
+            if (err || response.result != 0) {
+              // If it was an error reported by module, set that as error
+              if (!err) err = response.result;
+
+              // Call callback immediately
+              return callback && callback(err);
+            } 
+          });
+        }
+      }
+    }
+  }
+
+  this.messenger.on('completedProcedure', bufferWriteIterate);
+
+  this.messenger.prepareWrite(characteristic, multipleBuffers[offset], offset * bufSize, function(err, response) {
      // If there was a problem with the request
     if (err || response.result != 0) {
       // If it was an error reported by module, set that as error
@@ -755,11 +836,8 @@ BluetoothController.prototype.prepareWrite = function(characteristic, multipleBu
       // Call callback immediately
       return callback && callback(err);
     } 
+    offset++;
   });
-}
-
-BluetoothController.prototype.bufferWriteIterate = function(characteristic, multipleBuffers, offset, procedure) {
-
 }
 
 BluetoothController.prototype.splitWriteIntoBuffers = function(value, callback) {
@@ -775,15 +853,15 @@ BluetoothController.prototype.splitWriteIntoBuffers = function(value, callback) 
     if (typeof value === "string") {
       buf = new Buffer(value);
     }
+    // If it's already a buffer, keep as is
+    else if (Buffer.isBuffer(value)) {
+      buf = value;
+    }
     // If it's a number
     else if (!isNaN(value)) {
       // Make a new buffer for the 32 bit number
       buf = new Buffer(4);
-      buf.writeUInt32BE(value);
-    }
-    // If it's already a buffer, keep as is
-    else if (Buffer.isBuffer(value)) {
-      buf = value;
+      buf.writeUInt32BE(value, 0);
     }
     // If none of the above, it's invalid. Throw an error
     else {
@@ -792,10 +870,11 @@ BluetoothController.prototype.splitWriteIntoBuffers = function(value, callback) 
 
     // Max number of bytes per buffer
     var maxBufLen = 20;
+    var maxNumBufs = 5;
+
     // Get the number of buffers we'll need
     var iter = Math.ceil(buf.length/maxBufLen);
 
-    console.log("You need this many buffers", iter);
     // Prepare array for buffers
     var ret = new Array(iter);
     // For each buffer
@@ -804,12 +883,17 @@ BluetoothController.prototype.splitWriteIntoBuffers = function(value, callback) 
       var start = i * maxBufLen;
       // Put that start plus next 20 bytes (or if it's the last, just grab remainder)
       var end = (i == iter-1 ? buf.length % maxBufLen : maxBufLen);
-
       // Slice it and throw it into our return array
       ret[i] = buf.slice(start, start + end);
     }
-    // Return array
-    callback && callback(null, ret);
+
+    if (ret.length > maxNumBufs) {
+      callback && callback(new Error("Write data must be 100 bytes or less"));
+    }
+    else {
+      // Return array
+      callback && callback(null, ret);
+    }
   }
   
 }
