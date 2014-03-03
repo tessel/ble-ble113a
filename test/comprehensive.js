@@ -40,20 +40,35 @@ function beginTesting() {
   //     filterTest(function() {
         // connectTest(function() {
           // serviceDiscoveryTest(function() {
-          //   characteristicDiscoveryTest(function() {
+            characteristicDiscoveryTest(function() {
           //     characteristicServiceDiscoveryTest(function() {
           //       clearCacheTest(passModule);
                    // discoverAllTest(passModule);
                     // readCharacteristicTest(passModule);
                     // writeCharacteristicTest(passModule);
-                    writeLongCharacteristicTest(passModule);
+                    // writeLongCharacteristicTest(passModule);
           //     });    
           //   });
-          // });
+          });
         // });
   //     });
   //   });
   // });
+}
+
+
+function discoverSpecificService(callback) {
+  connectToMoosh(function(moosh) {
+    var meterSettings = "ffa2";
+    bluetooth.discoverSpecificServices(moosh, [meterSettings], function(err, services) {
+      if (err) {
+        return failModule("Discovering specific service quickly", err);
+      }
+      else {
+        console.log("Found these services", services);
+      }
+    })
+  })
 }
 
 function writeLongCharacteristicTest(callback) {
@@ -86,6 +101,8 @@ function writeLongCharacteristicTest(callback) {
     });
   });
 }
+
+
 function writeCharacteristicTest(callback) {
   connectToMoosh(function(moosh) {
     var meterName = "ffa3";
@@ -316,14 +333,14 @@ function characteristicDiscoveryTest(callback) {
 
   connectToMoosh(function(moosh) {
     allCharacteristicDiscoveryTest(moosh, function() {
-      specificCharacteristicDiscoveryTest(moosh, function() {
+      // specificCharacteristicDiscoveryTest(moosh, function() {
         moosh.disconnect(function(err) {
           if (err) {
             return failModule("Disconnecting from moosh in char test", err);
           }
           bluetooth.reset(callback);
         });
-      });
+      // });
     });
   });
 }
@@ -332,16 +349,16 @@ function specificCharacteristicDiscoveryTest(peripheral, callback) {
   var reqChar = ["ffa6", "ffa5"];
   console.log("Specific discovery test");
   peripheral.discoverCharacteristics(reqChar, function(err, pc) {
-    bluetooth.discoverCharacteristics(peripheral, reqChar, function(err, mc) {
-      console.log("pc length: ", pc.length);
-      console.log("mc length: ", mc.length);
-      if ((pc.length != reqChar.length) || (reqChar.length != mc.length)) {
-        return failModule("Matching characteristics");
-      }
-      else {
+    // bluetooth.discoverCharacteristics(peripheral, reqChar, function(err, mc) {
+    //   console.log("pc length: ", pc.length);
+    //   console.log("mc length: ", mc.length);
+      // if ((pc.length != reqChar.length) || (reqChar.length != mc.length)) {
+      //   return failModule("Matching characteristics");
+      // }
+      // else {
         callback();
-      }
-    });
+      // }
+    // });
   });
 }
 
@@ -357,7 +374,7 @@ function allCharacteristicDiscoveryTest(peripheral, callback) {
       }
       console.log("PC Length: ", pc.length);
       console.log("MC Length: ", mc.length);
-      if (pc.length != mc.length) {
+      if (pc.length != mc.length || pc.length === 0) {
         return failModule("Matching characteristics");
       }
       else {
@@ -381,6 +398,7 @@ function serviceDiscoveryTest(callback) {
   connectToMoosh(function(moosh) {
     discoverSpecificServicesTest(moosh, function() {
       discoverAllServicesTest(moosh, function() {
+        bluetooth.emit('completedProcedure');
         moosh.disconnect(function(err) {
           if (err) {
             return failModule("Disconnecting after service discovery", err);
