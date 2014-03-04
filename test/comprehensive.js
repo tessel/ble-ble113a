@@ -332,16 +332,16 @@ Tests surrounding discovering characteristics
 function characteristicDiscoveryTest(callback) {
 
   connectToMoosh(function(moosh) {
-    allCharacteristicDiscoveryTest(moosh, function() {
-      // specificCharacteristicDiscoveryTest(moosh, function() {
+    // allCharacteristicDiscoveryTest(moosh, function() {
+      specificCharacteristicDiscoveryTest(moosh, function() {
         moosh.disconnect(function(err) {
           if (err) {
             return failModule("Disconnecting from moosh in char test", err);
           }
           bluetooth.reset(callback);
         });
-      // });
-    });
+      });
+    // });
   });
 }
 
@@ -349,13 +349,14 @@ function specificCharacteristicDiscoveryTest(peripheral, callback) {
   var reqChar = ["ffa6", "ffa5"];
   console.log("Specific discovery test");
   peripheral.discoverCharacteristics(reqChar, function(err, pc) {
+    console.log("Fin 1", err, pc);
     // bluetooth.discoverCharacteristics(peripheral, reqChar, function(err, mc) {
     //   console.log("pc length: ", pc.length);
     //   console.log("mc length: ", mc.length);
-      // if ((pc.length != reqChar.length) || (reqChar.length != mc.length)) {
-      //   return failModule("Matching characteristics");
-      // }
-      // else {
+    //   if ((pc.length != reqChar.length) || (reqChar.length != mc.length)) {
+    //     return failModule("Matching characteristics");
+    //   }
+    //   else {
         callback();
       // }
     // });

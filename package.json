@@ -39,6 +39,5 @@
   {
     "./firmware_update" : false,
     "./examples" : false,
-    "./test" : false
   }
 }
