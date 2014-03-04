@@ -13,7 +13,7 @@ var blePort = tessel.port('a');
 var bleDriver = require('../');
 
 // Used for bluetooth tests
-var bluetooth; 
+var bluetooth;
 var peripheral;
 
 // Indication LEDs
@@ -47,10 +47,10 @@ function beginTesting() {
                     // readCharacteristicTest(passModule);
                     // writeCharacteristicTest(passModule);
                     // writeLongCharacteristicTest(passModule);
-          //     });    
+          //     });
           //   });
-          });
-        // });
+          // });
+        });
   //     });
   //   });
   // });
@@ -158,7 +158,7 @@ function readCharacteristicTest(callback) {
         meterSettings.on('read', function(value) {
           if (value.length > 0 && gate == 3) {
             moosh.disconnect(function(err) {
-              if (err) { 
+              if (err) {
                 return failModule("Couldn't disconnect on char read", err);
               }
               else {
@@ -250,8 +250,8 @@ function characteristicServiceDiscoveryTest(callback) {
         //         return failModule("Disconnect from moosh in char service disco test", err);
         //       }
                 serviceSyncingDiscoveryTest(function() {
-                    bluetooth.reset(callback); 
-                });   
+                    bluetooth.reset(callback);
+                });
   //         });
   //       });
   //     });
@@ -270,13 +270,13 @@ function serviceSyncingDiscoveryTest(callback) {
             }
             console.log("Completed service syncing test.");
             bluetooth.reset(callback);
-          }); 
+          });
         }
         else {
           console.log("Shit length: ", moosh._unassignedCharacteristics.length);
           return failModule("Still have unassigned characteristics after discovery");
         }
-      });  
+      });
     });
   });
 }
@@ -332,7 +332,7 @@ Tests surrounding discovering characteristics
 function characteristicDiscoveryTest(callback) {
 
   connectToMoosh(function(moosh) {
-    // allCharacteristicDiscoveryTest(moosh, function() {
+    allCharacteristicDiscoveryTest(moosh, function() {
       specificCharacteristicDiscoveryTest(moosh, function() {
         moosh.disconnect(function(err) {
           if (err) {
@@ -341,7 +341,7 @@ function characteristicDiscoveryTest(callback) {
           bluetooth.reset(callback);
         });
       });
-    // });
+    });
   });
 }
 
@@ -349,7 +349,7 @@ function specificCharacteristicDiscoveryTest(peripheral, callback) {
   var reqChar = ["ffa6", "ffa5"];
   console.log("Specific discovery test");
   peripheral.discoverCharacteristics(reqChar, function(err, pc) {
-    console.log("Fin 1", err, pc);
+    console.log("Fin 1", err, pc.toString());
     // bluetooth.discoverCharacteristics(peripheral, reqChar, function(err, mc) {
     //   console.log("pc length: ", pc.length);
     //   console.log("mc length: ", mc.length);
@@ -417,7 +417,7 @@ function serviceDiscoveryTest(callback) {
 function discoverAllServicesTest(peripheral, callback) {
   var gate = 0;
   bluetooth.once('servicesDiscover', function(services) {
-    return gate++;    
+    return gate++;
   });
   peripheral.once('servicesDiscover', function(services) {
     console.log("peripheral service hit.");
@@ -456,7 +456,6 @@ function discoverSpecificServicesTest(peripheral, callback) {
   });
   peripheral.once('servicesDiscover', function(services) {
     console.log("subset peripheral service hit.", gate, services.length);
-    console.log("services", services);
     for (var i = 0; i < services.length; i++) {
       console.log(services[i].toString());
     }
@@ -517,7 +516,7 @@ function connectToMoosh(callback) {
     }
   });
 }
-/* 
+/*
 Tests surrounding connecting to peripherals
 connect
 disconnect
@@ -646,7 +645,7 @@ function passableFilterTest(timeout, callback) {
           clearTimeout(passTimeout);
           bluetooth.stopFilterDiscover();
           bluetooth.removeAllListeners();
-      
+
           console.log("Passable Filter Test Passed.");
           bluetooth.reset(callback);
         }
@@ -726,7 +725,7 @@ function impassableFilter(peripheral, callback) {
 function passableFilter(peripheral, callback) {
   if (peripheral.advertisingData.length >= 2) {
     return callback(true);
-  } 
+  }
   else {
     return callback(false);
   }

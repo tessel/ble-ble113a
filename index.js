@@ -5,6 +5,7 @@ var Service = require('./lib/service');
 var Messenger = require('./lib/messenger');
 var UUID = require('./lib/uuid');
 var Address = require('./lib/address');
+var attributes = require('./lib/attributes.json');
 var events = require('events');
 var util = require('util');
 
@@ -124,6 +125,7 @@ BluetoothController.prototype.onConnectionStatus = function(status) {
 
 BluetoothController.prototype.onDisconnect = function(response) {
   // TODO: Get corresponding peripheral somehow, set connected property to false
+  console.log("SHIT ITS DISCONNECTED!");
   this.emit('endConnection' + response.connection, response.reason);
 }
 
@@ -440,6 +442,47 @@ BluetoothController.prototype.serviceDiscovery = function(peripheral, callback) 
     }.bind(this));
   }
 }
+BluetoothController.prototype.attributeDiscoveryHandler = function(err, filter, attributes, callback) {
+  // If there was an error, report it
+  if (err) {
+    callback && callback(err);
+
+    setImmediate(function() {
+      this.emit('error', err);
+    }.bind(this));
+
+    return;
+  }
+  // If not
+  else {
+    // Create a return array
+    var ret = [];
+          // If consumer has requested a subset of services
+    if (filter.length != 0) {
+      // Iterate through the services requested
+      for (var i = 0; i < filter.length; i++) {
+        // Convert filter to lower case
+        var match = filter[i].toLowerCase();
+        // If the service details exist and was returned
+        for (var j = 0; j < attributes.length; j++) {
+          // If the attribute's uuid is the filter
+          if (attributes[j].uuid.toString() == match) {
+            // Add it to the array
+            ret.push(attributes[j]);
+            break;
+          }
+        }
+      }
+    }
+    // If the consumer has requested all services
+    else {
+      ret = attributes;
+    }
+
+    // Return the values
+    callback && callback(null, ret);
+  }
+}
 
 BluetoothController.prototype.createServiceFromGroup = function(peripheral, ret, groupItem) {
   // If this is the right peripheral
@@ -450,7 +493,7 @@ BluetoothController.prototype.createServiceFromGroup = function(peripheral, ret,
     var service;
 
     // If the service doesn't already exist
-    if (!(service = peripheral[uuid])) {
+    if (!(service = peripheral[uuid.toString()])) {
       // Make a new service
       service = new Service(peripheral, uuid, groupItem.start, groupItem.end);
 
@@ -467,7 +510,6 @@ BluetoothController.prototype.discoverAllCharacteristics = function(peripheral, 
 
   if (peripheral._allCharacteristicsCached) {
     var ret = [];
-
     for (var service in peripheral.services) {
       for (var characteristic in peripheral.services[service].characteristics) {
         ret.push(peripheral.services[service].characteristics[characteristic]);
@@ -479,7 +521,7 @@ BluetoothController.prototype.discoverAllCharacteristics = function(peripheral, 
   else {
     this.discoverAllServices(peripheral, function(err, services) {
       if (err) {
-        return callback && callback(new Error("Unable to fetch necessary services for characteristics."));
+        return callback && callback(err);
       }
       else {
         var characteristics = [];
@@ -530,8 +572,8 @@ BluetoothController.prototype.discoverAllCharacteristics = function(peripheral, 
   }
 }
 
-BluetoothController.prototype.discoverCharacteristics = function(peripheral, filter, callback) {
-  var test = UUID.strToBuf(filter[0]);
+BluetoothController.prototype.discoverCharacteristics = function(peripheral, uuids, callback) {
+  var test = new UUID(uuids[0]);
 
   this.discoverCharacteristic(peripheral, test, callback);
 }
@@ -568,14 +610,17 @@ BluetoothController.prototype.discoverCharacteristic = function(peripheral, char
   var self = this;
   var ret = [];
   var listener = this.createCharacteristicFromAttributeValue.bind(this, peripheral, ret);
+  var cachedChar;
 
   // First, check if we've already fetched it. Iterate through each service
   for (var service in peripheral.services) {
     // If this characteristic exists
-    if (peripheral.services[service][characteristicUUID]) {
-      console.log("Found a cached version", peripheral.services[service][characteristicUUID]);
+
+    cachedChar = peripheral.services[service].characteristics[characteristicUUID.toString()];
+
+    if (cachedChar) {
       // Return it
-      return callback && callback(null, peripheral.services[service][characteristicUUID])
+      return callback && callback(null, cachedChar)
     }
   }
 
@@ -602,7 +647,7 @@ BluetoothController.prototype.discoverCharacteristic = function(peripheral, char
   });
 
   // Request only the value of the characteristic with this handle
-  this.messenger.discoverCharacteristicsInRange(peripheral, 0x0001, 0xFFFF, characteristicUUID, function(err, response) {
+  this.messenger.discoverCharacteristicsInRange(peripheral, 0x0001, 0xFFFF, characteristicUUID.toBuffer(), function(err, response) {
     // If there was a problem with the request
     if (err || response.result != 0) {
       // If it was an error reported by module, set that as error
@@ -612,6 +657,95 @@ BluetoothController.prototype.discoverCharacteristic = function(peripheral, char
       return callback && callback(err);
     }
   }.bind(this));
+}
+
+BluetoothController.prototype.discoverCharacteristicUUID = function(peripheral, characteristic, callback) {
+
+  // Save reference to self
+  var self = this;
+
+  // Once we have found info containing UUID about this char
+  this.on('findInformationFound', function setCharacteristicUUID(info) {
+
+    // If this is for the correct connection and char handle
+    if (peripheral.connection === info.connection
+      && characteristic.handle === info.chrhandle) {
+
+      // Set the uuid of this characteristic
+      characteristic.setUUID(new UUID(info.uuid));
+
+      // Remove this listener
+      self.removeListener('findInformationFound', setCharacteristicUUID);
+    }
+  });
+
+  // Once we complete the search
+  this.messenger.on('completedProcedure', function procedureComplete(procedure) {
+
+    // If this was called for this peripheral
+    if (procedure.connection === peripheral.connection) {
+
+      // Stop listening for more characteristics
+      self.removeListener('completedProcedure', procedureComplete);
+
+      // If it didn't succeed
+      if (procedure.result != 0) {
+
+        // Call the callback with the error
+        callback && callback(procedure.result, null);
+      }
+      else {
+        // Call the callback with result
+        callback && callback(null, characteristic);
+      }
+    }
+  });
+
+  // Tell the messenger to begin the search for the uuid of this characteristic
+  this.messenger.findUUID(peripheral, characteristic, function(err, response) {
+  // If there was a problem with the request
+    if (err || response.result != 0) {
+      // If it was an error reported by module, set that as error
+      if (!err) err = response.result;
+
+      // Call callback immediately
+      callback && callback(err);
+    }
+  }.bind(this));
+}
+
+/*
+* Method for turning a bit of information into a characteristic. Must discover all services before calling. (sucks, I know)
+*/
+BluetoothController.prototype.createCharacteristicFromInformationFound = function(peripheral, ret, info) {
+  if (peripheral._allServicesCached && peripheral.connection === info.connection) {
+    // Turn the uuid into a string
+    var uuid = new UUID(info.uuid);
+    // If this uuid isn't a service or a descriptor, or any other generic type
+    if (!peripheral.services[uuid.toString()] &&
+        !Service.isStandardService(uuid.toString()) &&
+        !(Descriptor.isStandardDescriptor(uuid.toString())) &&
+        !attributes[uuid.toString()]) {
+
+      // Make a new one
+      var characteristic = new Characteristic(peripheral, uuid, info.chrhandle);
+
+      // Sync the new one with the correct service
+      peripheral.syncCharacteristic(characteristic);
+
+      // Push it into the return array
+      ret.push(characteristic);
+    }
+  }
+}
+BluetoothController.prototype.createCharacteristicFromAttributeValue = function(peripheral, ret, value) {
+  // If this is the correct connection
+  if (peripheral.connection === value.connection) {
+    // Create the characteristic
+    var characteristic = new Characteristic(peripheral, null, value.atthandle, value.value);
+    // Add to the characteristics we will report as having discovered
+    ret.push(characteristic);
+  }
 }
 
 BluetoothController.prototype.discoverAllCharacteristicsOfService = function(service, callback) {
@@ -637,47 +771,6 @@ BluetoothController.prototype.discoverCharacteristicsOfService = function(servic
   }.bind(this));
 }
 
-BluetoothController.prototype.attributeDiscoveryHandler = function(err, filter, attributes, callback) {
-  // If there was an error, report it
-  if (err) {
-    callback && callback(err);
-
-    setImmediate(function() {
-      this.emit('error', err);
-    }.bind(this));
-
-    return;
-  }
-  // If not
-  else {
-    // Create a return array
-    var ret = [];
-          // If consumer has requested a subset of services
-    if (filter.length != 0) {
-      // Iterate through the services requested
-      for (var i = 0; i < filter.length; i++) {
-        // Convert filter to lower case
-        var match = filter[i].toLowerCase();
-        // If the service details exist and was returned
-        for (var j = 0; j < attributes.length; j++) {
-          // If the attribute's uuid is the filter
-          if (attributes[j].uuid == match) {
-            // Add it to the array
-            ret.push(attributes[j]);
-            break;
-          }
-        }
-      }
-    }
-    // If the consumer has requested all services
-    else {
-      ret = attributes;
-    }
-
-    // Return the values
-    callback && callback(null, ret);
-  }
-}
 
 // BluetoothController.prototype.characteristicDiscovery = function(peripheral, startHandle, endHandle, callback) {
 
@@ -747,94 +840,6 @@ BluetoothController.prototype.attributeDiscoveryHandler = function(err, filter, 
 //     }.bind(this));
 //   }
 // }
-
-BluetoothController.prototype.discoverCharacteristicUUID = function(peripheral, characteristic, callback) {
-
-  // Save reference to self
-  var self = this;
-
-  // Once we have found info containing UUID about this char
-  this.on('findInformationFound', function setCharacteristicUUID(info) {
-
-    // If this is for the correct connection and char handle
-    if (peripheral.connection === info.connection
-      && characteristic.handle === info.chrhandle) {
-
-      // Set the uuid of this characteristic
-      characteristic.uuid = new UUID(info.uuid);
-
-      // Remove this listener
-      self.removeListener('findInformationFound', setCharacteristicUUID);
-    }
-  });
-
-  // Once we complete the search
-  this.messenger.on('completedProcedure', function procedureComplete(procedure) {
-
-    // If this was called for this peripheral
-    if (procedure.connection === peripheral.connection) {
-
-      // Stop listening for more characteristics
-      self.removeListener('completedProcedure', procedureComplete);
-
-      // If it didn't succeed
-      if (procedure.result != 0) {
-
-        // Call the callback with the error
-        callback && callback(procedure.result, null);
-      }
-      else {
-        // Call the callback with result
-        callback && callback(null, characteristic);
-      }
-    }
-  });
-
-  // Tell the messenger to begin the search for the uuid of this characteristic
-  this.messenger.findUUID(peripheral, characteristic, function(err, response) {
-  // If there was a problem with the request
-    if (err || response.result != 0) {
-      // If it was an error reported by module, set that as error
-      if (!err) err = response.result;
-
-      // Call callback immediately
-      callback && callback(err);
-    }
-  }.bind(this));
-}
-
-/*
-* Method for turning a bit of information into a characteristic. Must discover all services before calling. (sucks, I know)
-*/
-BluetoothController.prototype.createCharacteristicFromInformationFound = function(peripheral, ret, info) {
-  if (peripheral._allServicesCached && peripheral.connection === info.connection) {
-    // Turn the uuid into a string
-    var uuid = new UUID(info.uuid);
-    // If this uuid isn't a service or a descriptor
-    if (!peripheral.services[uuid] && !Service.isStandardService(uuid) && !(Descriptor.isStandardDescriptor(uuid))) {
-
-      // Make a new one
-      var characteristic = new Characteristic(peripheral, uuid, info.chrhandle);
-
-      // Sync the new one with the correct service
-      peripheral.syncCharacteristic(characteristic);
-
-      // Push it into the return array
-      ret.push(characteristic);
-    }
-  }
-}
-BluetoothController.prototype.createCharacteristicFromAttributeValue = function(peripheral, ret, value) {
-  // If this is the correct connection
-  if (peripheral.connection === value.connection) {
-    // Create the characteristic
-    var characteristic = new Characteristic(peripheral, null, value.atthandle, value.value);
-    // Sync the new one with the correct service
-    peripheral.syncCharacteristic(characteristic);
-    // Add to the characteristics we will report as having discovered
-    ret.push(characteristic);
-  }
-}
 
 BluetoothController.prototype.clearCache = function(peripheral, callback) {
   peripheral.clearCache(callback);
@@ -1167,27 +1172,6 @@ BluetoothController.prototype.splitWriteIntoBuffers = function(value, callback) 
 //     callback && callback(err, rssi);
 //   }.bind(this));
 // }
-
-// TODO: Find a better place for these conversion functions to live. Make an Address obj?
-BluetoothController.prototype.addressBufferToString = function(addressBuffer) {
-  var str = "";
-  for (var i = 0; i < addressBuffer.length; i++) {
-    str+= addressBuffer.readUInt8(i).toString(10);
-    if (i != addressBuffer.length-1) {
-      str+=".";
-    }
-  }
-  return str;
-}
-
-BluetoothController.prototype.addressStringToBuffer = function(addressString) {
-  var b = new Buffer(6);
-  var bytes = addressString.split('.');
-  for (var i = 0; i < bytes.length; i++) {
-    b.writeUInt8(bytes[i], i);
-  }
-  return b;
-}
 /*************************************************************
 PUBLIC API
 *************************************************************/
