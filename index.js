@@ -4,6 +4,7 @@ var Characteristic = require('./lib/characteristic');
 var Service = require('./lib/service');
 var Messenger = require('./lib/messenger');
 var UUID = require('./lib/uuid');
+var Address = require('./lib/address');
 var events = require('events');
 var util = require('util');
 
@@ -243,10 +244,10 @@ BluetoothController.prototype.filterMatcher = function(filter, callback, periphe
 
 BluetoothController.prototype.getPeripheralFromData = function(rssi, data, address, callback) {
 
-  var strAddr = this.addressBufferToString(address);
+  var addr = new Address(address);
 
   // Try to grab this peripheral from list of previously discovered peripherals
-  var peripheral = this._discoveredPeripherals[strAddr];
+  var peripheral = this._discoveredPeripherals[addr.toString()];
 
   // If it hasn't been discovered yet
   if (!peripheral) {
@@ -255,10 +256,10 @@ BluetoothController.prototype.getPeripheralFromData = function(rssi, data, addre
                 this,
                 rssi,
                 data,
-                strAddr);
+                addr);
 
     // Put it in our discovered data structure
-    this._discoveredPeripherals[strAddr] = peripheral;
+    this._discoveredPeripherals[addr.toString()] = peripheral;
 
     callback && callback(peripheral, true);
   }
@@ -268,8 +269,8 @@ BluetoothController.prototype.getPeripheralFromData = function(rssi, data, addre
 }
 
 BluetoothController.prototype.connect = function(peripheral, callback) {
-  var bufferAddress = this.addressStringToBuffer(peripheral.address);
-  this.messenger.connect(bufferAddress, peripheral.addressType, function(err, response) {
+
+  this.messenger.connect(peripheral.address.toBuffer(), peripheral.addressType, function(err, response) {
     if (!err && response.result) {
       // Set result as error
       err = response.result;
