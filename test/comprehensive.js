@@ -48,7 +48,8 @@ function beginTesting() {
                   // writeLongCharacteristicTest(passModule);
                   // discoverAllDescriptorsTest(passModule);
                   // discoverCharacteristicDescriptorTest(passModule);
-                  discoverAllAttributesTest(passModule);
+                  // discoverAllAttributesTest(passModule);
+                  readDescriptorTest(passModule);
             // });
           // });
         // });
@@ -56,7 +57,43 @@ function beginTesting() {
   //   });
   // });
 }
-
+function readDescriptorTest(callback) {
+  connectToMoosh(function(moosh) {
+    moosh.discoverCharacteristics(['ffa2'], function(err, characteristics) {
+      if (err) {
+        return failModule("Discovering characteristic in read descriptor test", err);
+      }
+      else {
+        if (characteristics.length == 1) {
+          console.log("Discovered characteristic");
+          characteristics[0].discoverAllDescriptors(function(err, descriptors) {
+            if (err) {
+              return failModule("Reading characteristic descriptor", err);
+            }
+            if (descriptors.length) {
+              console.log("Discovered descriptors");
+              descriptors[0].read(function(err, value) {
+                if (err) {
+                  return failModule("Reading descriptor", err);
+                }
+                else {
+                  console.log("Read this value", value);
+                  bluetooth.reset(callback);
+                }
+              });
+            }
+            else {
+              return failModule("Reading correct number of descriptors");
+            }
+          });
+        }
+        else {
+          return failModule("Reading correct number of characteristics");
+        }
+      }
+    });
+  })
+}
 function discoverAllAttributesTest(callback) {
   connectToMoosh(function(moosh) {
     moosh.discoverAllAttributes(function(err, results) {
@@ -64,9 +101,15 @@ function discoverAllAttributesTest(callback) {
         return failModule("Discovering all attributes", results);
       }
       else {
-        console.log("Servs", results.services.length);
-        console.log("Chars", results.characteristics.length);
-        console.log("Desc", results.descriptors.length);
+        if (results.services.length === 0) {
+          return failModule("Discovering correct number of services");
+        }
+        if (results.characteristics.length === 0) {
+          return failModule("Discovering correct number of characteristics");
+        }
+        if (results.descriptors.length === 0) {
+          return failModule("Discovering correct number of descriptors");
+        }
         moosh.disconnect(function() {
           bluetooth.reset(callback);
         });

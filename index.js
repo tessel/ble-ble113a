@@ -561,10 +561,6 @@ BluetoothController.prototype.discoverCharacteristics = function(peripheral, uui
 
   async.series(funcs, function(err, characteristics) {
 
-    for (var i in characteristics) {
-      console.log(characteristics[i].toString());
-    }
-
     callback && callback(err, characteristics)
 
     if (!err && characteristics.length) {
@@ -828,12 +824,12 @@ BluetoothController.prototype.read = function(characteristic, callback) {
       }
       else {
         // Call the callback
-        callback && callback(null, characteristic.lastReadValue);
+        callback && callback(null, characteristic.value);
 
         setImmediate(function() {
-          this.emit('read', characteristic, characteristic.lastReadValue);
-          characteristic._peripheral.emit('read', characteristic, characteristic.lastReadValue);
-          characteristic.emit('read', characteristic.lastReadValue);
+          this.emit('read', characteristic, characteristic.value);
+          characteristic._peripheral.emit('read', characteristic, characteristic.value);
+          characteristic.emit('read', characteristic.value);
         }.bind(this));
       }
     }
@@ -861,12 +857,12 @@ BluetoothController.prototype.setCharacteristicValue = function(characteristic, 
   // If this is our first read of several or if this will be the only read
   if (readNum === 0 || (reading.type == 0)) {
     // Assign the value
-    characteristic.lastReadValue = reading.value;
+    characteristic.value = reading.value;
   }
   // If not
   else {
     // Concat the buffers
-    characteristic.lastReadValue = Buffer.concat([characteristic.lastReadValue, reading.value]);
+    characteristic.value = Buffer.concat([characteristic.value, reading.value]);
   }
 
   readNum++;
@@ -1081,7 +1077,7 @@ BluetoothController.prototype.discoverDescriptorsOfCharacteristic = function(cha
         offset++;
 
         // And make the call for the next attribute
-        self.messenger.readHandle(characteristic._peripheral, characteristic.handle + offset, function(err, response) {
+        self.messenger.findHandle(characteristic._peripheral, characteristic.handle + offset, function(err, response) {
           // If there was a problem with the request
           if (err || response.result != 0) {
            // If it was an error reported by module, set that as error
@@ -1100,7 +1096,7 @@ BluetoothController.prototype.discoverDescriptorsOfCharacteristic = function(cha
   });
 
   // Read the first subsequent handle
-  this.messenger.readHandle(characteristic._peripheral, characteristic.handle + offset, function(err, response) {
+  this.messenger.findHandle(characteristic._peripheral, characteristic.handle + offset, function(err, response) {
     // If there was a problem with the request
     if (err || response.result != 0) {
      // If it was an error reported by module, set that as error
@@ -1117,6 +1113,54 @@ BluetoothController.prototype.discoverDescriptorsOfCharacteristic = function(cha
   });
 }
 
+BluetoothController.prototype.readDescriptor = function(descriptor, callback) {
+  this.readHandle(descriptor._peripheral, descriptor, callback);
+}
+
+BluetoothController.prototype.readHandle = function(peripheral, attribute, callback) {
+
+  var self = this;
+
+  // When we get the attribute value
+  this.on('attributeValue', function fetchValue(value) {
+    // If it's for this connection and attribute
+    if (value.connection === peripheral.connection &&
+      value.atthandle === attribute.handle) {
+
+        // Set the appropriate value
+        attribute.value = value.value;
+
+        // Remove the listener
+        self.removeListener('attributeValue', fetchValue);
+
+        // Call the callback
+        callback && callback(null, attribute.value);
+
+        // Tell the events to fire
+        setImmediate(function() {
+          self.emit('handleRead', attribute, attribute.value);
+          peripheral.emit('handleRead', attribute, attribute.value);
+          attribute.emit('handleRead', attribute.value);
+        });
+      }
+  });
+
+  this.messenger.readHandle(peripheral, attribute.handle, function(err, response) {
+    // If there was a problem with the request
+    if (err || response.result != 0) {
+     // If it was an error reported by module, set that as error
+     if (!err) err = response.result;
+
+      // Call callback immediately
+      callback && callback(err);
+
+      // Emit the error
+      setImmediate(function() {
+        this.emit('error', err);
+      }.bind(this))
+    }
+  });
+}
 // BluetoothController.prototype.startAdvertising = function(callback) {
 //   this.advertising = true;
 //   this.messenger.startAdvertising(callback);
