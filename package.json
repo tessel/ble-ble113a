@@ -25,6 +25,7 @@
   ],
   "dependencies": {
     "bglib" : "*",
+    "async" : "*",
     "mocha" : "*",
     "chai" : "*",
     "sinon-chai" : "*"

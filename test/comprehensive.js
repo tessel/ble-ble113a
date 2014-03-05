@@ -39,19 +39,19 @@ function beginTesting() {
   //   scanTest(function() {
   //     filterTest(function() {
         // connectTest(function() {
-          // serviceDiscoveryTest(function() {
-            // characteristicDiscoveryTest(function() {
-              // characteristicServiceDiscoveryTest(function() {
+          serviceDiscoveryTest(function() {
+            characteristicDiscoveryTest(function() {
+              characteristicServiceDiscoveryTest(function() {
                  // discoverAllTest(passModule);
                   // readCharacteristicTest(passModule);
                   // writeCharacteristicTest(passModule);
                   // writeLongCharacteristicTest(passModule);
                   // discoverAllDescriptorsTest(passModule);
-                  discoverCharacteristicDescriptorTest(passModule);
-            // });
+                  // discoverCharacteristicDescriptorTest(passModule);
+            });
           // });
-        // });
-  //     });
+        });
+      });
   //   });
   // });
 }
@@ -389,7 +389,7 @@ Tests surrounding discovering characteristics
 function characteristicDiscoveryTest(callback) {
 
   connectToMoosh(function(moosh) {
-    allCharacteristicDiscoveryTest(moosh, function() {
+    // allCharacteristicDiscoveryTest(moosh, function() {
       specificCharacteristicDiscoveryTest(moosh, function() {
         moosh.disconnect(function(err) {
           if (err) {
@@ -398,7 +398,7 @@ function characteristicDiscoveryTest(callback) {
           bluetooth.reset(callback);
         });
       });
-    });
+    // });
   });
 }
 
@@ -409,17 +409,14 @@ function specificCharacteristicDiscoveryTest(peripheral, callback) {
     if (err) {
       return failModule("Discovering specific characteristics", err);
     }
-    console.log("Fin 1", pc.toString());
-    // bluetooth.discoverCharacteristics(peripheral, reqChar, function(err, mc) {
-    //   console.log("pc length: ", pc.length);
-    //   console.log("mc length: ", mc.length);
-    //   if ((pc.length != reqChar.length) || (reqChar.length != mc.length)) {
-    //     return failModule("Matching characteristics");
-    //   }
-    //   else {
+    bluetooth.discoverCharacteristics(peripheral, reqChar, function(err, mc) {
+      if ((pc.length != reqChar.length) || (reqChar.length != mc.length)) {
+        return failModule("Matching characteristics");
+      }
+      else {
         callback();
-      // }
-    // });
+      }
+    });
   });
 }
 
