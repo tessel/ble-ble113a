@@ -677,19 +677,26 @@ BluetoothController.prototype.discoverCharacteristicUUID = function(peripheral, 
 * Method for turning a bit of information into a characteristic. Must discover all services before calling. (sucks, I know)
 */
 BluetoothController.prototype.discoverAllServicesAndCharacteristics = function(peripheral, callback) {
-  this.discoverAllServices(peripheral, function(err, services) {
+
+  // Discover all characteristics already requires a discovery of all services
+  this.discoverAllCharacteristics(peripheral, function(err, characteristics) {
+    // If there is an error
     if (err) {
+      // Call the callback
       callback && callback(err);
     }
+    // If there is no error
     else {
-      this.discoverAllCharacteristics(peripheral, function(err, characteristics) {
-        if (err) {
-          callback && callback(err);
-        }
-        else {
-          callback && callback(err, {services : services, characteristics : characteristics});
-        }
-      }.bind(this));
+      // Services to return
+      var services = [];
+
+      // For each service in this peripheral
+      for (var service in peripheral.services) {
+        // Push it into the array
+        services.push(peripheral.services[service]);
+      }
+      // Call callback with our results
+      callback && callback(err, {services : services, characteristics : characteristics});
     }
   }.bind(this));
 }
