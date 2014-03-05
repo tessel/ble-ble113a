@@ -41,13 +41,14 @@ function beginTesting() {
         // connectTest(function() {
           // serviceDiscoveryTest(function() {
             // characteristicDiscoveryTest(function() {
-              characteristicServiceDiscoveryTest(function() {
+              // characteristicServiceDiscoveryTest(function() {
           //       clearCacheTest(passModule);
                    // discoverAllTest(passModule);
                     // readCharacteristicTest(passModule);
                     // writeCharacteristicTest(passModule);
                     // writeLongCharacteristicTest(passModule);
-              });
+                    discoverDescriptorsTest(passModule);
+              // });
             // });
           // });
         // });
@@ -56,6 +57,26 @@ function beginTesting() {
   // });
 }
 
+function discoverDescriptorsTest(callback) {
+  connectToMoosh(function(moosh) {
+    moosh.discoverAllDescriptors(function(err, descriptors) {
+      if (err) {
+        return failModule("Discovering all descriptors", err);
+      }
+      else {
+        console.log("Here are the descriptors", descriptors.toString());
+        moosh.disconnect(function(err) {
+          if (err) {
+            return failModule("Disconnecting from moosh", err);
+          }
+          else {
+            bluetooth.reset(callback);
+          }
+        });
+      }
+    });
+  });
+}
 
 function discoverSpecificService(callback) {
   connectToMoosh(function(moosh) {
