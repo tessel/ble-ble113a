@@ -332,22 +332,32 @@ BluetoothController.prototype.disconnect = function(peripheral, callback) {
     }
   }.bind(this));
 }
+BluetoothController.prototype.discoverAllAttributes = function(peripheral, callback) {
+  // Discover all of our services and characteristics
+  this.discoverAllServicesAndCharacteristics(peripheral, function(err, results) {
+    var funcs = [];
+    for (var characteristic in results.characteristics) {
+      funcs.push(this.discoverDescriptorsOfCharacteristic.bind(this, results.characteristics[characteristic]));
+    }
+    // Get an array of arrays of descriptors
+    async.series(funcs, function(err, charDescriptors) {
+      // Make return array
+      var allDescriptors = []
+      // For each array of descriptors
+      for (var i in charDescriptors) {
+        // For each descriptor in that array
+        for (var descriptor in charDescriptors[i]) {
+          // Push the descriptor
+          allDescriptors.push(charDescriptors[i][descriptor]);
+        }
+      }
 
-BluetoothController.prototype.discoverAllServicesAndCharacteristics = function(peripheral, callback) {
-  this.discoverAllServices(peripheral, function(err, services) {
-    if (err) {
-      callback && callback(err);
-    }
-    else {
-      this.discoverAllCharacteristics(peripheral, function(err, characteristics) {
-        if (err) {
-          callback && callback(err);
-        }
-        else {
-          callback && callback(err, {services : services, characteristics : characteristics});
-        }
-      }.bind(this));
-    }
+      // Add descriptors to the resulting object
+      results["descriptors"] = allDescriptors;
+
+      // Call the callback
+      callback && callback(err, results);
+    });
   }.bind(this));
 }
 
@@ -650,7 +660,6 @@ BluetoothController.prototype.discoverCharacteristicUUID = function(peripheral, 
     }
   });
 
-  console.log("Looking for the UUID now...");
   // Tell the messenger to begin the search for the uuid of this characteristic
   this.messenger.discoverCharacteristicUUID(characteristic, function(err, response) {
   // If there was a problem with the request
@@ -667,6 +676,23 @@ BluetoothController.prototype.discoverCharacteristicUUID = function(peripheral, 
 /*
 * Method for turning a bit of information into a characteristic. Must discover all services before calling. (sucks, I know)
 */
+BluetoothController.prototype.discoverAllServicesAndCharacteristics = function(peripheral, callback) {
+  this.discoverAllServices(peripheral, function(err, services) {
+    if (err) {
+      callback && callback(err);
+    }
+    else {
+      this.discoverAllCharacteristics(peripheral, function(err, characteristics) {
+        if (err) {
+          callback && callback(err);
+        }
+        else {
+          callback && callback(err, {services : services, characteristics : characteristics});
+        }
+      }.bind(this));
+    }
+  }.bind(this));
+}
 BluetoothController.prototype.createCharacteristicFromInformationFound = function(peripheral, ret, info) {
   if (peripheral.connection === info.connection) {
     // Turn the uuid into a string
@@ -772,74 +798,6 @@ BluetoothController.prototype.serviceCharacteristicDiscovery = function(service,
     }
   }.bind(this));
 }
-// BluetoothController.prototype.characteristicDiscovery = function(peripheral, startHandle, endHandle, callback) {
-//
-//     // If we've already discovered all services
-//   if (peripheral._allCharacteristicsCached) {
-//
-//     var characteristics = [];
-//
-//     // DOESN'T WORK Add all the matched characteristics
-//     for (var characteristic in peripheral.services.characteristics) {
-//       characteristics.push(peripheral.services.characteristics[characteristic]);
-//     }
-//
-//     // Add all the unmatched characteristics
-//     for (var unassigned in peripheral._unassignedCharacteristics) {
-//       characteristics.push(peripheral._unassignedCharacteristics[unassigned]);
-//     }
-//
-//     return callback && callback(null, characteristics);
-//
-//   }
-//   else {
-//
-//     var characteristics = [];
-//
-//     // The 'attributeValue' event is called when we find characteristics
-//     var valueFoundListener = this.createCharacteristicFromAttributeValue.bind(this, peripheral, characteristics);
-//
-//     this.messenger.on('attributeValue', valueFoundListener);
-//
-//     // The 'completed Procedure' event is called when we're done looking for services
-//     this.once('completedProcedure', function(procedure) {
-//       console.log("Completed procedure!", procedure);
-//
-//       // If this was called for this peripheral
-//       if (procedure.connection === peripheral.connection) {
-//
-//         // Stop listening for more characteristics
-//         this.messenger.removeListener('attributeValue', valueFoundListener);
-//
-//         // If it didn't succeed
-//         if (procedure.result != 0) {
-//
-//           callback && callback(procedure.result, null);
-//         }
-//         else {
-//           // Call the callback
-//           this.discoverCharacteristicUUIDs(peripheral, characteristics, callback);
-//         }
-//       }
-//     }.bind(this));
-//
-//     // Request the messenger to start discovering services
-//     this.messenger.discoverCharacteristicsInRange(peripheral, startHandle, endHandle, function(err, response) {
-//       // If there was a problem with the request
-//       if (err || response.result != 0) {
-//         // If it was an error reported by module, set that as error
-//         if (!err) err = response.result;
-//
-//         // Call callback immediately
-//         callback && callback(err);
-//
-//         setImmediate(function() {
-//           this.emit('error', err);
-//         }.bind(this));
-//       }
-//     }.bind(this));
-//   }
-// }
 
 BluetoothController.prototype.read = function(characteristic, callback) {
 
@@ -964,107 +922,6 @@ BluetoothController.prototype.writeImmediately = function(characteristic, single
     }
   })
 }
-BluetoothController.prototype.prepareWrite = function(characteristic, multipleBuffers, callback) {
-  var bufSize = 20;
-  var offset = 0;
-
-  // Keep this around
-  var self = this;
-
-  // Function for writing each subsequent buffer
-  this.on('completedProcedure', function bufferWriteIterate(procedure) {
-    // If this is for our connection
-    if (procedure.connection === characteristic._peripheral.connection
-      && procedure.chrhandle === characteristic.handle) {
-      // If there was an error, report it and cancel write
-      if (procedure.result != 0) {
-        // Cancel any previous writes
-        self.messenger.cancelWrite(characteristic, function(cancelErr, response) {
-          // Call callback immediately
-          return callback && callback(procedure.result);
-        });
-      }
-      // If there was no error
-      else {
-        // If we've completed the procedure but still have more to write
-        if (offset < multipleBuffers.length) {
-
-          // Send another part of the buffer off
-          self.messenger.prepareWrite(characteristic, multipleBuffers[offset], offset*bufSize, function(err, response) {
-            // If there was a problem with the request
-            if (err || response.result != 0) {
-              // Cancel any previous writes
-              self.messenger.cancelWrite(characteristic, function(cancelErr, response) {
-                // If it was an error reported by module, set that as error
-                if (!err) err = response.result;
-
-                // Call callback immediately
-                return callback && callback(err);
-              });
-            }
-            // Increment offset so we send the next buffer next time
-            offset++;
-          });
-        }
-        // If we've sent all the prepare writes...
-        else if (offset === multipleBuffers.length) {
-          // Remove the buffer write iterator listener so we don't send any more packets
-          self.removeListener('completedProcedure', bufferWriteIterate);
-
-          // Once our write execution is complete
-          self.once('completedProcedure', function(procedure) {
-            // If there was an error
-            if (procedure.result != 0) {
-              // Report the error
-              callback && callback(procedure.result);
-            }
-            // If there was no error
-            else {
-              //Concat all the buffers into one
-              var ret;
-              for (var i = 0; i < multipleBuffers.length; i++) {
-                ret = Buffer.concat(ret, multipleBuffers[i]);
-              }
-
-              // Call callback
-              callback && callback(null, ret);
-
-              // Emit the events
-              setImmediate(function() {
-                self.emit('write', characteristic, ret);
-                characteristic._peripheral.emit('write', characteristic, ret);
-                characteristic.emit('write', ret);
-              });
-            }
-          });
-          // Execute the write of the packets
-          self.messenger.executeWrite(characteristic, function(err, response) {
-            // If there was a problem with the request
-            if (err || response.result != 0) {
-              // If it was an error reported by module, set that as error
-              if (!err) err = response.result;
-
-              // Call callback immediately
-              return callback && callback(err);
-            }
-          });
-        }
-      }
-    }
-  });
-
-  this.messenger.prepareWrite(characteristic, multipleBuffers[offset], offset * bufSize, function(err, response) {
-    // If there was a problem with the request
-    if (err || response.result != 0) {
-      // If it was an error reported by module, set that as error
-      if (!err) err = response.result;
-
-      // Call callback immediately
-      return callback && callback(err);
-    }
-    offset++;
-  });
-}
 
 BluetoothController.prototype.splitWriteIntoBuffers = function(value, callback) {
   // If nothing was passed in, just return an error
@@ -1145,7 +1002,7 @@ BluetoothController.prototype.discoverDescriptorsOfCharacteristic = function(cha
       // Turn the uuid into a string
       var uuid = new UUID(info.uuid);
 
-      // If this uuid isn't of a descriptor
+      // If this uuid isn of a descriptor
       if (Descriptor.isStandardDescriptor(uuid.toString())) {
 
         // Make a new one
@@ -1176,54 +1033,61 @@ BluetoothController.prototype.discoverDescriptorsOfCharacteristic = function(cha
       // If it didn't succeed
       if (procedure.result != 0) {
 
-        // Call the callback with the error
-        callback && callback(procedure.result, null);
+        // If the error is not that their is no Attribute found (which will happen
+        // if the final characteristic is called upon)
+        if (procedure.result.message != 'Attribute Not Found') {
 
-        // Emit the event
+          // Call the callback with the error
+          callback && callback(procedure.result, null);
+
+          // Emit the event
+          setImmediate(function() {
+            self.emit('error', procedure.result);
+          });
+
+          return;
+        }
+        else {
+          done = true;
+        }
+      }
+
+      // If we have finished finding all descriptors
+      if (done) {
+
+        // Stop listening for more descriptors
+        self.removeListener('completedProcedure', descriptorDiscoveryComplete);
+
+        // Call the callback with result
+        callback && callback(null, descriptors);
+
+        // Emit events
         setImmediate(function() {
-          self.emit('error', procedure.result);
+          self.emit('descriptorsDiscover', descriptors);
+          characteristic._peripheral.emit('descriptorsDiscover', descriptors);
         });
       }
-      // It it was successful
+      // If we have not finished finding descriptors
       else {
 
-        // If we have finished finding all descriptors
-        if (done) {
+        // Increase the offset
+        offset++;
 
-          // Stop listening for more descriptors
-          self.removeListener('completedProcedure', descriptorDiscoveryComplete);
+        // And make the call for the next attribute
+        self.messenger.readHandle(characteristic._peripheral, characteristic.handle + offset, function(err, response) {
+          // If there was a problem with the request
+          if (err || response.result != 0) {
+           // If it was an error reported by module, set that as error
+           if (!err) err = response.result;
 
-          // Call the callback with result
-          callback && callback(null, descriptors);
+           // Call callback immediately
+           callback && callback(err);
 
-          // Emit events
-          setImmediate(function() {
-            self.emit('descriptorsDiscover', descriptors);
-            characteristic._peripheral.emit('descriptorsDiscover', descriptors);
-          });
-        }
-        // If we have not finished finding descriptors
-        else {
-
-          // Increase the offeset
-          offset++;
-
-          // And make the call for the next attribute
-          self.messenger.readHandle(characteristic._peripheral, characteristic.handle + offset, function(err, response) {
-            // If there was a problem with the request
-            if (err || response.result != 0) {
-             // If it was an error reported by module, set that as error
-             if (!err) err = response.result;
-
-             // Call callback immediately
-             callback && callback(err);
-
-             setImmediate(function() {
-               self.emit('error', err);
-             });
-            }
-          });
-        }
+           setImmediate(function() {
+             self.emit('error', err);
+           });
+          }
+        });
       }
     }
   });

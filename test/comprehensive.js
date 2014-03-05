@@ -39,21 +39,40 @@ function beginTesting() {
   //   scanTest(function() {
   //     filterTest(function() {
         // connectTest(function() {
-          serviceDiscoveryTest(function() {
-            characteristicDiscoveryTest(function() {
-              characteristicServiceDiscoveryTest(function() {
+          // serviceDiscoveryTest(function() {
+            // characteristicDiscoveryTest(function() {
+              // characteristicServiceDiscoveryTest(function() {
                  // discoverAllTest(passModule);
                   // readCharacteristicTest(passModule);
                   // writeCharacteristicTest(passModule);
                   // writeLongCharacteristicTest(passModule);
                   // discoverAllDescriptorsTest(passModule);
                   // discoverCharacteristicDescriptorTest(passModule);
-            });
+                  discoverAllAttributesTest(passModule);
+            // });
           // });
-        });
-      });
+        // });
+      // });
   //   });
   // });
+}
+
+function discoverAllAttributesTest(callback) {
+  connectToMoosh(function(moosh) {
+    moosh.discoverAllAttributes(function(err, results) {
+      if (err) {
+        return failModule("Discovering all attributes", results);
+      }
+      else {
+        console.log("Servs", results.services.length);
+        console.log("Chars", results.characteristics.length);
+        console.log("Desc", results.descriptors.length);
+        moosh.disconnect(function() {
+          bluetooth.reset(callback);
+        });
+      }
+    });
+  });
 }
 
 function discoverCharacteristicDescriptorTest(callback) {
