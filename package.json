@@ -29,7 +29,7 @@
     "chai" : "*",
     "sinon-chai" : "*"
   },
-  "devDependencies" : 
+  "devDependencies" :
   {
     "mocha" : "*",
     "chai" : "*",
@@ -38,6 +38,6 @@
   "hardware" :
   {
     "./firmware_update" : false,
-    "./examples" : false,
+    "./examples" : false
   }
 }

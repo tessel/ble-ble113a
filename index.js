@@ -8,6 +8,7 @@ var Address = require('./lib/address');
 var attributes = require('./lib/attributes.json');
 var events = require('events');
 var util = require('util');
+// var async = require('async');
 
 var TX_HANDLE=20;
 
@@ -97,7 +98,7 @@ BluetoothController.prototype.onScanStop = function(err, result) {
 
 BluetoothController.prototype.onDiscover = function(peripheralData) {
   // Try to grab this peripheral from list of previously discovered peripherals
-  this.getPeripheralFromData(peripheralData.rssi, peripheralData.data, peripheralData.sender, function(peripheral, undiscovered) {
+  this.getPeripheralFromData(peripheralData.rssi, peripheralData.data, peripheralData.sender, peripheral.address_type, function(peripheral, undiscovered) {
   // If this peripheral hasn't been discovered or we allow duplicates
   if (undiscovered || (this._allowDuplicates)) {
       setImmediate(function() {
@@ -109,7 +110,7 @@ BluetoothController.prototype.onDiscover = function(peripheralData) {
 
 BluetoothController.prototype.onConnectionStatus = function(status) {
 
-  this.getPeripheralFromData(null, null, status.address, function(peripheral, undiscovered) {
+  this.getPeripheralFromData(null, null, status.address, status.address_type, function(peripheral, undiscovered) {
     peripheral.connection = status.connection;
     peripheral.flags = status.flags;
 
@@ -226,7 +227,7 @@ BluetoothController.prototype.stopFilterDiscover = function(callback) {
 
 BluetoothController.prototype.filterMatcher = function(filter, callback, peripheralData) {
   // Get saved for peripheral or make a new one
-  this.getPeripheralFromData(peripheralData.rssi, peripheralData.data, peripheralData.sender, function(peripheral, undiscovered) {
+  this.getPeripheralFromData(peripheralData.rssi, peripheralData.data, peripheralData.sender, peripheralData.address_type, function(peripheral, undiscovered) {
     // Apply the filter to the peripheral
     filter(peripheral, function(match) {
       // If we've got a match and it's undiscovered (or if it's old and we allow duplicated)
@@ -244,7 +245,7 @@ BluetoothController.prototype.filterMatcher = function(filter, callback, periphe
   }.bind(this));
 }
 
-BluetoothController.prototype.getPeripheralFromData = function(rssi, data, address, callback) {
+BluetoothController.prototype.getPeripheralFromData = function(rssi, data, address, addressType, callback) {
 
   var addr = new Address(address);
 
@@ -259,6 +260,8 @@ BluetoothController.prototype.getPeripheralFromData = function(rssi, data, addre
                 rssi,
                 data,
                 addr);
+
+    peripheral.addressType = addressType;
 
     // Put it in our discovered data structure
     this._discoveredPeripherals[addr.toString()] = peripheral;
@@ -540,25 +543,16 @@ BluetoothController.prototype.discoverAllCharacteristics = function(peripheral, 
 // TODO: Make work with actual array
 BluetoothController.prototype.discoverCharacteristics = function(peripheral, uuids, callback) {
 
-  // Somehow assemble the functions such that the next element is the callback to the previous
-  var completed = 0;
-  var ret = [];
-  for (var i = 0; i < uuids.length; i++) {
-    this.discoverCharacteristic(peripheral, new UUID(uuids[i]), function(err, characteristic) {
-      completed++;
-      if (err) {
-        callback && callback(err);
-      }
-      else {
-        console.log("Got this", characteristic.toString());
-        ret.push(characteristic);
-      }
-
-      if (completed === uuids.length) {
-        callback && callback(null, ret);
-      }
-    });
-  }
+  // // Somehow assemble the functions such that the next element is the callback to the previous
+  // var funcs = [];
+  // for (var i = 0; i < uuids.length; i++) {
+  //   funcs.push(this.discoverCharacteristic(peripheral, new UUID(uuids[i]).bind(this)));
+  // }
+  //
+  // async.series(funcs, function(err, ret) {
+  //   console.log("In result of series", err, result);
+  //
+  // });
 }
 // BluetoothController.prototype.discoverCharacteristics = function(peripheral, filter, callback) {
 
@@ -617,7 +611,7 @@ BluetoothController.prototype.discoverCharacteristic = function(peripheral, char
   });
 
   // Request only the value of the characteristic with this handle
-  this.messenger.discoverCharacteristicsInRangeForUUID(peripheral, 0x0001, 0xFFFF, characteristicUUID.toBuffer(), function(err, response) {
+  this.messenger.discoverCharacteristicsInRangeForUUID(peripheral, 0x0001, 0xFFFF, characteristicUUID, function(err, response) {
     // If there was a problem with the request
     if (err || response.result != 0) {
       // If it was an error reported by module, set that as error
@@ -672,7 +666,7 @@ BluetoothController.prototype.discoverCharacteristicUUID = function(peripheral, 
   });
 
   // Tell the messenger to begin the search for the uuid of this characteristic
-  this.messenger.findUUID(peripheral, characteristic, function(err, response) {
+  this.messenger.discoverCharacteristicUUID(characteristic, function(err, response) {
   // If there was a problem with the request
     if (err || response.result != 0) {
       // If it was an error reported by module, set that as error
@@ -1201,32 +1195,127 @@ BluetoothController.prototype.discoverAllDescriptors = function(peripheral, call
   });
 }
 
-BluetoothController.prototype.createDescriptorFromInformationFound = function(peripheral, ret, info) {
-  if (peripheral.connection === info.connection) {
-    // Turn the uuid into a string
-    var uuid = new UUID(info.uuid);
-    console.log("Found this: ", info);
-    // If this uuid isn't a service or a descriptor, or any other generic type
-    if (Descriptor.isStandardDescriptor(uuid.toString())) {
-      console.log("It is a descriptor!");
-      // Make a new one
-      var descriptor = new Descriptor(peripheral, uuid, info.chrhandle);
+/*
+* Continues reading and storing subsequent handles of a characteristic until a non-descriptor is found
+*/
+BluetoothController.prototype.discoverDescriptorsOfCharacteristic = function(characteristic, callback) {
 
-      // Sync the new one with the correct service
-      // peripheral.syncCharacteristic(characteristic);
+  var self = this;
 
-      // Push it into the return array
-      ret.push(descriptor);
+  var descriptors = [];
+
+  var offset = 1;
+
+  var done = false;
+
+  // Keep reading the next handle until it is not a descriptor
+  this.on('findInformationFound', function findDescriptorInformation(info) {
+
+    // If this for the correct connection
+    if (characteristic._peripheral.connection === info.connection) {
+
+      // Turn the uuid into a string
+      var uuid = new UUID(info.uuid);
+
+      // If this uuid isn't of a descriptor
+      if (Descriptor.isStandardDescriptor(uuid.toString())) {
+
+        // Make a new one
+        var descriptor = new Descriptor(characteristic._peripheral, uuid, info.chrhandle);
+
+        // Add it to the characteristic's descriptors
+        characteristic.descriptors[uuid.toString()] = descriptor;
+
+        // Push it into the return array
+        descriptors.push(descriptor);
+      }
+      else {
+        // Set the done flag
+        done = true;
+
+        // Remove this listener
+        self.removeListener('findInformationFound', findDescriptorInformation);
+      }
     }
-    else {
-      console.log("Not a descriptor.");
+  });
+
+  // Once we have finished finding a single descriptor
+  this.on('completedProcedure', function descriptorDiscoveryComplete(procedure) {
+
+    // If this was called for this peripheral
+    if (procedure.connection === characteristic._peripheral.connection) {
+
+      // If it didn't succeed
+      if (procedure.result != 0) {
+
+        // Call the callback with the error
+        callback && callback(procedure.result, null);
+
+        // Emit the event
+        setImmediate(function() {
+          self.emit('error', procedure.result);
+        });
+      }
+      // It it was successful
+      else {
+
+        // If we have finished finding all descriptors
+        if (done) {
+
+          // Stop listening for more descriptors
+          self.removeListener('completedProcedure', descriptorDiscoveryComplete);
+
+          // Call the callback with result
+          callback && callback(null, descriptors);
+
+          // Emit events
+          setImmediate(function() {
+            self.emit('descriptorsDiscover', descriptors);
+            characteristic._peripheral.emit('descriptorsDiscover', descriptors);
+          });
+        }
+        // If we have not finished finding descriptors
+        else {
+
+          // Increase the offeset
+          offset++;
+
+          // And make the call for the next attribute
+          self.messenger.readHandle(characteristic._peripheral, characteristic.handle + offset, function(err, response) {
+            // If there was a problem with the request
+            if (err || response.result != 0) {
+             // If it was an error reported by module, set that as error
+             if (!err) err = response.result;
+
+             // Call callback immediately
+             callback && callback(err);
+
+             setImmediate(function() {
+               self.emit('error', err);
+             });
+            }
+          });
+        }
+      }
     }
-  }
-}
+  });
 
-BluetoothController.prototype.characteristicDescriptorDiscovery = function(characteristic, callback) {
+  // Read the first subsequent handle
+  this.messenger.readHandle(characteristic._peripheral, characteristic.handle + offset, function(err, response) {
+    // If there was a problem with the request
+    if (err || response.result != 0) {
+     // If it was an error reported by module, set that as error
+     if (!err) err = response.result;
 
-  // Search for all descriptors within
+      // Call callback immediately
+      callback && callback(err);
+
+      // Emit the error
+      setImmediate(function() {
+        this.emit('error', err);
+      }.bind(this))
+    }
+  });
 }
 
 // BluetoothController.prototype.startAdvertising = function(callback) {

@@ -40,22 +40,55 @@ function beginTesting() {
   //     filterTest(function() {
         // connectTest(function() {
           // serviceDiscoveryTest(function() {
-            characteristicDiscoveryTest(function() {
+            // characteristicDiscoveryTest(function() {
               // characteristicServiceDiscoveryTest(function() {
                  // discoverAllTest(passModule);
                   // readCharacteristicTest(passModule);
                   // writeCharacteristicTest(passModule);
                   // writeLongCharacteristicTest(passModule);
-                  // discoverDescriptorsTest(passModule);
+                  // discoverAllDescriptorsTest(passModule);
+                  discoverCharacteristicDescriptorTest(passModule);
             // });
-          });
+          // });
         // });
   //     });
   //   });
   // });
 }
 
-function discoverDescriptorsTest(callback) {
+function discoverCharacteristicDescriptorTest(callback) {
+  connectToMoosh(function(moosh) {
+    moosh.discoverAllCharacteristics(function(err, characteristics) {
+      if (err) {
+        return failModule("Discovering single characteristic in descriptor discovery", err);
+      }
+      else {
+        var char;
+        for (var i = 0; i < characteristics.length; i++) {
+          if (characteristics[i].uuid.toString() === "ffa6") {
+            char = characteristics[i];
+          }
+        }
+
+        if (char) {
+          char.discoverAllDescriptors(function(err, descriptors) {
+            if (err) {
+              return failModule("Discovering descriptors of characteristic", err);
+            }
+            else {
+              console.log("Found these descriptors lying around", descriptors.toString());
+            }
+          });
+        }
+        else {
+          console.log("No char match found");
+        }
+      }
+    });
+  });
+}
+
+function discoverAllDescriptorsTest(callback) {
   connectToMoosh(function(moosh) {
     moosh.discoverAllDescriptors(function(err, descriptors) {
       if (err) {
