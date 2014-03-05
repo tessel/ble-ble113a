@@ -40,17 +40,15 @@ function beginTesting() {
   //     filterTest(function() {
         // connectTest(function() {
           // serviceDiscoveryTest(function() {
-            // characteristicDiscoveryTest(function() {
+            characteristicDiscoveryTest(function() {
               // characteristicServiceDiscoveryTest(function() {
-          //       clearCacheTest(passModule);
-                   // discoverAllTest(passModule);
-                    // readCharacteristicTest(passModule);
-                    // writeCharacteristicTest(passModule);
-                    // writeLongCharacteristicTest(passModule);
-                    discoverDescriptorsTest(passModule);
-              // });
+                 // discoverAllTest(passModule);
+                  // readCharacteristicTest(passModule);
+                  // writeCharacteristicTest(passModule);
+                  // writeLongCharacteristicTest(passModule);
+                  // discoverDescriptorsTest(passModule);
             // });
-          // });
+          });
         // });
   //     });
   //   });
@@ -358,7 +356,7 @@ Tests surrounding discovering characteristics
 function characteristicDiscoveryTest(callback) {
 
   connectToMoosh(function(moosh) {
-    // allCharacteristicDiscoveryTest(moosh, function() {
+    allCharacteristicDiscoveryTest(moosh, function() {
       specificCharacteristicDiscoveryTest(moosh, function() {
         moosh.disconnect(function(err) {
           if (err) {
@@ -367,7 +365,7 @@ function characteristicDiscoveryTest(callback) {
           bluetooth.reset(callback);
         });
       });
-    // });
+    });
   });
 }
 
@@ -428,7 +426,6 @@ function serviceDiscoveryTest(callback) {
   connectToMoosh(function(moosh) {
     discoverSpecificServicesTest(moosh, function() {
       discoverAllServicesTest(moosh, function() {
-        bluetooth.emit('completedProcedure');
         moosh.disconnect(function(err) {
           if (err) {
             return failModule("Disconnecting after service discovery", err);
@@ -455,7 +452,6 @@ function discoverAllServicesTest(peripheral, callback) {
     }
     if (gate === 2 && services.length > 2) {
       console.log("Complete service discovery test passed.");
-      peripheral.disconnect()
       callback && callback();
     }
     else {
