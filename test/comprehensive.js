@@ -40,17 +40,17 @@ function beginTesting() {
   //     filterTest(function() {
         // connectTest(function() {
           // serviceDiscoveryTest(function() {
-            characteristicDiscoveryTest(function() {
-          //     characteristicServiceDiscoveryTest(function() {
+            // characteristicDiscoveryTest(function() {
+              characteristicServiceDiscoveryTest(function() {
           //       clearCacheTest(passModule);
                    // discoverAllTest(passModule);
                     // readCharacteristicTest(passModule);
                     // writeCharacteristicTest(passModule);
                     // writeLongCharacteristicTest(passModule);
-          //     });
-          //   });
+              });
+            // });
           // });
-        });
+        // });
   //     });
   //   });
   // });
@@ -243,18 +243,19 @@ function characteristicServiceDiscoveryTest(callback) {
   //       if (err) {
   //         return failModule("Disconnect from moosh in char service disco test", err);
   //       }
-        // connectToMoosh(function(moosh) {
-        //   subsetServiceCharacteristicDiscoveryTest(moosh, function() {
-        //     moosh.disconnect(function(err) {
-        //       if (err) {
-        //         return failModule("Disconnect from moosh in char service disco test", err);
-        //       }
-                serviceSyncingDiscoveryTest(function() {
+        connectToMoosh(function(moosh) {
+          console.log("Connected!");
+          subsetServiceCharacteristicDiscoveryTest(moosh, function() {
+            moosh.disconnect(function(err) {
+              if (err) {
+                return failModule("Disconnect from moosh in char service disco test", err);
+              }
+                // serviceSyncingDiscoveryTest(function() {
                     bluetooth.reset(callback);
-                });
-  //         });
-  //       });
-  //     });
+                // });
+              });
+            });
+          });
   //   });
   // });
 }
@@ -300,14 +301,18 @@ function completeServiceCharacteristicDiscoveryTest(peripheral, callback) {
 
 function subsetServiceCharacteristicDiscoveryTest(peripheral, callback) {
   peripheral.discoverAllServices(function(err, services) {
+    if (err) {
+    return failModule("Discovering all services", err);
+    }
     services.forEach(function(service) {
-      if (service.uuid == "ffa0") {
+      if (service.uuid.toString() === "ffa0") {
         var reqChar = ["ffa6"];
         service.discoverAllCharacteristics(function(err, allChars) {
-          console.log("Discovered these: ", allChars);
+          console.log("Discovered all: ", allChars.toString());
           if (allChars.length >= reqChar.length) {
+            console.log("Disocvering specific");
             service.discoverCharacteristics(reqChar, function(err, subsetChars) {
-              console.log("Then found these: ", subsetChars);
+              console.log("Then found these: ", subsetChars.toString());
               if (subsetChars.length == reqChar.length) {
                 callback();
               }
@@ -332,7 +337,7 @@ Tests surrounding discovering characteristics
 function characteristicDiscoveryTest(callback) {
 
   connectToMoosh(function(moosh) {
-    allCharacteristicDiscoveryTest(moosh, function() {
+    // allCharacteristicDiscoveryTest(moosh, function() {
       specificCharacteristicDiscoveryTest(moosh, function() {
         moosh.disconnect(function(err) {
           if (err) {
@@ -341,7 +346,7 @@ function characteristicDiscoveryTest(callback) {
           bluetooth.reset(callback);
         });
       });
-    });
+    // });
   });
 }
 
@@ -349,7 +354,10 @@ function specificCharacteristicDiscoveryTest(peripheral, callback) {
   var reqChar = ["ffa6", "ffa5"];
   console.log("Specific discovery test");
   peripheral.discoverCharacteristics(reqChar, function(err, pc) {
-    console.log("Fin 1", err, pc.toString());
+    if (err) {
+      return failModule("Discovering specific characteristics", err);
+    }
+    console.log("Fin 1", pc.toString());
     // bluetooth.discoverCharacteristics(peripheral, reqChar, function(err, mc) {
     //   console.log("pc length: ", pc.length);
     //   console.log("mc length: ", mc.length);
