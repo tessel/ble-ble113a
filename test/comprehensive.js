@@ -49,13 +49,64 @@ function beginTesting() {
                   // discoverAllDescriptorsTest(passModule);
                   // discoverCharacteristicDescriptorTest(passModule);
                   // discoverAllAttributesTest(passModule);
-                  readDescriptorTest(passModule);
+                  // readDescriptorTest(passModule);
+                  writeDescriptorTest(passModule);
             // });
           // });
         // });
       // });
   //   });
   // });
+}
+
+function writeDescriptorTest(callback) {
+connectToMoosh(function(moosh) {
+  moosh.discoverCharacteristics(['ffa2'], function(err, characteristics) {
+    if (err) {
+      return failModule("Discovering characteristic in write descriptor test", err);
+    }
+    else {
+      if (characteristics.length == 1) {
+        characteristics[0].discoverAllDescriptors(function(err, descriptors) {
+          if (err) {
+            return failModule("Writing characteristic descriptor", err);
+          }
+          var gate = 0;
+          if (descriptors.length) {
+            bluetooth.once('descriptorWrite', function(descriptor, value) {
+              gate++;
+            });
+            moosh.once('descriptorWrite', function(descriptor, value) {
+              gate++;
+            });
+            descriptors[0].once('write', function(value) {
+
+              console.log("In descriptor event", value);
+              if (gate === 3) {
+                console.log("Descriptor Write Test Passed.")
+                // bluetooth.reset(callback);
+              }
+            });
+            descriptors[0].write(new Buffer([0x1, 0x0]), function(err, value) {
+              if (err) {
+                return failModule("writing descriptor", err);
+              }
+              else {
+                gate++;
+              }
+            });
+          }
+          else {
+            return failModule("Reading correct number of descriptors");
+          }
+        });
+      }
+      else {
+        return failModule("Reading correct number of characteristics");
+      }
+    }
+  });
+})
 }
 function readDescriptorTest(callback) {
   connectToMoosh(function(moosh) {
@@ -65,7 +116,6 @@ function readDescriptorTest(callback) {
       }
       else {
         if (characteristics.length == 1) {
-          console.log("Discovered characteristic");
           characteristics[0].discoverAllDescriptors(function(err, descriptors) {
             if (err) {
               return failModule("Reading characteristic descriptor", err);
@@ -74,11 +124,9 @@ function readDescriptorTest(callback) {
             if (descriptors.length) {
               bluetooth.once('descriptorRead', function(descriptor, value) {
                 gate++;
-                console.log("In master event", descriptor.toString(), value);
               });
               moosh.once('descriptorRead', function(descriptor, value) {
                 gate++;
-                console.log("In moosh event", descriptor.toString(), value);
               });
               descriptors[0].once('read', function(value) {
 
@@ -88,13 +136,11 @@ function readDescriptorTest(callback) {
                   bluetooth.reset(callback);
                 }
               });
-              console.log("Discovered descriptors");
               descriptors[0].read(function(err, value) {
                 if (err) {
                   return failModule("Reading descriptor", err);
                 }
                 else {
-                  console.log("Read this value", value);
                   gate++;
                 }
               });
@@ -247,7 +293,7 @@ function writeCharacteristicTest(callback) {
       else{
         var deviceName = characteristics[0];
         console.log(deviceName.toString());
-        deviceName.write('Jon\'s Meter\0\0\0\0\0', function(err, written) {
+        deviceName.write('Johnny\'s Meter\0\0', function(err, written) {
           console.log("Result: ", err, written);
           if (err) {
             return failModule("Writing characteristic string", err);

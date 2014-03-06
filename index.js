@@ -877,6 +877,20 @@ BluetoothController.prototype.readAttribute = function(attribute, callback) {
 
 
 BluetoothController.prototype.write = function(characteristic, value, callback) {
+  this.writeAttribute(characteristic, value, function(err, written) {
+
+    callback && callback(err, written);
+
+    if (!err) {
+      setImmediate(function() {
+        this.emit('write', characteristic, written);
+        characteristic._peripheral.emit('write', characteristic, written);
+        characteristic.emit('write', written);
+      }.bind(this));
+    }
+  }.bind(this));
+}
+BluetoothController.prototype.writeAttribute = function(attribute, value, callback) {
 
   // Write has to be in 20 byte increments
   this.splitWriteIntoBuffers(value, function(err, buffers) {
@@ -887,22 +901,22 @@ BluetoothController.prototype.write = function(characteristic, value, callback) 
       // If there is only one buffer
       if (buffers.length == 1) {
         // We can send it immediately
-        this.writeImmediately(characteristic, buffers[0], callback);
+        this.writeAttributeImmediately(attribute, buffers[0], callback);
       }
       else {
         // If there are multiple buffers, we've got to prepare several writes, then execute
-        this.prepareWrite(characteristic, buffers, callback);
+        this.prepareAttributeWrite(attribute, buffers, callback);
       }
     }
   });
 }
-BluetoothController.prototype.writeImmediately = function(characteristic, singleBuffer, callback) {
+BluetoothController.prototype.writeAttributeImmediately = function(attribute, singleBuffer, callback) {
   // The 'completed Procedure' event is called when we're done writing
   this.once('completedProcedure', function(procedure) {
 
     // If this was called for this peripheral
-    if (procedure.connection === characteristic._peripheral.connection &&
-          procedure.chrhandle === characteristic.handle) {
+    if (procedure.connection === attribute._peripheral.connection &&
+          procedure.chrhandle === attribute.handle) {
 
       // If it didn't succeed
       if (procedure.result != 0) {
@@ -912,17 +926,11 @@ BluetoothController.prototype.writeImmediately = function(characteristic, single
       else {
         // Call the callback
         callback && callback(null, singleBuffer);
-
-        setImmediate(function() {
-          this.emit('write', characteristic, singleBuffer);
-          characteristic._peripheral.emit('write', characteristic, singleBuffer);
-          characteristic.emit('write', singleBuffer);
-        }.bind(this));
       }
     }
   }.bind(this));
 
-  this.messenger.writeImmediately(characteristic, singleBuffer, function(err, response) {
+  this.messenger.writeAttributeImmediately(attribute, singleBuffer, function(err, response) {
     // If there was a problem with the request
     if (err || response.result != 0) {
       // If it was an error reported by module, set that as error
@@ -932,6 +940,101 @@ BluetoothController.prototype.writeImmediately = function(characteristic, single
       return callback && callback(err);
     }
   })
+}
+
+BluetoothController.prototype.prepareAttributeWrite = function(attribute, multipleBuffers, callback) {
+  var bufSize = 20;
+  var offset = 0;
+
+  // Keep this around
+  var self = this;
+
+  // Function for writing each subsequent buffer
+  this.on('completedProcedure', function bufferWriteIterate(procedure) {
+    // If this is for our connection
+    if (procedure.connection === attribute._peripheral.connection
+      && procedure.chrhandle === attribute.handle) {
+      // If there was an error, report it and cancel write
+      if (procedure.result != 0) {
+        // Cancel any previous writes
+        self.messenger.cancelWrite(attribute, function(cancelErr, response) {
+          // Call callback immediately
+          return callback && callback(procedure.result);
+        });
+      }
+      // If there was no error
+      else {
+        // If we've completed the procedure but still have more to write
+        if (offset < multipleBuffers.length) {
+
+          // Send another part of the buffer off
+          self.messenger.prepareWrite(attribute, multipleBuffers[offset], offset*bufSize, function(err, response) {
+            // If there was a problem with the request
+            if (err || response.result != 0) {
+              // Cancel any previous writes
+              self.messenger.cancelWrite(attribute, function(cancelErr, response) {
+                // If it was an error reported by module, set that as error
+                if (!err) err = response.result;
+
+                // Call callback immediately
+                return callback && callback(err);
+              });
+            }
+            // Increment offset so we send the next buffer next time
+            offset++;
+          });
+        }
+        // If we've sent all the prepare writes...
+        else if (offset === multipleBuffers.length) {
+          // Remove the buffer write iterator listener so we don't send any more packets
+          self.removeListener('completedProcedure', bufferWriteIterate);
+
+          // Once our write execution is complete
+          self.once('completedProcedure', function(procedure) {
+            // If there was an error
+            if (procedure.result != 0) {
+              // Report the error
+              callback && callback(procedure.result);
+            }
+            // If there was no error
+            else {
+              //Concat all the buffers into one
+              var ret;
+              for (var i = 0; i < multipleBuffers.length; i++) {
+                ret = Buffer.concat(ret, multipleBuffers[i]);
+              }
+
+              // Call callback
+              callback && callback(null, ret);
+            }
+          });
+          // Execute the write of the packets
+          self.messenger.executeWrite(attribute, function(err, response) {
+            // If there was a problem with the request
+            if (err || response.result != 0) {
+              // If it was an error reported by module, set that as error
+              if (!err) err = response.result;
+
+              // Call callback immediately
+              return callback && callback(err);
+            }
+          });
+        }
+      }
+    }
+  });
+
+  this.messenger.prepareWrite(attribute, multipleBuffers[offset], offset * bufSize, function(err, response) {
+    // If there was a problem with the request
+    if (err || response.result != 0) {
+      // If it was an error reported by module, set that as error
+      if (!err) err = response.result;
+
+      // Call callback immediately
+      return callback && callback(err);
+    }
+    offset++;
+  });
 }
 
 BluetoothController.prototype.splitWriteIntoBuffers = function(value, callback) {
@@ -1138,99 +1241,20 @@ BluetoothController.prototype.readDescriptor = function(descriptor, callback) {
 }
 
 BluetoothController.prototype.writeDescriptor = function(descriptor, value, callback) {
-  this.writeHandle(descriptor._peripheral, descriptor, value, callback);
-}
+  this.writeAttribute(descriptor, value, function(err, written) {
 
-BluetoothController.prototype.readHandle = function(peripheral, attribute, callback) {
+    callback && callback(err, written);
 
-  var self = this;
-
-  // When we get the attribute value
-  this.on('attributeValue', function fetchValue(value) {
-    // If it's for this connection and attribute
-    if (value.connection === peripheral.connection &&
-      value.atthandle === attribute.handle) {
-
-        // Set the appropriate value
-        attribute.value = value.value;
-
-        // Remove the listener
-        self.removeListener('attributeValue', fetchValue);
-
-        // Call the callback
-        callback && callback(null, attribute.value);
-
-        // Tell the events to fire
-        setImmediate(function() {
-          self.emit('handleRead', attribute, attribute.value);
-          peripheral.emit('handleRead', attribute, attribute.value);
-          attribute.emit('handleRead', attribute.value);
-        });
-      }
-  });
-
-  this.messenger.readHandle(peripheral, attribute.handle, function(err, response) {
-    // If there was a problem with the request
-    if (err || response.result != 0) {
-     // If it was an error reported by module, set that as error
-     if (!err) err = response.result;
-
-      // Call callback immediately
-      callback && callback(err);
-
-      // Emit the error
+    if (!err) {
       setImmediate(function() {
-        this.emit('error', err);
+        this.emit('descriptorWrite', descriptor, written);
+        descriptor._peripheral.emit('descriptorWrite', descriptor, written);
+        descriptor.emit('write', written);
       }.bind(this))
     }
-  });
+  }.bind(this));
 }
 
-
-BluetoothController.prototype.writeHandle = function(peripheral, attribute, value, callback) {
-
-  var self = this;
-
-  // When we get the attribute value
-  this.on('attributeValue', function fetchValue(value) {
-    // If it's for this connection and attribute
-    if (value.connection === peripheral.connection &&
-      value.atthandle === attribute.handle) {
-
-        // Set the appropriate value
-        attribute.value = value.value;
-
-        // Remove the listener
-        self.removeListener('attributeValue', fetchValue);
-
-        // Call the callback
-        callback && callback(null, attribute.value);
-
-        // Tell the events to fire
-        setImmediate(function() {
-          self.emit('handleRead', attribute, attribute.value);
-          peripheral.emit('handleRead', attribute, attribute.value);
-          attribute.emit('handleRead', attribute.value);
-        });
-      }
-  });
-
-  this.messenger.readHandle(peripheral, attribute.handle, function(err, response) {
-    // If there was a problem with the request
-    if (err || response.result != 0) {
-     // If it was an error reported by module, set that as error
-     if (!err) err = response.result;
-
-      // Call callback immediately
-      callback && callback(err);
-
-      // Emit the error
-      setImmediate(function() {
-        this.emit('error', err);
-      }.bind(this))
-    }
-  });
-}
 
 // BluetoothController.prototype.startAdvertising = function(callback) {
 //   this.advertising = true;
