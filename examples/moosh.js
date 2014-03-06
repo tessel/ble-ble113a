@@ -8,8 +8,8 @@ bluetooth = bleDriver.use(blePort, function(err) {
   }
   else {
     connectToMoosh(function(moosh) {
-      readMeterSettings(function(moosh) {
-        startReadingMeter();
+      readMeterSettings(moosh, function() {
+        startReadingMeter(moosh);
       });
     });
   }
@@ -37,7 +37,6 @@ function readMeterSettings(mooshimeter, callback) {
   if (mooshimeter) {
     // Find the characteristic with meter settings
     var meterSettings = 'ffa6'
-    mooshimeter.discoverAllCharacteristics
     mooshimeter.discoverCharacteristics([meterSettings], function(err, characteristics) {
 
       meterSettings = characteristics[0];
@@ -47,7 +46,10 @@ function readMeterSettings(mooshimeter, callback) {
         meterSettings.removeAllListeners('read');
         console.log("Initial meter settings ", value);
         mooshimeter.meterSettings = value;
-        meterSettings.write(new Buffer([3, 2, 0, 0, 7, 1, 0, 0, 0]), function(err, valueWritten) {
+        meterSettings.write(new Buffer([3, 2, 0, 0, 0, 0, 0, 0, 30]), function(err, valueWritten) {
+          if (err) {
+            console.log("Error writing buffer", err);
+          }
           console.log("Write a new meter setting: ", valueWritten);
           mooshimeter.meterSettings = valueWritten;
           meterSettings.read(function(err, value) {

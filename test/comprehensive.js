@@ -81,7 +81,6 @@ connectToMoosh(function(moosh) {
             });
             descriptors[0].once('write', function(value) {
 
-              console.log("In descriptor event", value);
               if (gate === 3) {
                 console.log("Descriptor Write Test Passed.")
                 // bluetooth.reset(callback);
@@ -110,6 +109,7 @@ connectToMoosh(function(moosh) {
 }
 function readDescriptorTest(callback) {
   connectToMoosh(function(moosh) {
+    
     moosh.discoverCharacteristics(['ffa2'], function(err, characteristics) {
       if (err) {
         return failModule("Discovering characteristic in read descriptor test", err);
@@ -130,7 +130,6 @@ function readDescriptorTest(callback) {
               });
               descriptors[0].once('read', function(value) {
 
-                console.log("In descriptor event", value);
                 if (gate === 3) {
                   console.log("Descriptor Read Test Passed.")
                   bluetooth.reset(callback);
