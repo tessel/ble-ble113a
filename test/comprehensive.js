@@ -70,7 +70,24 @@ function readDescriptorTest(callback) {
             if (err) {
               return failModule("Reading characteristic descriptor", err);
             }
+            var gate = 0;
             if (descriptors.length) {
+              bluetooth.once('descriptorRead', function(descriptor, value) {
+                gate++;
+                console.log("In master event", descriptor.toString(), value);
+              });
+              moosh.once('descriptorRead', function(descriptor, value) {
+                gate++;
+                console.log("In moosh event", descriptor.toString(), value);
+              });
+              descriptors[0].once('read', function(value) {
+
+                console.log("In descriptor event", value);
+                if (gate === 3) {
+                  console.log("Descriptor Read Test Passed.")
+                  bluetooth.reset(callback);
+                }
+              });
               console.log("Discovered descriptors");
               descriptors[0].read(function(err, value) {
                 if (err) {
@@ -78,7 +95,7 @@ function readDescriptorTest(callback) {
                 }
                 else {
                   console.log("Read this value", value);
-                  bluetooth.reset(callback);
+                  gate++;
                 }
               });
             }
