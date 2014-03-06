@@ -79,7 +79,7 @@ connectToMoosh(function(moosh) {
             moosh.once('descriptorWrite', function(descriptor, value) {
               gate++;
             });
-            descriptors[0].once('write', function(value) {
+            descriptors[0].once('descriptorWrite', function(value) {
 
               if (gate === 3) {
                 console.log("Descriptor Write Test Passed.")
@@ -109,7 +109,7 @@ connectToMoosh(function(moosh) {
 }
 function readDescriptorTest(callback) {
   connectToMoosh(function(moosh) {
-    
+
     moosh.discoverCharacteristics(['ffa2'], function(err, characteristics) {
       if (err) {
         return failModule("Discovering characteristic in read descriptor test", err);
@@ -128,7 +128,7 @@ function readDescriptorTest(callback) {
               moosh.once('descriptorRead', function(descriptor, value) {
                 gate++;
               });
-              descriptors[0].once('read', function(value) {
+              descriptors[0].once('descriptorRead', function(value) {
 
                 if (gate === 3) {
                   console.log("Descriptor Read Test Passed.")
@@ -321,17 +321,17 @@ function readCharacteristicTest(callback) {
         var gate = 0;
         console.log(characteristics[0].toString());
         var meterSettings = characteristics[0];
-        bluetooth.on('read', function(characteristic, value){
+        bluetooth.on('characteristicRead', function(characteristic, value){
           if (characteristic && value) {
             gate++;
           }
         });
-        moosh.on('read', function(characteristic, value) {
+        moosh.on('characteristicRead', function(characteristic, value) {
           if (characteristic && value) {
             gate++;
           }
         })
-        meterSettings.on('read', function(value) {
+        meterSettings.on('characteristicRead', function(value) {
           if (value.length > 0 && gate == 3) {
             moosh.disconnect(function(err) {
               if (err) {

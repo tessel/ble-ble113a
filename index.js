@@ -809,9 +809,9 @@ BluetoothController.prototype.read = function(characteristic, callback) {
     callback && callback(err, value);
 
     if (value) {
-      this.emit('read', characteristic, value);
-      characteristic._peripheral.emit('read', characteristic, value);
-      characteristic.emit('read', value);
+      this.emit('characteristicRead', characteristic, value);
+      characteristic._peripheral.emit('characteristicRead', characteristic, value);
+      characteristic.emit('characteristicRead', value);
     }
   }.bind(this));
 }
@@ -883,8 +883,8 @@ BluetoothController.prototype.write = function(characteristic, value, callback) 
 
     if (!err) {
       setImmediate(function() {
-        this.emit('write', characteristic, written);
-        characteristic._peripheral.emit('write', characteristic, written);
+        this.emit('characteristicWrite', characteristic, written);
+        characteristic._peripheral.emit('characteristicWrite', characteristic, written);
         characteristic.emit('write', written);
       }.bind(this));
     }
@@ -1234,7 +1234,7 @@ BluetoothController.prototype.readDescriptor = function(descriptor, callback) {
       setImmediate(function() {
         this.emit('descriptorRead', descriptor, value);
         descriptor._peripheral.emit('descriptorRead', descriptor, value);
-        descriptor.emit('read', value);
+        descriptor.emit('descriptorRead', value);
       }.bind(this));
     }
   }.bind(this));
@@ -1249,7 +1249,7 @@ BluetoothController.prototype.writeDescriptor = function(descriptor, value, call
       setImmediate(function() {
         this.emit('descriptorWrite', descriptor, written);
         descriptor._peripheral.emit('descriptorWrite', descriptor, written);
-        descriptor.emit('write', written);
+        descriptor.emit('descriptorWrite', written);
       }.bind(this))
     }
   }.bind(this));

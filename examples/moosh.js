@@ -16,49 +16,47 @@ bluetooth = bleDriver.use(blePort, function(err) {
 });
 
 function startReadingMeter(mooshimeter) {
-  var meterSample = 'ffa2'
-  mooshimeter.discoverCharacteristics([meterSample], function(err, characteristics) {
+  mooshimeter.discoverCharacteristics(['ffa2'], function(err, characteristics) {
       meterSample = characteristics[0];
 
       setInterval(function() {
+        console.log("Reading Moosh...");
         meterSample.read(function(err, value) {
           if (err){
             console.log("Error reading sample: ", err);
           }
           else {
-            console.log("New sample", value);
+            var voltage = 0;
+            for (var i = 0; i < 3; i++) {
+              voltage += value[3+i] << (i*8);
+            }
+            voltage = (0x1000000 - voltage)  * (1.51292917e-04);
+
+            console.log("New sample", voltage);
           }
         })
-      }, 3000);
+      }, 1000);
   });
 }
 
 function readMeterSettings(mooshimeter, callback) {
   if (mooshimeter) {
     // Find the characteristic with meter settings
-    var meterSettings = 'ffa6'
-    mooshimeter.discoverCharacteristics([meterSettings], function(err, characteristics) {
+    mooshimeter.discoverCharacteristics(['ffa6'], function(err, characteristics) {
 
       meterSettings = characteristics[0];
       console.log("Meter settings Info: ", meterSettings.toString());
 
-      meterSettings.once('read', function(value) {
-        meterSettings.removeAllListeners('read');
+      meterSettings.once('characteristicRead', function(value) {
         console.log("Initial meter settings ", value);
         mooshimeter.meterSettings = value;
-        meterSettings.write(new Buffer([3, 2, 0, 0, 0, 0, 0, 0, 30]), function(err, valueWritten) {
+        meterSettings.write(new Buffer([3, 2, 0, 0, 0, 0, 0, 0, 23]), function(err, valueWritten) {
           if (err) {
             console.log("Error writing buffer", err);
           }
-          console.log("Write a new meter setting: ", valueWritten);
+          console.log("Wrote a new meter setting: ", valueWritten);
           mooshimeter.meterSettings = valueWritten;
-          meterSettings.read(function(err, value) {
-            if (err) {
-              console.log("Got this error checking read back of meter settings", err);
-            }
-            console.log("New meter settings: ", value);
-            callback && callback(mooshimeter);
-          });
+          callback && callback(mooshimeter);
         });
       });
 
