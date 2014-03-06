@@ -51,7 +51,8 @@ function beginTesting() {
                   // discoverAllAttributesTest(passModule);
                   // readDescriptorTest(passModule);
                   // writeDescriptorTest(passModule);
-                  notificationTest(passModule);
+                  // notificationTest(passModule);
+                  indicationTest(passModule);
             // });
           // });
         // });
@@ -60,7 +61,7 @@ function beginTesting() {
   // });
 }
 
-function notificationTest(callback) {
+function indicationTest(callback) {
   connectToMoosh(function(moosh) {
     console.log("Connected to moosh. Searching for chars...");
     moosh.discoverCharacteristics(['ffa2', 'ffa6'], function(err, characteristics) {
@@ -72,7 +73,51 @@ function notificationTest(callback) {
         if (characteristics.length == 2) {
           var meterSettings = characteristics[1];
           var meterSample = characteristics[0];
-          meterSample.on('notification', function(value) {
+          meterSample.once('indication', function(value) {
+            console.log("Got indications of this value!", value);
+            meterSample.stopNotifications(function(err) {
+              if (err) {
+                return failModule("Stopping indications", err);
+                console.log("Stopped indications...");
+              }
+
+            });
+          });
+          console.log("Starting indications...");
+          meterSample.startIndications(function(err) {
+            if (err) {
+              failModule("Starting indications", err);
+            }
+            console.log("Starting meter sampling...")
+            meterSettings.write(new Buffer([3, 2, 0, 0, 0, 0, 0, 0, 23]), function(err, written) {
+              if (err) {
+                return failModule("Writing to characteristic in indication test", err);
+              }
+              else {
+                console.log("Meter is sampling...");
+              }
+            });
+          });
+        }
+      }
+    });
+  });
+}
+
+function notificationTest(callback) {
+  var failTimeout;
+  connectToMoosh(function(moosh) {
+    console.log("Connected to moosh. Searching for chars...");
+    moosh.discoverCharacteristics(['ffa2', 'ffa6'], function(err, characteristics) {
+      if (err) {
+        return failModule("Discovering meter settings and sample chars", err);
+      }
+      else {
+        console.log("Got these: ", characteristics.toString());
+        if (characteristics.length == 2) {
+          var meterSettings = characteristics[1];
+          var meterSample = characteristics[0];
+          meterSample.once('notification', function(value) {
             console.log("Got notified of this value!", value);
             meterSample.stopNotifications(function(err) {
               if (err) {
