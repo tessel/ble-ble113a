@@ -7,60 +7,42 @@ bluetooth = bleDriver.use(blePort, function(err) {
     return console.log("Failed to connect");
   }
   else {
+    // Connect to moosh
     connectToMoosh(function(moosh) {
-      readMeterSettings(moosh, function() {
-        startReadingMeter(moosh);
+      // Tell the meter to start reading, pass back char to read
+      setMeterSettings(moosh, function(meterSample) {
+        // Start reading that char
+        startReadingMeter(meterSample);
       });
     });
   }
 });
 
-function startReadingMeter(mooshimeter) {
-  mooshimeter.discoverCharacteristics(['ffa2'], function(err, characteristics) {
-      meterSample = characteristics[0];
+function startReadingMeter(meterSample) {
 
-      setInterval(function() {
-        console.log("Reading Moosh...");
-        meterSample.read(function(err, value) {
-          if (err){
-            console.log("Error reading sample: ", err);
-          }
-          else {
-            var voltage = 0;
-            for (var i = 0; i < 3; i++) {
-              voltage += value[3+i] << (i*8);
-            }
-            voltage = (0x1000000 - voltage)  * (1.51292917e-04);
+    meterSample.on('notification', function(value) {
+      var voltage = 0;
+      for (var i = 0; i < 3; i++) {
+        voltage += value[3+i] << (i*8);
+      }
+      voltage = (0x1000000 - voltage)  * (1.51292917e-04);
 
-            console.log("New sample", voltage);
-          }
-        })
-      }, 1000);
-  });
+      console.log("Voltage", voltage);
+    });
+
+    meterSample.startNotifications();
 }
 
-function readMeterSettings(mooshimeter, callback) {
+function setMeterSettings(mooshimeter, callback) {
   if (mooshimeter) {
     // Find the characteristic with meter settings
-    mooshimeter.discoverCharacteristics(['ffa6'], function(err, characteristics) {
-
-      meterSettings = characteristics[0];
-      console.log("Meter settings Info: ", meterSettings.toString());
-
-      meterSettings.once('characteristicRead', function(value) {
-        console.log("Initial meter settings ", value);
-        mooshimeter.meterSettings = value;
-        meterSettings.write(new Buffer([3, 2, 0, 0, 0, 0, 0, 0, 23]), function(err, valueWritten) {
-          if (err) {
-            console.log("Error writing buffer", err);
-          }
-          console.log("Wrote a new meter setting: ", valueWritten);
-          mooshimeter.meterSettings = valueWritten;
-          callback && callback(mooshimeter);
-        });
+    mooshimeter.discoverCharacteristics(['ffa2', 'ffa6'], function(err, characteristics) {
+      var meterSample = characteristics[0];
+      var meterSettings = characteristics[1];
+      // Update meter settings struct to start reading...
+      meterSettings.write(new Buffer([3, 2, 0, 0, 0, 0, 0, 0, 23]), function(err, valueWritten) {
+        callback && callback(meterSample);
       });
-
-      meterSettings.read();
     });
   }
 }

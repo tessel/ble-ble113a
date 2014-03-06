@@ -154,6 +154,33 @@ BluetoothController.prototype.onFindInformationFound = function(info) {
  Called when an attribute value is found
  */
 BluetoothController.prototype.onAttributeValue = function(value) {
+  // We have a notification
+  if (value.type === 1) {
+    // Grab the peripheral responsible
+    var peripheral = this._connectedPeripherals[value.connection];
+    // If it exists (it better!)
+    if (peripheral) {
+      // Grab the corresponding characteristic
+      var characteristic = peripheral.characteristics[value.atthandle];
+      // If it exists (it better!)
+      if (characteristic) {
+        // Set the value
+        characteristic.value = value.value;
+
+        // Emit events
+        this.emit('notification', characteristic, characteristic.value);
+        peripheral.emit('notification', characteristic, characteristic.value);
+        characteristic.emit('notification', characteristic.value);
+      }
+    }
+  }
+  // We have an indication
+  else if (value.type === 2) {
+  }
+  // We have an indication and remote is waiting for confirmation
+  else if (value.type === 5) {
+  }
+
   this.emit('attributeValue', value);
 }
 
@@ -628,6 +655,9 @@ BluetoothController.prototype.discoverCharacteristicUUID = function(peripheral, 
 
       // Set the uuid of this characteristic
       characteristic.setUUID(new UUID(info.uuid));
+
+      // Sync the new one with the correct service
+      peripheral.syncCharacteristic(characteristic);
 
       // Remove this listener
       self.removeListener('findInformationFound', setCharacteristicUUID);

@@ -50,7 +50,8 @@ function beginTesting() {
                   // discoverCharacteristicDescriptorTest(passModule);
                   // discoverAllAttributesTest(passModule);
                   // readDescriptorTest(passModule);
-                  writeDescriptorTest(passModule);
+                  // writeDescriptorTest(passModule);
+                  notificationTest(passModule);
             // });
           // });
         // });
@@ -59,53 +60,95 @@ function beginTesting() {
   // });
 }
 
-function writeDescriptorTest(callback) {
-connectToMoosh(function(moosh) {
-  moosh.discoverCharacteristics(['ffa2'], function(err, characteristics) {
-    if (err) {
-      return failModule("Discovering characteristic in write descriptor test", err);
-    }
-    else {
-      if (characteristics.length == 1) {
-        characteristics[0].discoverAllDescriptors(function(err, descriptors) {
-          if (err) {
-            return failModule("Writing characteristic descriptor", err);
-          }
-          var gate = 0;
-          if (descriptors.length) {
-            bluetooth.once('descriptorWrite', function(descriptor, value) {
-              gate++;
-            });
-            moosh.once('descriptorWrite', function(descriptor, value) {
-              gate++;
-            });
-            descriptors[0].once('descriptorWrite', function(value) {
-
-              if (gate === 3) {
-                console.log("Descriptor Write Test Passed.")
-                // bluetooth.reset(callback);
-              }
-            });
-            descriptors[0].write(new Buffer([0x1, 0x0]), function(err, value) {
-              if (err) {
-                return failModule("writing descriptor", err);
-              }
-              else {
-                gate++;
-              }
-            });
-          }
-          else {
-            return failModule("Reading correct number of descriptors");
-          }
-        });
+function notificationTest(callback) {
+  connectToMoosh(function(moosh) {
+    console.log("Connected to moosh. Searching for chars...");
+    moosh.discoverCharacteristics(['ffa2', 'ffa6'], function(err, characteristics) {
+      if (err) {
+        return failModule("Discovering meter settings and sample chars", err);
       }
       else {
-        return failModule("Reading correct number of characteristics");
+        console.log("Got these: ", characteristics.toString());
+        if (characteristics.length == 2) {
+          var meterSettings = characteristics[1];
+          var meterSample = characteristics[0];
+          meterSample.on('notification', function(value) {
+            console.log("Got notified of this value!", value);
+            meterSample.stopNotifications(function(err) {
+              if (err) {
+                return failModule("Stopping notifications", err);
+                console.log("Stopped notifications...");
+              }
+
+            });
+          });
+          console.log("Starting notifications...");
+          meterSample.startNotifications(function(err) {
+            if (err) {
+              failModule("Starting notifications", err);
+            }
+            console.log("Starting meter sampling...")
+            meterSettings.write(new Buffer([3, 2, 0, 0, 0, 0, 0, 0, 23]), function(err, written) {
+              if (err) {
+                return failModule("Writing to characteristic in notification test", err);
+              }
+              else {
+                console.log("Meter is sampling...");
+              }
+            });
+          });
+        }
       }
-    }
+    });
   });
-})
+}
+function writeDescriptorTest(callback) {
+  connectToMoosh(function(moosh) {
+    moosh.discoverCharacteristics(['ffa2'], function(err, characteristics) {
+      if (err) {
+        return failModule("Discovering characteristic in write descriptor test", err);
+      }
+      else {
+        if (characteristics.length == 1) {
+          characteristics[0].discoverAllDescriptors(function(err, descriptors) {
+            if (err) {
+              return failModule("Writing characteristic descriptor", err);
+            }
+            var gate = 0;
+            if (descriptors.length) {
+              bluetooth.once('descriptorWrite', function(descriptor, value) {
+                gate++;
+              });
+              moosh.once('descriptorWrite', function(descriptor, value) {
+                gate++;
+              });
+              descriptors[0].once('descriptorWrite', function(value) {
+
+                if (gate === 3) {
+                  console.log("Descriptor Write Test Passed.")
+                  // bluetooth.reset(callback);
+                }
+              });
+              descriptors[0].write(new Buffer([0x1, 0x0]), function(err, value) {
+                if (err) {
+                  return failModule("writing descriptor", err);
+                }
+                else {
+                  gate++;
+                }
+              });
+            }
+            else {
+              return failModule("Reading correct number of descriptors");
+            }
+          });
+        }
+        else {
+          return failModule("Reading correct number of characteristics");
+        }
+      }
+    });
+  });
 }
 function readDescriptorTest(callback) {
   connectToMoosh(function(moosh) {
@@ -156,6 +199,8 @@ function readDescriptorTest(callback) {
     });
   })
 }
+
+
 function discoverAllAttributesTest(callback) {
   connectToMoosh(function(moosh) {
     moosh.discoverAllAttributes(function(err, results) {
