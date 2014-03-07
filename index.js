@@ -1285,6 +1285,131 @@ BluetoothController.prototype.writeDescriptor = function(descriptor, value, call
   }.bind(this));
 }
 
+BluetoothController.prototype.startNotifications = function(characteristic, callback) {
+  this.writeToConfigDescriptorOfCharacteristic(characteristic, new Buffer([0x01, 0x00]), function(err) {
+    callback && callback(err);
+  });
+}
+
+BluetoothController.prototype.stopNotifications = function(characteristic, callback) {
+  this.stopRemoteUpdates(characteristic, callback);
+}
+
+BluetoothController.prototype.startIndications = function(characteristic, callback) {
+  this.writeToConfigDescriptorOfCharacteristic(characteristic, new Buffer([0x02, 0x00]), function(err) {
+    callback && callback(err);
+  });
+}
+
+BluetoothController.prototype.stopIndications = function(characteristic, callback) {
+  this.stopRemoteUpdates(characteristic, callback);
+}
+
+BluetoothController.prototype.stopRemoteUpdates = function(characteristic, callback) {
+  this.writeToConfigDescriptorOfCharacteristic(characteristic, new Buffer([0x00, 0x00]), function(err) {
+    callback && callback(err);
+  });
+}
+
+BluetoothController.prototype.writeToConfigDescriptorOfCharacteristic = function(characteristic, value, callback) {
+  // Check if we've already fetched the config descriptor
+  this.retrieveConfigDescriptor(characteristic, function(err, descriptor) {
+    if (err) {
+      return callback && callback(err);
+    }
+    else {
+      if (!descriptor) {
+        return callback && callback(new Error("Characteristic is not configured for notifications"));
+      }
+      else {
+        console.log("Writing", value, "to", descriptor.toString());
+        descriptor.write(value, function(err, written) {
+          console.log("Finished the write...");
+          return callback && callback(err);
+        });
+      }
+    }
+  });
+}
+BluetoothController.prototype.retrieveConfigDescriptor = function(characteristic, callback) {
+  // Check if we've already fetched the config descriptor
+  console.log("fetching...");
+  this.getConfigDescriptorFromFetched(characteristic, function(descriptor) {
+    // If we haven't
+    if (!descriptor) {
+      // Discover all descriptors
+      this.discoverDescriptorsOfCharacteristic(characteristic, function(err, descriptors) {
+        if (err) {
+          return callback && callback(err);
+        }
+        else {
+          // Now check again for the config descriptor
+          this.getConfigDescriptorFromFetched(characteristic, function(descriptor) {
+            // If there is no descriptor, you can't get notifications from this char
+            if (!descriptor) {
+              return callback && callback();
+            }
+            else {
+              return callback && callback(null, descriptor);
+            }
+          }.bind(this));
+        }
+      }.bind(this));
+    }
+    else {
+      console.log("Returning local desc");
+      return callback && callback(null, descriptor);
+    }
+  }.bind(this));
+}
+
+BluetoothController.prototype.getConfigDescriptorFromFetched = function(characteristic, callback) {
+  for (var d in characteristic.descriptors) {
+    if (characteristic.descriptors[d].uuid.toString() == "2902") {
+      return callback && callback(characteristic.descriptors[d]);
+    }
+  }
+  callback && callback();
+}
+
+BluetoothController.prototype.confirmIndication = function(characteristic, callback) {
+  this.messenger.confirmIndication(characteristic, function(err, response) {
+    // If there was a problem with the request
+    if (err || response.result != 0) {
+     // If it was an error reported by module, set that as error
+     if (!err) err = response.result;
+
+      // Call callback immediately
+      callback && callback(err);
+
+      // Emit the error
+      setImmediate(function() {
+        this.emit('error', err);
+      }.bind(this))
+    }
+  }.bind(this));
+}
+
+BluetoothController.prototype.updateRssi = function(peripheral, callback) {
+  this.messenger.updateRssi(peripheral, function(err, rssi) {
+
+    callback && callback(err, rssi);
+
+    if (!err) {
+      setImmediate(function() {
+        this.emit('rssiUpdate', rssi);
+        peripheral.emit('rssiUpdate', rssi);
+      }.bind(this));
+    }
+  }.bind(this));
+}
+
+BluetoothController.prototype.getBluetoothAddress = function(callback) {
+  this.messenger.getAddress(function(err, response) {
+
+    callback && callback(err, response.address);
+  });
+}
 
 // BluetoothController.prototype.startAdvertising = function(callback) {
 //   this.advertising = true;
@@ -1301,12 +1426,6 @@ BluetoothController.prototype.writeDescriptor = function(descriptor, value, call
 
 
 
-// BluetoothController.prototype.getAddress = function(callback) {
-//   this.messenger.getAddress(function(err, response) {
-//     callback && callback(err, response.address);
-//   });
-// }
-
 // BluetoothController.prototype.whitelistAppend = function(address, callback) {
 //   this.messenger.whitelistAppend(address, callback);
 // }
@@ -1318,17 +1437,7 @@ BluetoothController.prototype.writeDescriptor = function(descriptor, value, call
 //   this.messenger.connectSelective(callback);
 // }
 
-// BluetoothController.prototype.updateRssi = function(peripheral, callback) {
-//   this.messenger.updateRssi(peripheral, function(err, rssi) {
-//     if (!err) {
-//       setImmediate(function() {
-//         this.emit('rssiUpdate', rssi);
-//         peripheral.emit('rssiUpdate', rssi);
-//       }.bind(this));
-//     }
-//     callback && callback(err, rssi);
-//   }.bind(this));
-// }
+
 /*************************************************************
 PUBLIC API
 *************************************************************/

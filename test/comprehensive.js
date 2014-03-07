@@ -84,20 +84,26 @@ function indicationTest(callback) {
             });
           });
           console.log("Starting indications...");
-          meterSample.startIndications(function(err) {
+          meterSample.confirmIndication(function(err) {
             if (err) {
-              failModule("Starting indications", err);
+              return failModule("Confirming indication...", err);
             }
-            console.log("Starting meter sampling...")
-            meterSettings.write(new Buffer([3, 2, 0, 0, 0, 0, 0, 0, 23]), function(err, written) {
-              if (err) {
-                return failModule("Writing to characteristic in indication test", err);
-              }
-              else {
-                console.log("Meter is sampling...");
-              }
-            });
+            console.log("Confirmation sent");
           });
+          // meterSample.startIndications(function(err) {
+          //   if (err) {
+          //     failModule("Starting indications", err);
+          //   }
+          //   console.log("Starting meter sampling...")
+          //   meterSettings.write(new Buffer([3, 2, 0, 0, 0, 0, 0, 0, 23]), function(err, written) {
+          //     if (err) {
+          //       return failModule("Writing to characteristic in indication test", err);
+          //     }
+          //     else {
+          //       console.log("Meter is sampling...");
+          //     }
+          //   });
+          // });
         }
       }
     });
@@ -105,7 +111,6 @@ function indicationTest(callback) {
 }
 
 function notificationTest(callback) {
-  var failTimeout;
   connectToMoosh(function(moosh) {
     console.log("Connected to moosh. Searching for chars...");
     moosh.discoverCharacteristics(['ffa2', 'ffa6'], function(err, characteristics) {
@@ -113,7 +118,6 @@ function notificationTest(callback) {
         return failModule("Discovering meter settings and sample chars", err);
       }
       else {
-        console.log("Got these: ", characteristics.toString());
         if (characteristics.length == 2) {
           var meterSettings = characteristics[1];
           var meterSample = characteristics[0];
@@ -122,9 +126,8 @@ function notificationTest(callback) {
             meterSample.stopNotifications(function(err) {
               if (err) {
                 return failModule("Stopping notifications", err);
-                console.log("Stopped notifications...");
               }
-
+              console.log("Stopped notifications...");
             });
           });
           console.log("Starting notifications...");
