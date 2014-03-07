@@ -24,6 +24,7 @@ var failTimeout;
 
 console.log("Setting up tests...");
 
+
 bluetooth = bleDriver.use(blePort, function(err) {
   if (err) {
     return failModule("Connecting to BLE Test Module on Port A prior to commence", err);
@@ -38,7 +39,7 @@ function beginTesting() {
   // portTest(function() {
   //   scanTest(function() {
   //     filterTest(function() {
-        // connectTest(function() {
+        connectTest(function() {
           // serviceDiscoveryTest(function() {
             // characteristicDiscoveryTest(function() {
               // characteristicServiceDiscoveryTest(function() {
@@ -54,15 +55,41 @@ function beginTesting() {
                   // notificationTest(passModule);
                   // indicationTest(passModule);
                   // signalStrengthTest(passModule);
-                  systemCommandsTest(passModule);
+                  // systemCommandsTest(passModule);
+                  advertisingTest(passModule);
             // });
           // });
-        // });
+        });
       // });
   //   });
   // });
 }
 
+function advertisingTest(callback) {
+  bluetooth.once('startAdvertising', function() {
+    console.log("Started advertising");
+    bluetooth.once('disconnect', function(reason) {
+      console.log("Disconnected from master...");
+      bluetooth.once('stopAdvertising', function(err) {
+        if (err) {
+          return failModule("Stopping advertisement event", err);
+        }
+        console.log("Advertising Test Passed.");
+        bluetooth.reset(callback);
+      });
+      bluetooth.stopAdvertising(function(err) {
+        if (err) {
+          return failModule("Stopping advertisement", err);
+        }
+      });
+    });
+  });
+  bluetooth.startAdvertising(function(err) {
+    if (err) {
+      return failModule("Starting to advertise", err);
+    }
+  });
+}
 function systemCommandsTest(callback) {
   bluetooth.getBluetoothAddress(function(err, address) {
     if (err) {
