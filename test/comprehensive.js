@@ -39,7 +39,7 @@ function beginTesting() {
   // portTest(function() {
   //   scanTest(function() {
   //     filterTest(function() {
-        connectTest(function() {
+        // connectTest(function() {
           // serviceDiscoveryTest(function() {
             // characteristicDiscoveryTest(function() {
               // characteristicServiceDiscoveryTest(function() {
@@ -56,31 +56,75 @@ function beginTesting() {
                   // indicationTest(passModule);
                   // signalStrengthTest(passModule);
                   // systemCommandsTest(passModule);
-                  advertisingTest(passModule);
+                  // advertisingTest(passModule);
+                  // advertisementDataTest(passModule);
+                  // readFirmwareTest(passModule);
+                  maxNumberValueTest(passModule)
+                  // readWriteValueTest(passModule);
             // });
           // });
-        });
+        // });
       // });
   //   });
   // });
 }
 
+function writeValueTest(callback) {
+  this.writeLocalValue(0, "")
+}
+
+function readWriteValueTest(callback) {
+
+}
+
+function readFirmwareTest(callback) {
+  bluetooth.getFirmwareVersion(function(err, version) {
+    if (err) {
+      return failModule("Reading firmware", err);
+    }
+    console.log("Got this version", version);
+
+  });
+}
+
+function maxNumberValueTest(callback) {
+  bluetooth.maxNumValues(function(err, max) {
+    if (err) {
+      failModule("Getting max values", err);
+    }
+    if (max <= 0) {
+      failModule("Getting actual max value");
+    }
+    else {
+        console.log("Max Num Values Test Passed.");
+        callback && callback();
+    }
+  });
+}
+
+// Can't make this test until we use multiple modules
+function advertisementDataTest(callback) {
+}
+
+
 function advertisingTest(callback) {
   bluetooth.once('startAdvertising', function() {
     console.log("Started advertising");
-    bluetooth.once('disconnect', function(reason) {
-      console.log("Disconnected from master...");
-      bluetooth.once('stopAdvertising', function(err) {
-        if (err) {
-          return failModule("Stopping advertisement event", err);
-        }
-        console.log("Advertising Test Passed.");
-        bluetooth.reset(callback);
-      });
-      bluetooth.stopAdvertising(function(err) {
-        if (err) {
-          return failModule("Stopping advertisement", err);
-        }
+    bluetooth.once('connect', function() {
+      bluetooth.once('disconnect', function(reason) {
+        console.log("Disconnected from master...");
+        bluetooth.once('stopAdvertising', function(err) {
+          if (err) {
+            return failModule("Stopping advertisement event", err);
+          }
+          console.log("Advertising Test Passed.");
+          bluetooth.reset(callback);
+        });
+        bluetooth.stopAdvertising(function(err) {
+          if (err) {
+            return failModule("Stopping advertisement", err);
+          }
+        });
       });
     });
   });

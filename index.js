@@ -10,9 +10,6 @@ var events = require('events');
 var util = require('util');
 var async = require('async');
 
-var TX_HANDLE=20;
-
-var characteristicHandles = [21, 25, 29, 33, 37, 41, 45, 49, 53, 57, 61, 65];
 
 /*************************************************************
 Function:     connect
@@ -40,6 +37,12 @@ function BluetoothController(hardware, callback) {
   this.messenger = new Messenger(hardware, name);
   this._connectedPeripherals = {};
   this._discoveredPeripherals = {};
+
+  this._firmwareVersionHandle = 17;
+  this._maxNumValues = {
+    "1.0.1" : 12,
+  }
+  this._localHandles = [21, 25, 29, 33, 37, 41, 45, 49, 53, 57, 61, 65];
 
   this.messenger.on('scanStart', this.onScanStart.bind(this));
   this.messenger.on('scanStop', this.onScanStop.bind(this));
@@ -1493,9 +1496,56 @@ BluetoothController.prototype.stopAdvertising = function(callback) {
   }.bind(this));
 }
 
-// BluetoothController.prototype.readValue = function(index, callback) {
-//   this.messenger.readValue(characteristicHandles[index], callback);
-// }
+BluetoothController.prototype.setAdvertisingData = function(data, callback) {
+  this.advHelper(data, 0, callback);
+}
+
+BluetoothController.prototype.setScanResponseData = function(data, callback) {
+  this.advHelper(data, 1, callback);
+}
+BluetoothController.prototype.advDataHelper = function(data, advParam, callback) {
+  this.messenger.setAdvertisementData(advParam, data, function(err, response) {
+    if (!err && response.result) {
+      err = response.result;
+    }
+
+    callback && callback(err);
+
+    setImmediate(function() {
+      this.emit('error');
+    }.bind(this));
+
+  }.bind(this));
+}
+
+BluetoothController.prototype.getFirmwareVersion = function(callback) {
+  this.messenger.readLocalValue(this._firmwareVersionHandle, 0, function(err, response) {
+    if (!err && response.result != 0) {
+      err = response.result;
+    }
+    var version;
+    if (response.value) {
+      version = response.value.toString();
+    }
+    callback && callback(err, version);
+  });
+}
+
+BluetoothController.prototype.maxNumValues = function(callback) {
+  this.getFirmwareVersion(function(err, version) {
+    var max;
+    if (!err) {
+      max = this._maxNumValues[version];
+    }
+    callback && callback(err, max);
+  }.bind(this));
+}
+BluetoothController.prototype.readValue = function(index, offset, callback) {
+  this.messenger.readValue(this._localHandles[index], offset, callback);
+}
+BluetoothController.prototype.writeValue = function(index, data, offset, callback) {
+  this.messenger.writeValue(this._localHandles[index], offset, callback);
+}
 
 // BluetoothController.prototype.writeValue = function(index, value, callback) {
 //   this.messenger.writeValue(characteristicHandles[index], value, callback);
