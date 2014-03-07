@@ -1391,23 +1391,33 @@ BluetoothController.prototype.confirmIndication = function(characteristic, callb
 }
 
 BluetoothController.prototype.updateRssi = function(peripheral, callback) {
-  this.messenger.updateRssi(peripheral, function(err, rssi) {
+  this.messenger.updateRssi(peripheral, function(err, response) {
 
-    callback && callback(err, rssi);
+    callback && callback(err, response.rssi);
 
     if (!err) {
       setImmediate(function() {
-        this.emit('rssiUpdate', rssi);
-        peripheral.emit('rssiUpdate', rssi);
+        this.emit('rssiUpdate', response.rssi);
+        peripheral.emit('rssiUpdate', response.rssi);
       }.bind(this));
     }
   }.bind(this));
 }
 
+// Returns a string... is that appropriate?
 BluetoothController.prototype.getBluetoothAddress = function(callback) {
   this.messenger.getAddress(function(err, response) {
+    var address;
+    if (response && !err) {
+      address = Address.bufToStr(response.address);
+    }
+    callback && callback(err, address);
+  });
+}
 
-    callback && callback(err, response.address);
+BluetoothController.prototype.getMaxConnections = function(callback) {
+  this.messenger.getMaxConnections(function(err, response) {
+    callback && callback(err, response.maxconn);
   });
 }
 

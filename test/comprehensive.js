@@ -52,13 +52,43 @@ function beginTesting() {
                   // readDescriptorTest(passModule);
                   // writeDescriptorTest(passModule);
                   // notificationTest(passModule);
-                  indicationTest(passModule);
+                  // indicationTest(passModule);
+                  // signalStrengthTest(passModule);
+                  systemCommandsTest(passModule);
             // });
           // });
         // });
       // });
   //   });
   // });
+}
+
+function systemCommandsTest(callback) {
+  bluetooth.getBluetoothAddress(function(err, address) {
+    if (err) {
+      return failModule("Retrieving address", err);
+    }
+    bluetooth.getMaxConnections(function(err, max) {
+      if (err) {
+        return failModule("Retrieving max connections", err);
+      }
+      console.log("System Commands Test Passed.");
+    });
+  })
+}
+
+function signalStrengthTest(callback) {
+  connectToMoosh(function(moosh) {
+    moosh.updateRssi(function(err, rssi) {
+      if (err) {
+        return failModule("Getting signal strength", err);
+      }
+      if (rssi > 0) {
+        return failModule("Invalid Rssi value" + rssi.toString());
+      }
+      moosh.disconnect(callback);
+    });
+  });
 }
 
 function indicationTest(callback) {
