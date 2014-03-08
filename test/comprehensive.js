@@ -59,8 +59,8 @@ function beginTesting() {
                   // advertisingTest(passModule);
                   // advertisementDataTest(passModule);
                   // readFirmwareTest(passModule);
-                  maxNumberValueTest(passModule)
-                  // readWriteValueTest(passModule);
+                  // maxNumberValueTest(passModule)
+                  readWriteValueTest(passModule);
             // });
           // });
         // });
@@ -74,7 +74,26 @@ function writeValueTest(callback) {
 }
 
 function readWriteValueTest(callback) {
-
+  var testPhrase = "Alpha Bar Cappa Foo"
+  bluetooth.writeLocalValue(0, testPhrase, function(err) {
+    if (err) {
+      return failModule("Writing local value", err);
+    }
+    else {
+      bluetooth.readLocalValue(0, 0, function(err, value) {
+        if (err) {
+          return failModule("Reading local value", err);
+        }
+        else if (value.toString() != testPhrase) {
+          return failModule("Comparing written with read local");
+        }
+        else {
+          console.log("Read Write Test Complete");
+          callback && callback()
+        }
+      });
+    }
+  })
 }
 
 function readFirmwareTest(callback) {

@@ -1540,11 +1540,21 @@ BluetoothController.prototype.maxNumValues = function(callback) {
     callback && callback(err, max);
   }.bind(this));
 }
-BluetoothController.prototype.readValue = function(index, offset, callback) {
-  this.messenger.readValue(this._localHandles[index], offset, callback);
+BluetoothController.prototype.readLocalValue = function(index, offset, callback) {
+  this.messenger.readLocalValue(this._localHandles[index], offset, function(err, response) {
+    if (!err && response.result != 0) {
+      err = response.result;
+    }
+    callback && callback(err, response.value);
+  });
 }
-BluetoothController.prototype.writeValue = function(index, data, offset, callback) {
-  this.messenger.writeValue(this._localHandles[index], offset, callback);
+BluetoothController.prototype.writeLocalValue = function(index, data, callback) {
+  this.messenger.writeLocalValue(this._localHandles[index], data, function(err, response) {
+    if (!err && response.result != 0) {
+      err = response.result;
+    }
+    callback && callback(err);
+  });
 }
 
 // BluetoothController.prototype.writeValue = function(index, value, callback) {
