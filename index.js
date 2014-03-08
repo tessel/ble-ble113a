@@ -53,6 +53,8 @@ function BluetoothController(hardware, callback) {
   this.messenger.on('completedProcedure', this.onCompletedProcedure.bind(this));
   this.messenger.on('findInformationFound', this.onFindInformationFound.bind(this));
   this.messenger.on('attributeValue', this.onAttributeValue.bind(this));
+  this.messenger.on('remoteWrite', this.onRemoteWrite.bind(this));
+  this.messenger.on('remoteStatus', this.onRemoteStatus.bind(this));
 
   // Once the messenger says we're ready, call callback and emit event
   this.messenger.once('ready', this.bootSequence.bind(this, callback));
@@ -112,33 +114,61 @@ BluetoothController.prototype.onDiscover = function(peripheralData) {
 }
 
 BluetoothController.prototype.onConnectionStatus = function(status) {
+  // If we're advertising in slave mode
+  if (this.advertising) {
+    // Emit that we connected with the connection number
+    setImmediate(function() {
+      this.emit('connect', status.connection);
+    }.bind(this));
+  }
+  // If we're in master mode
+  else {
+    // Grab the peripheral
+    this.getPeripheralFromData(null, null, status.address, status.address_type, function(peripheral, undiscovered) {
 
-  this.getPeripheralFromData(null, null, status.address, status.address_type, function(peripheral, undiscovered) {
-    if (peripheral) {
-      peripheral.connection = status.connection;
-      peripheral.flags = status.flags;
+      if (peripheral) {
+        // Set the connection number and flags
+        peripheral.connection = status.connection;
+        peripheral.flags = status.flags;
 
-      this._connectedPeripherals[peripheral.connection] = peripheral;
+        // Save it in our data structure
+        this._connectedPeripherals[peripheral.connection] = peripheral;
 
-      // If this new connection was just made
-      // Let any listeners know
-      if (peripheral.flags & (1 << 2)) {
-        peripheral.connected = true;
-        this.emit('connect', peripheral);
+        // If this new connection was just made
+        // Let any listeners know
+        if (peripheral.flags & (1 << 2)) {
+          peripheral.connected = true;
+          setImmediate(function() {
+            this.emit('connect', peripheral);
+          }.bind(this));
+        }
       }
-    }
-  }.bind(this));
+    }.bind(this));
+  }
 }
 
 BluetoothController.prototype.onDisconnect = function(response) {
 
   var peripheral = this._connectedPeripherals[response.connection];
 
+  // If we have a peripheral (we're acting as master)
   if (peripheral) {
+    // Set the flags
     peripheral.flags = 0;
     peripheral.connection = null
     peripheral.connected = false;
-    this.emit('disconnect', peripheral);
+
+    // Emit the event
+    setImmediate(function() {
+      this.emit('disconnect', peripheral, response.reason);
+    }.bind(this));
+  }
+  // If we're acting as slave
+  else {
+    // Emit event with connection param
+    setImmediate(function() {
+      this.emit('disconnect', response.connection, response.reason);
+    }.bind(this));
   }
 }
 
@@ -187,15 +217,65 @@ BluetoothController.prototype.onAttributeValue = function(value) {
     }
   }
   // We have an indication
-  else if (value.type === 2) {
-  }
-  // We have an indication and remote is waiting for confirmation
-  else if (value.type === 5) {
+  else if (value.type === 2 || value.type === 5) {
+    // Grab the peripheral responsible
+    var peripheral = this._connectedPeripherals[value.connection];
+    // If it exists (it better!)
+    if (peripheral) {
+      // Grab the corresponding characteristic
+      var characteristic = peripheral.characteristics[value.atthandle];
+      // If it exists (it better!)
+      if (characteristic) {
+        // Set the value
+        characteristic.value = value.value;
+
+        // Emit events
+        this.emit('indication', characteristic, characteristic.value);
+        peripheral.emit('indication', characteristic, characteristic.value);
+        characteristic.emit('indication', characteristic.value);
+      }
+    }
   }
 
-  this.emit('attributeValue', value);
+  setImmediate(function() {
+    this.emit('attributeValue', value);
+  }.bind(this));
 }
 
+BluetoothController.prototype.onRemoteWrite = function(value) {
+  // If the master is requesting confirmation
+  if (value.reason === 2) {
+    this.messenger.remoteWriteAck(value.connection, 0x00, function(err, response) {
+        // TODO: Do we need anything with this response?
+    });
+  }
+  var index = this._localHandles.indexOf(value.handle);
+  if (index != -1) {
+    setImmediate(function() {
+      this.emit('remoteWrite', value.connection, index, value.value);
+    }.bind(this));
+  }
+}
+
+BluetoothController.prototype.onRemoteStatus = function(status) {
+  var index = this._localHandles.indexOf(status.handle);
+  if (index != -1) {
+    var action;
+    if (status.flags === 0) {
+      action = "remoteUpdateStop";
+    }
+    if (status.flags === 1) {
+      action = "remoteNotification";
+    }
+    else if (status.flags === 2) {
+      action = "remoteIndication";
+    }
+
+    setImmediate(function() {
+      this.emit(action, index);
+    }.bind(this));
+  }
+}
 
 /**********************************************************
  Bluetooth API

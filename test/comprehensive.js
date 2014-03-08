@@ -60,7 +60,10 @@ function beginTesting() {
                   // advertisementDataTest(passModule);
                   // readFirmwareTest(passModule);
                   // maxNumberValueTest(passModule)
-                  readWriteValueTest(passModule);
+                  // readWriteValueTest(passModule);
+                  // readWriteLongValueTest(passModule);
+                  // remoteWriteTest();
+                  remoteStatusUpdateTest();
             // });
           // });
         // });
@@ -69,8 +72,72 @@ function beginTesting() {
   // });
 }
 
-function writeValueTest(callback) {
-  this.writeLocalValue(0, "")
+function remoteStatusUpdateTest(callback) {
+  bluetooth.startAdvertising(function(err) {
+    if (err) {
+      return failModule("Beginning Advertisement", err);
+    }
+    bluetooth.once('connect', function(connection) {
+      console.log("Connected!", connection);
+      bluetooth.on('remoteNotification', function(connection, index) {
+        console.log("Master watching notifications!", connection, index);
+        bluetooth.once('disconnect', function(connection, reason) {
+          console.log("Disconnected!", connection, reason);
+        })
+      });
+    })
+  })
+}
+function remoteWriteTest(callback) {
+  bluetooth.startAdvertising(function(err) {
+    if (err) {
+      return failModule("Beginning Advertisement", err);
+    }
+    bluetooth.once('connect', function(connection) {
+      console.log("Connected!", connection);
+      bluetooth.on('remoteWrite', function(connection, handle, value) {
+        console.log("Value was written!", connection, handle, value.toString());
+        bluetooth.once('disconnect', function(connection, reason) {
+          console.log("Disconnected!", connection, reason);
+        })
+      });
+    })
+  })
+}
+
+function readWriteLongValueTest(callback) {
+  var testPhrase = "Alpha Bar Cappa Foo Something Super Long"
+  bluetooth.writeLocalValue(0, testPhrase, function(err) {
+    if (err) {
+      return failModule("Writing local value", err);
+    }
+    else {
+      bluetooth.readLocalValue(0, 0, function(err, value) {
+        var repeat = value;
+        if (err) {
+          return failModule("Reading local value", err);
+        }
+        else if (value.toString() == testPhrase) {
+          return failModule("Comparing written with long read local");
+        }
+        else {
+          bluetooth.readLocalValue(0, 32, function(err, value) {
+            repeat = Buffer.concat([repeat, value]);
+            if (err) {
+              return failModule("Reading local value", err);
+            }
+            else if (repeat.toString() != testPhrase) {
+              return failModule("Comparing written with long read local");
+            }
+            else {
+              console.log("Read Write Test Complete");
+              callback && callback()
+            }
+          });
+        }
+      });
+    }
+  })
 }
 
 function readWriteValueTest(callback) {
