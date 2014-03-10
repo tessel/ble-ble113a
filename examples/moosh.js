@@ -39,6 +39,7 @@ function setMeterSettings(mooshimeter, callback) {
     mooshimeter.discoverCharacteristics(['ffa2', 'ffa6'], function(err, characteristics) {
       var meterSample = characteristics[0];
       var meterSettings = characteristics[1];
+
       // Update meter settings struct to start reading...
       meterSettings.write(new Buffer([3, 2, 0, 0, 0, 0, 0, 0, 23]), function(err, valueWritten) {
         callback && callback(meterSample);
@@ -68,9 +69,8 @@ function mooshFilter(peripheral, callback) {
       return callback(true);
     }
   }
-
   return  callback(false);
 }
 
 
-setInterval(function(){}, 20000);
+setInterval(function() {}, 20000);

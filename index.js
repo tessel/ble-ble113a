@@ -1643,12 +1643,12 @@ BluetoothController.prototype.I2C = function(address) {
 
 function BluetoothI2C(messenger, address) {
   this.messenger = messenger;
-  this.address = address;
+  this.address = address << 1;
 }
 
 BluetoothI2C.prototype.send = function(txbuf, callback) {
-  this.messenger.I2CSend(this.address, 0, txbuf, function(err, response) {
-    console.log("After BLE Send", response);
+  this.messenger.I2CSend(this.address, 1, txbuf, function(err, response) {
+
     if (!err && response.result != 0) {
       err = response.result;
     }
@@ -1663,16 +1663,25 @@ BluetoothI2C.prototype.receive = function(length, callback) {
     if (!err && response.result != 0) {
         err = response.result;
     }
-    callback && calback(err);
+    callback && callback(err);
   });
 }
 
 BluetoothController.prototype.gpio = function(index, callback) {
-  return new BluetoothPin(index);
+  if (!this.gpios) {
+    this.createGPIOs();
+  }
+
+  return this.gpios[index];
+}
+
+BluetoothController.prototype.createGPIOs = function() {
+  this.gpios = new Array(2);
+  this.gpios["p0_3"] = new BluetoothPin();
+  this.gpios["p0_2"] = new BluetoothPin();
 }
 
 function BluetoothPin() {
-  this.index = index;
   this.direction = "input";
   this.value = 0;
 }

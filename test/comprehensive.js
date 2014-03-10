@@ -75,14 +75,17 @@ function beginTesting() {
 }
 
 function i2cTest(callback) {
-  var testString = "Foo Bar";
-  var slave = tessel.port('b').I2C(0x40, tessel.I2CMode.Slave);
+  var testString = "Hell yeah!";
+  // var master = new tessel.port('b').I2C(0x40, tessel.I2CMode.Master);
+  // master.initialize();
   var master = bluetooth.I2C(0x40);
-  master.send(testString, function(err) {
+  // var master = new tessel.port('d').I2C(0x40);
+  // master.initialize();
+  master.send(new Buffer(testString), function(err) {
     console.log("Supposedly we sent this.");
-    slave.receive(testString.length, function(err, ret) {
-      console.log("Tessel got this: ", ret);
-    });
+    // slave.receive(testString.length, function(err, ret) {
+      // console.log("Tessel got this: ", ret);
+    // });
   });
 }
 
