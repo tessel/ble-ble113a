@@ -1647,23 +1647,34 @@ function BluetoothI2C(messenger, address) {
 }
 
 BluetoothI2C.prototype.send = function(txbuf, callback) {
+  // If they're sending a number
+  if (!isNaN(txbuf)) {
+    // Convert it to a buffer so it plays nicely with bglib
+    txbuf = new Buffer([txbuf]);
+  }
+
+  // Send off the data
+  // TODO: Let users decide on stop condition
   this.messenger.I2CSend(this.address, 1, txbuf, function(err, response) {
 
+    // If there wasn't a logical error but a functional error
     if (!err && response.result != 0) {
+      // Make that the error
       err = response.result;
     }
 
+    // Return the error
     callback && callback(err);
   });
 }
 
 BluetoothI2C.prototype.receive = function(length, callback) {
-  this.messenger.I2CRead(this.address, 0, length, function(err, response) {
-    console.log("After BLE Read", response);
+  this.messenger.I2CRead(this.address, 1, length, function(err, response) {
+
     if (!err && response.result != 0) {
         err = response.result;
     }
-    callback && callback(err);
+    callback && callback(err, response.data);
   });
 }
 
