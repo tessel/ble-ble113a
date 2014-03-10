@@ -63,13 +63,38 @@ function beginTesting() {
                   // readWriteValueTest(passModule);
                   // readWriteLongValueTest(passModule);
                   // remoteWriteTest();
-                  remoteStatusUpdateTest();
+                  // remoteStatusUpdateTest();
+                  // ADCTest(passModule);
+                  i2cTest();
             // });
           // });
         // });
       // });
   //   });
   // });
+}
+
+function i2cTest(callback) {
+  var testString = "Foo Bar";
+  var slave = tessel.port('b').I2C(0x40, tessel.I2CMode.Slave);
+  var master = bluetooth.I2C(0x40);
+  master.send(testString, function(err) {
+    console.log("Supposedly we sent this.");
+    slave.receive(testString.length, function(err, ret) {
+      console.log("Tessel got this: ", ret);
+    });
+  });
+}
+
+function ADCTest(callback) {
+  bluetooth.readADC(function(err, value) {
+    console.log("Got this all the way back", err, value);
+    setTimeout(function() {
+      bluetooth.readADC(function(err, value) {
+        console.log("Then I got this!", err, value);
+      });
+    }, 5000);
+  });
 }
 
 function remoteStatusUpdateTest(callback) {

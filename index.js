@@ -34,7 +34,7 @@ Params:     hardware - the module port ble was plugged in to
 function BluetoothController(hardware, callback) {
   this.hardware = hardware;
   this.isAdvertising = false;
-  this.messenger = new Messenger(hardware, name);
+  this.messenger = new Messenger(hardware);
   this._connectedPeripherals = {};
   this._discoveredPeripherals = {};
 
@@ -1350,7 +1350,7 @@ BluetoothController.prototype.discoverDescriptorsOfCharacteristic = function(cha
         this.emit('error', err);
       }.bind(this))
     }
-  });
+  }.bind(this));
 }
 
 BluetoothController.prototype.readDescriptor = function(descriptor, callback) {
@@ -1421,9 +1421,7 @@ BluetoothController.prototype.writeToConfigDescriptorOfCharacteristic = function
         return callback && callback(new Error("Characteristic is not configured for notifications"));
       }
       else {
-        console.log("Writing", value, "to", descriptor.toString());
         descriptor.write(value, function(err, written) {
-          console.log("Finished the write...");
           return callback && callback(err);
         });
       }
@@ -1432,7 +1430,6 @@ BluetoothController.prototype.writeToConfigDescriptorOfCharacteristic = function
 }
 BluetoothController.prototype.retrieveConfigDescriptor = function(characteristic, callback) {
   // Check if we've already fetched the config descriptor
-  console.log("fetching...");
   this.getConfigDescriptorFromFetched(characteristic, function(descriptor) {
     // If we haven't
     if (!descriptor) {
@@ -1456,7 +1453,6 @@ BluetoothController.prototype.retrieveConfigDescriptor = function(characteristic
       }.bind(this));
     }
     else {
-      console.log("Returning local desc");
       return callback && callback(null, descriptor);
     }
   }.bind(this));
@@ -1637,9 +1633,113 @@ BluetoothController.prototype.writeLocalValue = function(index, data, callback) 
   });
 }
 
-// BluetoothController.prototype.writeValue = function(index, value, callback) {
-//   this.messenger.writeValue(characteristicHandles[index], value, callback);
-// }
+/*
+* HARDWARE
+*/
+
+BluetoothController.prototype.I2C = function(address) {
+  return new BluetoothI2C(this.messenger, address);
+}
+
+function BluetoothI2C(messenger, address) {
+  this.messenger = messenger;
+  this.address = address;
+}
+
+BluetoothI2C.prototype.send = function(txbuf, callback) {
+  this.messenger.I2CSend(this.address, 0, txbuf, function(err, response) {
+    console.log("After BLE Send", response);
+    if (!err && response.result != 0) {
+      err = response.result;
+    }
+
+    callback && callback(err);
+  });
+}
+
+BluetoothI2C.prototype.receive = function(length, callback) {
+  this.messenger.I2CRead(this.address, 0, length, function(err, response) {
+    console.log("After BLE Read", response);
+    if (!err && response.result != 0) {
+        err = response.result;
+    }
+    callback && calback(err);
+  });
+}
+
+BluetoothController.prototype.gpio = function(index, callback) {
+  return new BluetoothPin(index);
+}
+
+function BluetoothPin() {
+  this.index = index;
+  this.direction = "input";
+  this.value = 0;
+}
+
+BluetoothPin.prototype.setInput = function(callback) {
+
+}
+
+BluetoothPin.prototype.setOutput = function(initial, callback) {
+  if (typeof initial == 'function') {
+    next = initial;
+    initial = null;
+  }
+
+}
+
+BluetoothPin.prototype.write = function(value, callback) {
+
+}
+
+BluetoothPin.prototype.writeSync = function(value) {
+
+}
+
+BluetoothPin.prototype.read = function(callback) {
+
+}
+
+BluetoothPin.prototype.readSync = function() {
+
+}
+
+BluetoothPin.prototype.watch = function(type, callback) {
+
+}
+
+BluetoothPin.prototype.unwatch = function(type, callback) {
+
+}
+
+BluetoothController.prototype.readADC = function(callback) {
+  this.messenger.once('ADCRead', function(adc) {
+    console.log("Shit... we got this!", adc);
+    callback && callback(null, adc.value);
+  });
+  this.messenger.readADC(0x1, 0x3, 0x2, function(err, response) {
+    console.log("Sent request...");
+    // If there was a problem with the request
+    if (err || response.result != 0) {
+     // If it was an error reported by module, set that as error
+     if (!err) err = response.result;
+
+      // Call callback immediately
+      callback && callback(err);
+
+      // Emit the error
+      setImmediate(function() {
+        this.emit('error', err);
+      }.bind(this))
+    }
+  }.bind(this));
+}
+
+BluetoothController.prototype.readADCSync = function() {
+
+}
+
 
 
 /*************************************************************
