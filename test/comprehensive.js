@@ -81,11 +81,8 @@ function i2cTest(callback) {
   var master = bluetooth.I2C(0x40);
   // var master = new tessel.port('d').I2C(0x40);
   // master.initialize();
-  master.send(11, function(err) {
-    console.log("Supposedly we sent this.");
-    master.receive(testString.length, function(err, ret) {
-      console.log("Tessel got this: ", ret.toString());
-    });
+  master.transfer(testString, testString.length, function(err, response) {
+    console.log("Supposedly we got this.", err, response);
   });
 }
 

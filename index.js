@@ -1646,6 +1646,19 @@ function BluetoothI2C(messenger, address) {
   this.address = address << 1;
 }
 
+BluetoothI2C.prototype.transfer = function(txbuf, rxLen, callback) {
+  this.send(txbuf, function(err) {
+    if (err) {
+      return callback && callback(err);
+    }
+    else {
+      this.receive(rxLen, function(err, rx) {
+        return callback && callback(err, rx);
+      });
+    }
+  }.bind(this));
+}
+
 BluetoothI2C.prototype.send = function(txbuf, callback) {
   // If they're sending a number
   if (!isNaN(txbuf)) {
@@ -1670,10 +1683,6 @@ BluetoothI2C.prototype.send = function(txbuf, callback) {
 
 BluetoothI2C.prototype.receive = function(length, callback) {
   this.messenger.I2CRead(this.address, 1, length, function(err, response) {
-
-    if (!err && response.result != 0) {
-        err = response.result;
-    }
     callback && callback(err, response.data);
   });
 }
