@@ -278,14 +278,11 @@ BluetoothController.prototype.onRemoteStatus = function(status) {
 }
 
 BluetoothController.prototype.onPortStatus = function(portStatus) {
-  console.log("Got this", portStatus);
   // Iterate through gpios
   for (var id in this.gpios) {
     var gpio = this.gpios[id];
     // If it's the right port and pin
-    console.log("Is ", id, "a fit?");
     if (gpio._port == portStatus.port && (portStatus.irq & (1 << gpio._pin))) {
-      console.log("It is!");
       // Set the correct type of interrupt
       var type = (portStatus.state & (1 << gpio._pin)) ? "rise" : "fall";
       // Emit that type as well as the change type
