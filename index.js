@@ -1660,12 +1660,6 @@ BluetoothI2C.prototype.transfer = function(txbuf, rxLen, callback) {
 }
 
 BluetoothI2C.prototype.send = function(txbuf, callback) {
-  // If they're sending a number
-  if (!isNaN(txbuf)) {
-    // Convert it to a buffer so it plays nicely with bglib
-    txbuf = new Buffer([txbuf]);
-  }
-
   // Send off the data
   // TODO: Let users decide on stop condition
   this.messenger.I2CSend(this.address, 1, txbuf, function(err, response) {
@@ -1696,17 +1690,35 @@ BluetoothController.prototype.gpio = function(index, callback) {
 }
 
 BluetoothController.prototype.createGPIOs = function() {
-  this.gpios = new Array(2);
-  this.gpios["p0_3"] = new BluetoothPin();
-  this.gpios["p0_2"] = new BluetoothPin();
+  this.gpios = {};
+  this.gpios["p0_3"] = new BluetoothPin(this, 0, 3);
+  this.gpios["p0_2"] = new BluetoothPin(this, 0, 2);
 }
 
-function BluetoothPin() {
+function BluetoothPin(controller, port, pin) {
+  this._port = port;
+  this._pin = pin;
+  this._controller = controller;
   this.direction = "input";
-  this.value = 0;
+  this.value = false;
+
+  // Set as an input
+  this.setInput();
 }
 
+BluetoothPin.prototype.toString = function() {
+  return JSON.stringify({
+    direction: this.direction,
+    value: this.value,
+  });
+}
 BluetoothPin.prototype.setInput = function(callback) {
+  this.direction = "input";
+
+  this._controller.messenger.setPinFunctions(0, 0, function(err, response) {
+    console.log("Set pin functions...", err, response);
+    this.setPinDirections(callback);
+  }.bind(this));
 
 }
 
@@ -1716,22 +1728,81 @@ BluetoothPin.prototype.setOutput = function(initial, callback) {
     initial = null;
   }
 
+  this.direction = "output";
+
+  this.setPinDirections(function(err) {
+    if (err) {
+      return callback && callback(err);
+    }
+    else {
+      this.write(initial, callback);
+    }
+  }.bind(this));
 }
 
 BluetoothPin.prototype.write = function(value, callback) {
+  if (this.direction === "output") {
 
+    this.value = value;
+
+    this.setPinValues(callback);
+  }
 }
 
-BluetoothPin.prototype.writeSync = function(value) {
-
-}
 
 BluetoothPin.prototype.read = function(callback) {
-
+  // Read port 0
+  this._controller.messenger.readPin(this._port, 1 << this._pin, function(err, response) {
+    if (!err && response.result != 0) {
+      err = response.result;
+    }
+    callback && callback(err, response.data);
+  });
 }
 
-BluetoothPin.prototype.readSync = function() {
+BluetoothPin.prototype.setPinDirections = function(callback) {
 
+  var mask = 0;
+
+  // Iterate through our gpios to construct a bitmask
+  for (var id in this._controller.gpios) {
+    // If the gpio is an output
+    var gpio = this._controller.gpios[id];
+    if (gpio.direction === "output") {
+      // Put a one in it's place
+      mask += (1 << gpio._pin);
+    }
+  }
+
+  this._controller.messenger.setPinDirections(this._port, mask, function(err, response) {
+
+    if (!err && response.result != 0) {
+      err = response.result;
+    }
+
+    callback && callback();
+  });
+}
+
+BluetoothPin.prototype.setPinValues = function(callback) {
+  var mask = 0;
+
+  // Iterate through our gpios to construct a bitmask
+  for (var id in this._controller.gpios) {
+    // If the gpio is an output
+    var gpio = this._controller.gpios[id];
+    if (gpio.direction === "output" && gpio.value == true) {
+      // Put a one in it's place
+      mask += (1 << gpio._pin);
+    }
+  }
+
+  this._controller.messenger.writePin(this._port, this._pin, function(err, response) {
+      if (!err && response.result != 0) {
+        err = response.result;
+      }
+      callback && callback(err);
+  })
 }
 
 BluetoothPin.prototype.watch = function(type, callback) {
@@ -1744,11 +1815,18 @@ BluetoothPin.prototype.unwatch = function(type, callback) {
 
 BluetoothController.prototype.readADC = function(callback) {
   this.messenger.once('ADCRead', function(adc) {
-    console.log("Shit... we got this!", adc);
-    callback && callback(null, adc.value);
+    /* From the datasheet:
+    In the example case of 12 effective bits decimation, you will need to read
+    the left-most 12 bits of the value to interpret it. It is a 12-bit 2's
+    complement value left-aligned to the MSB of the 16-bit container.
+    */
+    var normalized = (adc.value >> 4) / 0x7ff;
+    callback && callback(null, normalized);
   });
+  // Read ADC channel 1, with the third option for decimation (12 value) with
+  // aref as reference
   this.messenger.readADC(0x1, 0x3, 0x2, function(err, response) {
-    console.log("Sent request...");
+
     // If there was a problem with the request
     if (err || response.result != 0) {
      // If it was an error reported by module, set that as error

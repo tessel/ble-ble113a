@@ -64,8 +64,9 @@ function beginTesting() {
                   // readWriteLongValueTest(passModule);
                   // remoteWriteTest();
                   // remoteStatusUpdateTest();
-                  // ADCTest(passModule);
-                  i2cTest();
+                  ADCTest(passModule);
+                  // i2cTest();
+                    //  gpioTest();
             // });
           // });
         // });
@@ -74,26 +75,56 @@ function beginTesting() {
   // });
 }
 
+function gpioTest(callback) {
+  var g3 = bluetooth.gpio("p0_3");
+  var reader = tessel.port('b').gpio(1);
+  g3.setOutput(true, function(err) {
+    if (err) {
+      return failModule("Setting pin as output", err);
+    }
+    else {
+      g3.read(function(err, val) {
+        console.log("Read this val", val);
+      });
+      // tessel.port('b').gpio(1).output().high();
+      // g3.read(function(err, value) {
+      //   console.log("Read this value", err, value);
+      //   // g3.write(true, function(err) {
+      //   //
+      //   // });
+      // });
+    }
+  });
+}
+
+// This currently requires a Seeeduino programmed
+// to send an 11 char string back (listening on address 0x40)
 function i2cTest(callback) {
   var testString = "Hell yeah!";
-  // var master = new tessel.port('b').I2C(0x40, tessel.I2CMode.Master);
-  // master.initialize();
   var master = bluetooth.I2C(0x40);
-  // var master = new tessel.port('d').I2C(0x40);
-  // master.initialize();
-  master.transfer(testString, testString.length, function(err, response) {
-    console.log("Supposedly we got this.", err, response);
+  master.transfer(testString, testString.length, function(err, rx) {
+    if (err) {
+      failModule("Transferring i2c data", err);
+    }
+    else if (testString.length != rx.length) {
+      failModule("Receiving correct number of bytes");
+    }
+    else {
+      console.log("I2C test passed.");
+      callback && callback();
+    }
   });
 }
 
 function ADCTest(callback) {
+  var adcread = tessel.port('b').gpio(3).output();
+  adcread.high();
   bluetooth.readADC(function(err, value) {
     console.log("Got this all the way back", err, value);
-    setTimeout(function() {
-      bluetooth.readADC(function(err, value) {
-        console.log("Then I got this!", err, value);
-      });
-    }, 5000);
+    adcread.low();
+    bluetooth.readADC(function(err, value) {
+      console.log("Then I got this!", err, value);
+    });
   });
 }
 
