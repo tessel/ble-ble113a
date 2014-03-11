@@ -39,9 +39,7 @@ function BluetoothController(hardware, callback) {
   this._discoveredPeripherals = {};
 
   this._firmwareVersionHandle = 17;
-  this._maxNumValues = {
-    "1.0.1" : 12,
-  }
+  this._maxNumValues = { "1.0.1" : 12}
   this._localHandles = [21, 25, 29, 33, 37, 41, 45, 49, 53, 57, 61, 65];
 
   this.messenger.on('scanStart', this.onScanStart.bind(this));
@@ -69,6 +67,7 @@ BluetoothController.prototype.bootSequence = function(callback, err) {
 
 // Tell any ble listeners
   if (!err) {
+    this.createGPIOs()
     setImmediate(function() {
       this.emit('ready');
     }.bind(this));
@@ -1681,11 +1680,10 @@ BluetoothI2C.prototype.receive = function(length, callback) {
   });
 }
 
-BluetoothController.prototype.gpio = function(index, callback) {
+BluetoothController.prototype.gpio = function(index) {
   if (!this.gpios) {
     this.createGPIOs();
   }
-
   return this.gpios[index];
 }
 
@@ -1701,9 +1699,6 @@ function BluetoothPin(controller, port, pin) {
   this._controller = controller;
   this.direction = "input";
   this.value = false;
-
-  // Set as an input
-  this.setInput();
 }
 
 BluetoothPin.prototype.toString = function() {
@@ -1714,12 +1709,7 @@ BluetoothPin.prototype.toString = function() {
 }
 BluetoothPin.prototype.setInput = function(callback) {
   this.direction = "input";
-
-  this._controller.messenger.setPinFunctions(0, 0, function(err, response) {
-    console.log("Set pin functions...", err, response);
-    this.setPinDirections(callback);
-  }.bind(this));
-
+  this.setPinDirections(callback);
 }
 
 BluetoothPin.prototype.setOutput = function(initial, callback) {
@@ -1745,7 +1735,7 @@ BluetoothPin.prototype.write = function(value, callback) {
 
     this.value = value;
 
-    this.setPinValues(callback);
+    this.setPinValues(value, callback);
   }
 }
 
@@ -1756,8 +1746,11 @@ BluetoothPin.prototype.read = function(callback) {
     if (!err && response.result != 0) {
       err = response.result;
     }
-    callback && callback(err, response.data);
-  });
+    else {
+      this.value = (response.data >> this._pin);
+    }
+    callback && callback(err, this.value);
+  }.bind(this));
 }
 
 BluetoothPin.prototype.setPinDirections = function(callback) {
@@ -1780,24 +1773,30 @@ BluetoothPin.prototype.setPinDirections = function(callback) {
       err = response.result;
     }
 
-    callback && callback();
+    callback && callback(err);
   });
 }
 
-BluetoothPin.prototype.setPinValues = function(callback) {
+BluetoothPin.prototype.setPinValues = function(value, callback) {
   var mask = 0;
+  var data = 0;
 
   // Iterate through our gpios to construct a bitmask
   for (var id in this._controller.gpios) {
     // If the gpio is an output
     var gpio = this._controller.gpios[id];
-    if (gpio.direction === "output" && gpio.value == true) {
+    if (gpio.direction === "output") {
       // Put a one in it's place
       mask += (1 << gpio._pin);
+      // If the value is high
+      if (gpio.value == true) {
+        // Put a 1 in it's place
+        data += (1 << gpio._pin);
+      }
     }
   }
 
-  this._controller.messenger.writePin(this._port, this._pin, function(err, response) {
+  this._controller.messenger.writePin(this._port, mask, data, function(err, response) {
       if (!err && response.result != 0) {
         err = response.result;
       }
@@ -1842,12 +1841,6 @@ BluetoothController.prototype.readADC = function(callback) {
     }
   }.bind(this));
 }
-
-BluetoothController.prototype.readADCSync = function() {
-
-}
-
-
 
 /*************************************************************
 PUBLIC API

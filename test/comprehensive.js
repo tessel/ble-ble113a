@@ -62,11 +62,14 @@ function beginTesting() {
                   // maxNumberValueTest(passModule)
                   // readWriteValueTest(passModule);
                   // readWriteLongValueTest(passModule);
-                  // remoteWriteTest();
-                  // remoteStatusUpdateTest();
-                  ADCTest(passModule);
-                  // i2cTest();
-                    //  gpioTest();
+                  // remoteWriteTest(passModule);
+                  // remoteStatusUpdateTest(passModule);
+                  // ADCTest(passModule);
+                  // i2cTest(passModule);
+                    //  gpioReadTest(passModule);
+                    gpioWriteTest(function() {
+                      gpioReadTest(passModule);
+                    })
             // });
           // });
         // });
@@ -75,24 +78,63 @@ function beginTesting() {
   // });
 }
 
-function gpioTest(callback) {
-  var g3 = bluetooth.gpio("p0_3");
-  var reader = tessel.port('b').gpio(1);
-  g3.setOutput(true, function(err) {
+function gpioWriteTest(callback) {
+  var gpio = bluetooth.gpio("p0_2");
+  var reader = tessel.port('b').gpio(2).input();
+  gpio.setOutput(true, function(err) {
     if (err) {
-      return failModule("Setting pin as output", err);
+      return failModule ("Setting GPIO as output");
     }
     else {
-      g3.read(function(err, val) {
-        console.log("Read this val", val);
-      });
-      // tessel.port('b').gpio(1).output().high();
-      // g3.read(function(err, value) {
-      //   console.log("Read this value", err, value);
-      //   // g3.write(true, function(err) {
-      //   //
-      //   // });
-      // });
+      var value = reader.readSync();
+      if (value != 1) {
+        return failModule("Writing correct GPIO value");
+      }
+      else {
+        gpio.write(0, function(err) {
+          if (err) {
+            return failModule("Writing to gpio", err);
+          }
+          value = reader.readSync();
+          if (value != 0) {
+            return failModule("Writing correct GPIO value again...");
+          }
+          else {
+            console.log("GPIO Writing Test Passed.");
+            callback && callback();
+          }
+        })
+      }
+
+    }
+  });
+}
+// This requires "p0_2" to be connected to port b, gpio 2
+function gpioReadTest(callback) {
+  var gpio = bluetooth.gpio("p0_2");
+  var writer = tessel.port('b').gpio(2).output();
+  writer.high();
+  gpio.read(function(err, value) {
+    if (err) {
+      return failModule("Reading gpio", err);
+    }
+    else if (value != 1) {
+      return failModule("Reading correct gpio value");
+    }
+    else {
+    writer.low();
+    gpio.read(function(err, value) {
+      if (err) {
+        return failModule("Reading GPIO again", err);
+      }
+      else if (value != 0 ) {
+        return failModule("Reading correct gpio value the second time");
+      }
+      else {
+        console.log("GPIO Read Test Passed");
+        callback && callback();
+      }
+    });
     }
   });
 }
@@ -120,10 +162,9 @@ function ADCTest(callback) {
   var adcread = tessel.port('b').gpio(3).output();
   adcread.high();
   bluetooth.readADC(function(err, value) {
-    console.log("Got this all the way back", err, value);
     adcread.low();
     bluetooth.readADC(function(err, value) {
-      console.log("Then I got this!", err, value);
+      callback && callback();
     });
   });
 }
