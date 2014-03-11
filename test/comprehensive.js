@@ -67,15 +67,83 @@ function beginTesting() {
                   // ADCTest(passModule);
                   // i2cTest(passModule);
                     //  gpioReadTest(passModule);
-                    gpioWriteTest(function() {
-                      gpioReadTest(passModule);
-                    })
+                    // gpioWriteTest(function() {
+                    //   gpioReadTest(passModule);
+                    // })
+                  // gpioWatchTest(passModule);
+                  // gpioWatchChangeTest(passModule);
+                  multipleGPIOWatchTest(passModule);
             // });
           // });
         // });
       // });
   //   });
   // });
+}
+
+function gpioWatchChangeTest(callback) {
+  var gpio = bluetooth.gpio("p0_2");
+  var trig = tessel.port('b').gpio(2).output();
+  trig.high();
+  gpio.watch('change', function(err, timestamp, type) {
+    console.log("Got this int", err, timestamp, type);
+    if (err) {
+      return failModule("Error setting watch on gpio", err);
+    }
+    else {
+      gpio.unwatch('change', function(err) {
+        if (err) {
+          return failModule("Error removing watch", err);
+        }
+        var timeout = setTimeout(function() {
+          gpio.removeAllListeners();
+          console.log("GPIO Watch Test Passed!");
+          callback && callback();
+        }, 2000);
+        gpio.on('change', function(err, timestamp, type) {
+          console.log("Somehow it was hit!", err, timestamp, type);
+          clearTimeout(timeout);
+
+          return failModule("Pin Watch interrupt fired after unwatch.");
+        });
+        trig.high();
+      });
+    }
+  });
+  setTimeout(function() {
+    trig.low();
+  }, 1000);
+}
+
+function gpioWatchTest(callback) {
+  var gpio = bluetooth.gpio("p0_2");
+  var trig = tessel.port('b').gpio(2).output();
+  gpio.watch('rise', function(err, timestamp, type) {
+    console.log("Got this", err, timestamp, type);
+    if (err) {
+      return failModule("Error setting watch on gpio", err);
+    }
+    else {
+      gpio.unwatch('rise', function(err) {
+        if (err) {
+          return failModule("Error removing watch", err);
+        }
+        var timeout = setTimeout(function() {
+          gpio.removeAllListeners();
+          console.log("GPIO Watch Test Passed!");
+          callback && callback();
+        }, 2000);
+        gpio.on('rise', function() {
+          clearTimeout(timeout);
+
+          return failModule("Pin Watch interrupt fired after unwatch.");
+        });
+      });
+    }
+  });
+  setTimeout(function() {
+    trig.high();
+  }, 1000);
 }
 
 function gpioWriteTest(callback) {

@@ -53,6 +53,7 @@ function BluetoothController(hardware, callback) {
   this.messenger.on('attributeValue', this.onAttributeValue.bind(this));
   this.messenger.on('remoteWrite', this.onRemoteWrite.bind(this));
   this.messenger.on('remoteStatus', this.onRemoteStatus.bind(this));
+  this.messenger.on('portStatus', this.onPortStatus.bind(this))
 
   // Once the messenger says we're ready, call callback and emit event
   this.messenger.once('ready', this.bootSequence.bind(this, callback));
@@ -273,6 +274,26 @@ BluetoothController.prototype.onRemoteStatus = function(status) {
     setImmediate(function() {
       this.emit(action, index);
     }.bind(this));
+  }
+}
+
+BluetoothController.prototype.onPortStatus = function(portStatus) {
+  console.log("Got this", portStatus);
+  // Iterate through gpios
+  for (var id in this.gpios) {
+    var gpio = this.gpios[id];
+    // If it's the right port and pin
+    console.log("Is ", id, "a fit?");
+    if (gpio._port == portStatus.port && (portStatus.irq & (1 << gpio._pin))) {
+      console.log("It is!");
+      // Set the correct type of interrupt
+      var type = (portStatus.state & (1 << gpio._pin)) ? "rise" : "fall";
+      // Emit that type as well as the change type
+      setImmediate(function() {
+        gpio.emit("change", null, portStatus.timestamp, type);
+        gpio.emit(type, null, portStatus.timestamp, type);
+      });
+    }
   }
 }
 
@@ -1699,7 +1720,10 @@ function BluetoothPin(controller, port, pin) {
   this._controller = controller;
   this.direction = "input";
   this.value = false;
+  this.interruptOn = null;
 }
+
+util.inherits(BluetoothPin, events.EventEmitter);
 
 BluetoothPin.prototype.toString = function() {
   return JSON.stringify({
@@ -1806,10 +1830,68 @@ BluetoothPin.prototype.setPinValues = function(value, callback) {
 
 BluetoothPin.prototype.watch = function(type, callback) {
 
+  if (type != "rise" && type != "fall" && type !="change") {
+    return callback && callback(new Error("Invalid pin watch type. Must be 'rise', 'fall', or 'change'."));
+  }
+
+  // Set an event listener
+  this.on(type, callback);
+
+  // Set the type for the pin
+  this.onInterrupt = type;
+
+  this.setPinWatches(type, function(err) {
+    if (err) {
+      callback && callback(err);
+    }
+  }.bind(this));
 }
 
 BluetoothPin.prototype.unwatch = function(type, callback) {
+  if (this.onInterrupt === type) {
+    this.onInterrupt = null;
+    this.setPinWatches(type, callback);
+  }
+  else {
+    callback && callback();
+  }
+}
 
+BluetoothPin.prototype.setPinWatches = function(type, callback) {
+
+  var mask = 0;
+  // For each of our gpios
+  for (var id in this._controller.gpios) {
+    // Get reference to gpio
+    var gpio = this._controller.gpios[id];
+    // If this interrupt type is the kind we are watching for
+    if (gpio.onInterrupt == type) {
+      // Add it to the mask
+      mask += (1 << gpio._pin);
+    }
+  }
+
+  // Tell the messenger to set the mask
+  this._controller.messenger.watchPin(0, mask, (type === "rise" ? 0 : 1), function(err, response) {
+    if (!err && response.result != 0) {
+      err = response.result;
+    }
+
+    // If we're  looking for a change
+    if (type === "change") {
+      // We'll have to set the rise detector as well
+      this._controller.messenger.watchPin(0, mask, 0, function(err, response) {
+        if (!err && response.result != 0) {
+          err = response.result;
+        }
+
+        callback && callback(err);
+      });
+    }
+    else {
+      callback && callback(err);
+    }
+  }.bind(this));
 }
 
 BluetoothController.prototype.readADC = function(callback) {
