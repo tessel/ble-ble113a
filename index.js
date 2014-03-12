@@ -94,21 +94,21 @@ BluetoothController.prototype.reset = function(callback) {
  Event Handlers
 **********************************************************/
 BluetoothController.prototype.onScanStart = function(err, result) {
-  this.emit('scanStart', err, result);
+  this.emit('scanStart', err);
 }
 
 BluetoothController.prototype.onScanStop = function(err, result) {
-  this.emit('scanStop', err, result);
+  this.emit('scanStop', err);
 }
 
 BluetoothController.prototype.onDiscover = function(peripheralData) {
   // Try to grab this peripheral from list of previously discovered peripherals
-  this.getPeripheralFromData(peripheralData.rssi, peripheralData.data, peripheralData.sender, peripheral.address_type, function(peripheral, undiscovered) {
+  this.getPeripheralFromData(peripheralData.rssi, peripheralData.data, peripheralData.sender, peripheralData.address_type, function(peripheral, undiscovered) {
   // If this peripheral hasn't been discovered or we allow duplicates
-  if (undiscovered || (this._allowDuplicates)) {
-      setImmediate(function() {
+    if (undiscovered || (this._allowDuplicates)) {
+      // setImmediate(function() {
         this.emit('discover', peripheral);
-      }.bind(this));
+      // }.bind(this));
     }
   }.bind(this));
 }
@@ -319,11 +319,6 @@ BluetoothController.prototype.stopScanning = function(callback) {
 }
 
 BluetoothController.prototype.manageRequestResult = function(event, callback, err, response) {
-   // If there wasn't error with comms but with ble113 logic
-  if (!err && response.result) {
-    // Set result as error
-    err = response.result;
-  }
   // If there wasn't an error
   if (!err) {
     // Emit the event
@@ -384,7 +379,6 @@ BluetoothController.prototype.filterMatcher = function(filter, callback, periphe
 BluetoothController.prototype.getPeripheralFromData = function(rssi, data, address, addressType, callback) {
 
   var addr = new Address(address);
-
   // Try to grab this peripheral from list of previously discovered peripherals
   var peripheral = this._discoveredPeripherals[addr.toString()];
 
@@ -412,10 +406,6 @@ BluetoothController.prototype.getPeripheralFromData = function(rssi, data, addre
 BluetoothController.prototype.connect = function(peripheral, callback) {
 
   this.messenger.connect(peripheral.address.toBuffer(), peripheral.addressType, function(err, response) {
-    if (!err && response.result) {
-      // Set result as error
-      err = response.result;
-    }
     // If there was an error
     if (err) {
       // Call the callback
@@ -446,10 +436,6 @@ BluetoothController.prototype.connect = function(peripheral, callback) {
 
 BluetoothController.prototype.disconnect = function(peripheral, callback) {
   this.messenger.disconnect(peripheral.connection, function(err, response) {
-    if (!err && response.result) {
-      // Set result as error
-      err = response.result;
-    }
     // If there was an error
     if (err) {
       // Call the callback
@@ -568,10 +554,7 @@ BluetoothController.prototype.serviceDiscovery = function(peripheral, callback) 
   // Request the messenger to start discovering services
   this.messenger.discoverServices(peripheral, function(err, response) {
     // If there was a problem with the request
-    if (err || response.result != 0) {
-      // If it was an error reported by module, set that as error
-      if (!err) err = response.result;
-
+    if (err) {
       // Call callback immediately
       return callback && callback(err);
     }
@@ -681,10 +664,7 @@ BluetoothController.prototype.discoverAllCharacteristics = function(peripheral, 
 
       this.messenger.discoverAllAttributes(peripheral, function(err, response) {
         // If there was a problem with the request
-        if (err || response.result != 0) {
-          // If it was an error reported by module, set that as error
-          if (!err) err = response.result;
-
+        if (err) {
           // Call callback immediately
           return callback && callback(err);
         }
@@ -747,10 +727,7 @@ BluetoothController.prototype.discoverCharacteristic = function(peripheral, char
   // Request only the value of the characteristic with this handle
   this.messenger.discoverCharacteristicsInRangeForUUID(peripheral, 0x0001, 0xFFFF, characteristicUUID, function(err, response) {
     // If there was a problem with the request
-    if (err || response.result != 0) {
-      // If it was an error reported by module, set that as error
-      if (!err) err = response.result;
-
+    if (err) {
       // Call callback immediately
       return callback && callback(err);
     }
@@ -805,10 +782,7 @@ BluetoothController.prototype.discoverCharacteristicUUID = function(peripheral, 
   // Tell the messenger to begin the search for the uuid of this characteristic
   this.messenger.discoverCharacteristicUUID(characteristic, function(err, response) {
   // If there was a problem with the request
-    if (err || response.result != 0) {
-      // If it was an error reported by module, set that as error
-      if (!err) err = response.result;
-
+    if (err) {
       // Call callback immediately
       callback && callback(err);
     }
@@ -938,9 +912,7 @@ BluetoothController.prototype.serviceCharacteristicDiscovery = function(service,
   // Tell the messenger to begin the search for the uuid of this characteristic
   this.messenger.discoverCharacteristicsInRange(service._peripheral, service._startHandle, service._endHandle, function(err, response) {
   // If there was a problem with the request
-    if (err || response.result != 0) {
-      // If it was an error reported by module, set that as error
-      if (!err) err = response.result;
+    if (err) {
 
       // Call callback immediately
       callback && callback(err);
@@ -1011,10 +983,7 @@ BluetoothController.prototype.readAttribute = function(attribute, callback) {
     // Request the messenger to start discovering services
   this.messenger.readHandle(attribute._peripheral, attribute, function(err, response) {
     // If there was a problem with the request
-    if (err || response.result != 0) {
-      // If it was an error reported by module, set that as error
-      if (!err) err = response.result;
-
+    if (err) {
       // Call callback immediately
       callback && callback(err);
     }
@@ -1078,10 +1047,7 @@ BluetoothController.prototype.writeAttributeImmediately = function(attribute, si
 
   this.messenger.writeAttributeImmediately(attribute, singleBuffer, function(err, response) {
     // If there was a problem with the request
-    if (err || response.result != 0) {
-      // If it was an error reported by module, set that as error
-      if (!err) err = response.result;
-
+    if (err) {
       // Call callback immediately
       return callback && callback(err);
     }
@@ -1116,11 +1082,9 @@ BluetoothController.prototype.prepareAttributeWrite = function(attribute, multip
           // Send another part of the buffer off
           self.messenger.prepareWrite(attribute, multipleBuffers[offset], offset*bufSize, function(err, response) {
             // If there was a problem with the request
-            if (err || response.result != 0) {
+            if (err) {
               // Cancel any previous writes
               self.messenger.cancelWrite(attribute, function(cancelErr, response) {
-                // If it was an error reported by module, set that as error
-                if (!err) err = response.result;
 
                 // Call callback immediately
                 return callback && callback(err);
@@ -1157,10 +1121,7 @@ BluetoothController.prototype.prepareAttributeWrite = function(attribute, multip
           // Execute the write of the packets
           self.messenger.executeWrite(attribute, function(err, response) {
             // If there was a problem with the request
-            if (err || response.result != 0) {
-              // If it was an error reported by module, set that as error
-              if (!err) err = response.result;
-
+            if (err) {
               // Call callback immediately
               return callback && callback(err);
             }
@@ -1172,10 +1133,7 @@ BluetoothController.prototype.prepareAttributeWrite = function(attribute, multip
 
   this.messenger.prepareWrite(attribute, multipleBuffers[offset], offset * bufSize, function(err, response) {
     // If there was a problem with the request
-    if (err || response.result != 0) {
-      // If it was an error reported by module, set that as error
-      if (!err) err = response.result;
-
+    if (err) {
       // Call callback immediately
       return callback && callback(err);
     }
@@ -1336,9 +1294,7 @@ BluetoothController.prototype.discoverDescriptorsOfCharacteristic = function(cha
         // And make the call for the next attribute
         self.messenger.findHandle(characteristic._peripheral, characteristic.handle + offset, function(err, response) {
           // If there was a problem with the request
-          if (err || response.result != 0) {
-           // If it was an error reported by module, set that as error
-           if (!err) err = response.result;
+          if (err) {
 
            // Call callback immediately
            callback && callback(err);
@@ -1355,9 +1311,7 @@ BluetoothController.prototype.discoverDescriptorsOfCharacteristic = function(cha
   // Read the first subsequent handle
   this.messenger.findHandle(characteristic._peripheral, characteristic.handle + offset, function(err, response) {
     // If there was a problem with the request
-    if (err || response.result != 0) {
-     // If it was an error reported by module, set that as error
-     if (!err) err = response.result;
+    if (err) {
 
       // Call callback immediately
       callback && callback(err);
@@ -1487,9 +1441,7 @@ BluetoothController.prototype.getConfigDescriptorFromFetched = function(characte
 BluetoothController.prototype.confirmIndication = function(characteristic, callback) {
   this.messenger.confirmIndication(characteristic, function(err, response) {
     // If there was a problem with the request
-    if (err || response.result != 0) {
-     // If it was an error reported by module, set that as error
-     if (!err) err = response.result;
+    if (err) {
 
       // Call callback immediately
       callback && callback(err);
@@ -1535,10 +1487,6 @@ BluetoothController.prototype.getMaxConnections = function(callback) {
 
 BluetoothController.prototype.startAdvertising = function(callback) {
   this.messenger.startAdvertising(function(err, response) {
-    // If there was a problem with the request
-    if (!err && response.result) {
-      err = response.result;
-    }
 
     if (!err) {
       this.advertising = true;
@@ -1563,11 +1511,6 @@ BluetoothController.prototype.startAdvertising = function(callback) {
 
 BluetoothController.prototype.stopAdvertising = function(callback) {
   this.messenger.stopAdvertising(function(err, response) {
-    // If there was a problem with the request
-    if (!err && response.result) {
-      err = response.result;
-    }
-
     if (!err) {
       this.advertising = false;
       // Emit the error
@@ -1598,9 +1541,6 @@ BluetoothController.prototype.setScanResponseData = function(data, callback) {
 }
 BluetoothController.prototype.advDataHelper = function(data, advParam, callback) {
   this.messenger.setAdvertisementData(advParam, data, function(err, response) {
-    if (!err && response.result) {
-      err = response.result;
-    }
 
     callback && callback(err);
 
@@ -1613,9 +1553,7 @@ BluetoothController.prototype.advDataHelper = function(data, advParam, callback)
 
 BluetoothController.prototype.getFirmwareVersion = function(callback) {
   this.messenger.readLocalValue(this._firmwareVersionHandle, 0, function(err, response) {
-    if (!err && response.result != 0) {
-      err = response.result;
-    }
+
     var version;
     if (response.value) {
       version = response.value.toString();
@@ -1635,17 +1573,11 @@ BluetoothController.prototype.maxNumValues = function(callback) {
 }
 BluetoothController.prototype.readLocalValue = function(index, offset, callback) {
   this.messenger.readLocalValue(this._localHandles[index], offset, function(err, response) {
-    if (!err && response.result != 0) {
-      err = response.result;
-    }
     callback && callback(err, response.value);
   });
 }
 BluetoothController.prototype.writeLocalValue = function(index, data, callback) {
   this.messenger.writeLocalValue(this._localHandles[index], data, function(err, response) {
-    if (!err && response.result != 0) {
-      err = response.result;
-    }
     callback && callback(err);
   });
 }
@@ -1680,12 +1612,6 @@ BluetoothI2C.prototype.send = function(txbuf, callback) {
   // Send off the data
   // TODO: Let users decide on stop condition
   this.messenger.I2CSend(this.address, 1, txbuf, function(err, response) {
-
-    // If there wasn't a logical error but a functional error
-    if (!err && response.result != 0) {
-      // Make that the error
-      err = response.result;
-    }
 
     // Return the error
     callback && callback(err);
@@ -1764,13 +1690,12 @@ BluetoothPin.prototype.write = function(value, callback) {
 BluetoothPin.prototype.read = function(callback) {
   // Read port 0
   this._controller.messenger.readPin(this._port, 1 << this._pin, function(err, response) {
-    if (!err && response.result != 0) {
-      err = response.result;
+    var val;
+    if (!err) {
+      val = (response.data >> this._pin);
     }
-    else {
-      this.value = (response.data >> this._pin);
-    }
-    callback && callback(err, this.value);
+    this.value = val;
+    callback && callback(err, val);
   }.bind(this));
 }
 
@@ -1789,11 +1714,6 @@ BluetoothPin.prototype.setPinDirections = function(callback) {
   }
 
   this._controller.messenger.setPinDirections(this._port, mask, function(err, response) {
-
-    if (!err && response.result != 0) {
-      err = response.result;
-    }
-
     callback && callback(err);
   });
 }
@@ -1818,9 +1738,6 @@ BluetoothPin.prototype.setPinValues = function(value, callback) {
   }
 
   this._controller.messenger.writePin(this._port, mask, data, function(err, response) {
-      if (!err && response.result != 0) {
-        err = response.result;
-      }
       callback && callback(err);
   })
 }
@@ -1870,18 +1787,10 @@ BluetoothPin.prototype.setPinWatches = function(type, callback) {
 
   // Tell the messenger to set the mask
   this._controller.messenger.watchPin(0, mask, (type === "rise" ? 0 : 1), function(err, response) {
-    if (!err && response.result != 0) {
-      err = response.result;
-    }
-
     // If we're  looking for a change
     if (type === "change") {
       // We'll have to set the rise detector as well
       this._controller.messenger.watchPin(0, mask, 0, function(err, response) {
-        if (!err && response.result != 0) {
-          err = response.result;
-        }
-
         callback && callback(err);
       });
     }
@@ -1906,10 +1815,7 @@ BluetoothController.prototype.readADC = function(callback) {
   this.messenger.readADC(0x1, 0x3, 0x2, function(err, response) {
 
     // If there was a problem with the request
-    if (err || response.result != 0) {
-     // If it was an error reported by module, set that as error
-     if (!err) err = response.result;
-
+    if (err) {
       // Call callback immediately
       callback && callback(err);
 

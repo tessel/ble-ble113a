@@ -4,7 +4,7 @@ var bleDriver = require('../');
 
 bluetooth = bleDriver.use(blePort, function(err) {
   if (err) {
-    return console.log("Failed to connect");
+    return console.log("Failed to connect", err);
   }
   else {
     // Connect to moosh
