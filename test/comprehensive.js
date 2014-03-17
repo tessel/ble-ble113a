@@ -24,7 +24,6 @@ var failTimeout;
 
 console.log("Setting up tests...");
 
-
 bluetooth = bleDriver.use(blePort, function(err) {
   if (err) {
     return failModule("Connecting to BLE Test Module on Port A prior to commence", err);
@@ -37,8 +36,8 @@ bluetooth = bleDriver.use(blePort, function(err) {
 function beginTesting() {
   console.log("Commencing tests.");
   // portTest(function() {
-  //   scanTest(function() {
-  //     filterTest(function() {
+    // scanTest(function() {
+      filterTest(function() {
         // connectTest(function() {
           // serviceDiscoveryTest(function() {
             // characteristicDiscoveryTest(function() {
@@ -72,13 +71,45 @@ function beginTesting() {
                     // })
                   // gpioWatchTest(passModule);
                   // gpioWatchChangeTest(passModule);
-                  multipleGPIOWatchTest(passModule);
+                  // bondingTest(passModule);
             // });
           // });
         // });
       // });
   //   });
-  // });
+  });
+}
+
+function bondingTest(callback) {
+  bluetooth.setBondable(true, function(err) {
+    if (err) {
+      return failModule("Setting to bondable", err);
+    }
+    else {
+      console.log("Set to bondable successful...");
+      connectToMoosh(function(moosh) {
+        bluetooth.on('disconnect', function(peripheral, reason) {
+          console.log(peripheral.toString() + "disconnected because" + reason);
+        });
+        bluetooth.startEncryption(moosh, function(err) {
+          if (err) {
+            return failModule("Starting encryption", err);
+          }
+          else {
+            console.log("Successfully encrypted connection!");
+            bluetooth.getBonds(function(err, bonds) {
+              if (err) {
+                return failModule("Retrieving bonds", err);
+              }
+              else {
+                console.log("Got these bonds: ", bonds);
+              }
+            });
+          }
+        });
+      });
+    }
+  })
 }
 
 function gpioWatchChangeTest(callback) {
@@ -1102,21 +1133,9 @@ function discoverSpecificServicesTest(peripheral, callback) {
   });
 }
 
-function mooshFilter(peripheral, callback) {
-  for (var i = 0; i < peripheral.advertisingData.length; i++) {
-    var packet = peripheral.advertisingData[i];
-
-    if (packet.type = 'Incomplete List of 16-bit Service Class UUIDs'
-        && packet.data[0] == '0xffa0') {
-      return callback(true);
-    }
-  }
-
-  return  callback(false);
-}
 
 function connectToMoosh(callback) {
-    bluetooth.filterDiscover(mooshFilter, function(err, moosh) {
+    bluetooth.startScanning({serviceUUIDs:["ffa0"]}, function(err, moosh) {
     if (err) {
       return failModule("Filtering moosh", err);
     }
@@ -1252,35 +1271,22 @@ function passableFilterTest(timeout, callback) {
 
   var gate = 0;
 
-  bluetooth.filterDiscover(passableFilter, function(err, matched) {
-    if (err) {
-      return failModule("Passable filter discover callback", err);
-    }
-    gate++;
-  });
-
   bluetooth.once('discover', function(peripheral) {
-    if (gate) {
-      bluetooth.stopScanning(function(err) {
-        if (err) {
-          return failModule("Stopping scan in passable filter test", err);
-        }
-        else {
-          clearTimeout(passTimeout);
-          bluetooth.stopFilterDiscover();
-          bluetooth.removeAllListeners();
+    bluetooth.stopScanning(function(err) {
+      if (err) {
+        return failModule("Stopping scan in passable filter test", err);
+      }
+      else {
+        clearTimeout(passTimeout);
+        bluetooth.removeAllListeners();
 
-          console.log("Passable Filter Test Passed.");
-          bluetooth.reset(callback);
-        }
-      });
-    }
-    else {
-      return failModule("Passable filter event", "Gate = " + gate.toString());
-    }
+        console.log("Passable Filter Test Passed.");
+        bluetooth.reset(callback);
+      }
+    });
   });
 
-  bluetooth.startScanning(function(err) {
+  bluetooth.startScanning({serviceUUIDs:["ffa0"]}, function(err) {
     if (err) {
       return failModule("Starting passable filter test scan");
     }
@@ -1297,16 +1303,12 @@ function impassableFilterAndStopTest(timeout, callback) {
         }
         bluetooth.removeAllListeners();
         console.log("Impassable Filter Test Passed.");
-        stopFilterHelper(callback);
+        callback && callback();
       });
     }
   }, timeout);
 
-  bluetooth.filterDiscover(impassableFilter, function(err, matched) {
-    failModule('Impassable discover filter');
-  });
-
-  bluetooth.startScanning(function(err) {
+  bluetooth.startScanning({serviceUUIDs:["ffa6"]}, function(err) {
     if (err) {
       return failModule("Starting scan in impassable filter test", err);
     }
@@ -1315,44 +1317,6 @@ function impassableFilterAndStopTest(timeout, callback) {
       return failModule("Not discovering in impassable filter test");
     });
   });
-}
-
-function stopFilterHelper(callback) {
-  // Start scanning again
-  bluetooth.stopFilterDiscover(function(err) {
-    if (err) {
-      return failModule("Stop filter discover...", err);
-    }
-    // Once we discover, we know the filter was removed
-    // In the future, if we have multiple devices, we should have a better test
-    bluetooth.once('discover', function(peripheral) {
-      bluetooth.stopScanning(function(err) {
-        if (err) {
-          return failModule("Stop scan filter stop");
-        }
-        bluetooth.removeAllListeners();
-        bluetooth.reset(callback);
-      });
-    });
-    bluetooth.startScanning(function(err) {
-      if (err) {
-        return failModule("Starting scan in stop filter test", err);
-      }
-    });
-  });
-}
-
-function impassableFilter(peripheral, callback) {
-  callback(false);
-}
-
-function passableFilter(peripheral, callback) {
-  if (peripheral.advertisingData.length >= 2) {
-    return callback(true);
-  }
-  else {
-    return callback(false);
-  }
 }
 
 /*
@@ -1493,7 +1457,10 @@ function failModule(test, err)
   if (err) {
     console.log(err);
   }
-  failedLED.high();
+  bluetooth.reset(function() {
+    failedLED.high();
+  })
+
 }
 
 function passModule()

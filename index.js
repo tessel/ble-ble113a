@@ -42,6 +42,9 @@ function BluetoothController(hardware, callback) {
   this._maxNumValues = { "1.0.1" : 12}
   this._localHandles = [21, 25, 29, 33, 37, 41, 45, 49, 53, 57, 61, 65];
 
+  this._MITMEnabled = false;
+  this._minKeySize = 7;
+
   this.messenger.on('scanStart', this.onScanStart.bind(this));
   this.messenger.on('scanStop', this.onScanStop.bind(this));
   this.messenger.on('discover', this.onDiscover.bind(this));
@@ -53,7 +56,9 @@ function BluetoothController(hardware, callback) {
   this.messenger.on('attributeValue', this.onAttributeValue.bind(this));
   this.messenger.on('remoteWrite', this.onRemoteWrite.bind(this));
   this.messenger.on('remoteStatus', this.onRemoteStatus.bind(this));
-  this.messenger.on('portStatus', this.onPortStatus.bind(this))
+  this.messenger.on('portStatus', this.onPortStatus.bind(this));
+  this.messenger.on('ADCRead', this.onADCRead.bind(this));
+  this.messenger.on('bondStatus', this.onBondStatus.bind(this));
 
   // Once the messenger says we're ready, call callback and emit event
   this.messenger.once('ready', this.bootSequence.bind(this, callback));
@@ -106,11 +111,47 @@ BluetoothController.prototype.onDiscover = function(peripheralData) {
   this.getPeripheralFromData(peripheralData.rssi, peripheralData.data, peripheralData.sender, peripheralData.address_type, function(peripheral, undiscovered) {
   // If this peripheral hasn't been discovered or we allow duplicates
     if (undiscovered || (this._allowDuplicates)) {
-      // setImmediate(function() {
-        this.emit('discover', peripheral);
-      // }.bind(this));
+      // If we are not filtering UUIDs or we are and this is a match
+      if (!this.filteredUUIDs.length || this.matchAdvDataUUID(peripheralData.data)) {
+        // Emit the event
+        setImmediate(function() {
+          this.emit('discover', peripheral);
+        }.bind(this));
+      }
     }
   }.bind(this));
+}
+
+BluetoothController.prototype.matchAdvDataUUID = function(data) {
+  for (var i in data) {
+    var datum = data[i];
+
+    // For each piece of advertising data
+    if (datum.typeFlag >= 2 && datum.typeFlag <= 7) {
+      // For each uuid in each datum
+      for (var j in datum.data) {
+        // Grab the uuid
+        var uuid = datum.data[j];
+        // Strip the '0x'
+        uuid = uuid.substr(2).toLowerCase();
+
+        // For each filter uuid
+        for (var k in this.filteredUUIDs) {
+          // Grab the filter
+          var filter = this.filteredUUIDs[k];
+          // If it's a match
+          if (filter === uuid) {
+            // return true
+            return true;
+          }
+        }
+
+      }
+    }
+  }
+
+  // No matches found
+  return false;
 }
 
 BluetoothController.prototype.onConnectionStatus = function(status) {
@@ -130,6 +171,7 @@ BluetoothController.prototype.onConnectionStatus = function(status) {
         // Set the connection number and flags
         peripheral.connection = status.connection;
         peripheral.flags = status.flags;
+        peripheral.bondHandle = status.bonding;
 
         // Save it in our data structure
         this._connectedPeripherals[peripheral.connection] = peripheral;
@@ -145,6 +187,7 @@ BluetoothController.prototype.onConnectionStatus = function(status) {
       }
     }.bind(this));
   }
+  this.emit('connectionStatus', status);
 }
 
 BluetoothController.prototype.onDisconnect = function(response) {
@@ -294,19 +337,28 @@ BluetoothController.prototype.onPortStatus = function(portStatus) {
   }
 }
 
+BluetoothController.prototype.onADCRead = function(adcRead) {
+  this.emit('ADCRead', adcRead);
+}
+
+BluetoothController.prototype.onBondStatus = function(bondStatus) {
+  this.emit('bondStatus', bondStatus);
+}
+
 /**********************************************************
  Bluetooth API
 **********************************************************/
-BluetoothController.prototype.startScanning = function(allowDuplicates, callback) {
+BluetoothController.prototype.startScanning = function(options, callback) {
 
   // If the user just passed in a function, make allow duplicates a null
-  if (typeof allowDuplicates == "function") {
-    callback = allowDuplicates;
-    allowDuplicates = null;
+  if (typeof options == "function") {
+    callback = options;
+    options = {};
   }
 
-  // Set duplicate rule
-  this._allowDuplicates = allowDuplicates;
+  this.allowDuplications = (options.allowDuplicates ? true : false);
+
+  this.filteredUUIDs = (options.serviceUUIDs ? options.serviceUUIDs : []);
 
   // Reset discovered peripherals
   this._discoveredPeripherals = {};
@@ -314,6 +366,7 @@ BluetoothController.prototype.startScanning = function(allowDuplicates, callback
   // Start scanning
   this.messenger.startScanning(this.manageRequestResult.bind(this, 'scanStart', callback));
 }
+
 BluetoothController.prototype.stopScanning = function(callback) {
   this.messenger.stopScanning(this.manageRequestResult.bind(this, 'scanStop', callback));
 }
@@ -335,47 +388,7 @@ BluetoothController.prototype.manageRequestResult = function(event, callback, er
   // Call the callback
   callback && callback(err);
 }
-
-BluetoothController.prototype.filterDiscover = function(filter, callback) {
-
-  // Cancel the previous discover event
-  this.messenger.removeAllListeners('discover');
-
-  // When we discover a peripheral, have our filter matcher test it
-  this.messenger.on('discover', this.filterMatcher.bind(this, filter, callback));
-}
-
-BluetoothController.prototype.stopFilterDiscover = function(callback) {
-
-  // Remove our discover listener
-  this.messenger.removeAllListeners('discover');
-
-  // Make the normal discover listener the default
-  this.messenger.on('discover', this.onDiscover.bind(this));
-
-  callback && callback();
-}
-
-BluetoothController.prototype.filterMatcher = function(filter, callback, peripheralData) {
-  // Get saved for peripheral or make a new one
-  this.getPeripheralFromData(peripheralData.rssi, peripheralData.data, peripheralData.sender, peripheralData.address_type, function(peripheral, undiscovered) {
-    // Apply the filter to the peripheral
-    filter(peripheral, function(match) {
-      // If we've got a match and it's undiscovered (or if it's old and we allow duplicated)
-      if (match && (undiscovered || this._allowDuplicates)) {
-
-        // Call the callback
-        callback && callback(null, peripheral);
-
-        // Emit the event
-        setImmediate(function() {
-          this.emit('discover', peripheral);
-        }.bind(this));
-      }
-    }.bind(this));
-  }.bind(this));
-}
-
+g
 BluetoothController.prototype.getPeripheralFromData = function(rssi, data, address, addressType, callback) {
 
   var addr = new Address(address);
@@ -404,7 +417,6 @@ BluetoothController.prototype.getPeripheralFromData = function(rssi, data, addre
 }
 
 BluetoothController.prototype.connect = function(peripheral, callback) {
-
   this.messenger.connect(peripheral.address.toBuffer(), peripheral.addressType, function(err, response) {
     // If there was an error
     if (err) {
@@ -414,22 +426,25 @@ BluetoothController.prototype.connect = function(peripheral, callback) {
 
     // If there wasn't
     else {
-      // Wait for a connection Update
-      this.on('connect', function callCallback(connectedPeripheral) {
+      var self = this;
+      function connectCallback(connectedPeripheral) {
         if (peripheral === connectedPeripheral) {
 
           // Remove this listener
-          this.removeListener('connect', callCallback);
+          self.removeListener('connect', connectCallback);
 
           // Call the callback
           callback && callback();
 
           setImmediate(function() {
             // Let any listeners know
+            self.emit('connect', peripheral);
             peripheral.emit('connect');
-          }.bind(this));
+          });
         }
-      }.bind(this));
+      };
+      // Wait for a connection Update
+      this.on('connect', connectCallback);
     }
   }.bind(this));
 }
@@ -704,7 +719,7 @@ BluetoothController.prototype.discoverCharacteristic = function(peripheral, char
 
   this.on('attributeValue', listener);
 
-  this.on('completedProcedure', function charDiscoveryComplete(procedure) {
+  function charDiscoveryComplete(procedure) {
     if (procedure.connection === peripheral.connection) {
       if (procedure.result != 0) {
         callback && callback(procedure.result);
@@ -722,7 +737,9 @@ BluetoothController.prototype.discoverCharacteristic = function(peripheral, char
         }
       }
     }
-  });
+  }
+
+  this.on('completedProcedure', charDiscoveryComplete);
 
   // Request only the value of the characteristic with this handle
   this.messenger.discoverCharacteristicsInRangeForUUID(peripheral, 0x0001, 0xFFFF, characteristicUUID, function(err, response) {
@@ -739,8 +756,7 @@ BluetoothController.prototype.discoverCharacteristicUUID = function(peripheral, 
   // Save reference to self
   var self = this;
 
-  // Once we have found info containing UUID about this char
-  this.on('findInformationFound', function setCharacteristicUUID(info) {
+  function setCharacteristicUUID(info) {
 
     // If this is for the correct connection and char handle
     if (peripheral.connection === info.connection
@@ -755,10 +771,12 @@ BluetoothController.prototype.discoverCharacteristicUUID = function(peripheral, 
       // Remove this listener
       self.removeListener('findInformationFound', setCharacteristicUUID);
     }
-  });
+  }
 
-  // Once we complete the search
-  this.on('completedProcedure', function procedureComplete(procedure) {
+  // Once we have found info containing UUID about this char
+  this.on('findInformationFound', setCharacteristicUUID);
+
+  function procedureComplete(procedure) {
 
     // If this was called for this peripheral
     if (procedure.connection === peripheral.connection) {
@@ -777,7 +795,10 @@ BluetoothController.prototype.discoverCharacteristicUUID = function(peripheral, 
         callback && callback(null, characteristic);
       }
     }
-  });
+  }
+
+  // Once we complete the search
+  this.on('completedProcedure', procedureComplete);
 
   // Tell the messenger to begin the search for the uuid of this characteristic
   this.messenger.discoverCharacteristicUUID(characteristic, function(err, response) {
@@ -958,8 +979,7 @@ BluetoothController.prototype.readAttribute = function(attribute, callback) {
 
   this.on('attributeValue', valueListener);
 
-  // The 'completed Procedure' event is called when we're done looking for services
-  this.on('completedProcedure', function attributeReadComplete(procedure) {
+  function attributeReadComplete(procedure) {
 
     // If this was called for this peripheral
     if (procedure.connection === attribute._peripheral.connection) {
@@ -978,7 +998,10 @@ BluetoothController.prototype.readAttribute = function(attribute, callback) {
         callback && callback(null, ret);
       }
     }
-  });
+  }
+
+  // The 'completed Procedure' event is called when we're done looking for services
+  this.on('completedProcedure', attributeReadComplete);
 
     // Request the messenger to start discovering services
   this.messenger.readHandle(attribute._peripheral, attribute, function(err, response) {
@@ -1061,8 +1084,7 @@ BluetoothController.prototype.prepareAttributeWrite = function(attribute, multip
   // Keep this around
   var self = this;
 
-  // Function for writing each subsequent buffer
-  this.on('completedProcedure', function bufferWriteIterate(procedure) {
+  function bufferWriteIterate(procedure) {
     // If this is for our connection
     if (procedure.connection === attribute._peripheral.connection
       && procedure.chrhandle === attribute.handle) {
@@ -1129,7 +1151,10 @@ BluetoothController.prototype.prepareAttributeWrite = function(attribute, multip
         }
       }
     }
-  });
+  }
+
+  // Function for writing each subsequent buffer
+  this.on('completedProcedure', bufferWriteIterate);
 
   this.messenger.prepareWrite(attribute, multipleBuffers[offset], offset * bufSize, function(err, response) {
     // If there was a problem with the request
@@ -1211,8 +1236,7 @@ BluetoothController.prototype.discoverDescriptorsOfCharacteristic = function(cha
 
   var done = false;
 
-  // Keep reading the next handle until it is not a descriptor
-  this.on('findInformationFound', function findDescriptorInformation(info) {
+  function findDescriptorInformation(info) {
 
     // If this for the correct connection
     if (characteristic._peripheral.connection === info.connection) {
@@ -1240,10 +1264,12 @@ BluetoothController.prototype.discoverDescriptorsOfCharacteristic = function(cha
         self.removeListener('findInformationFound', findDescriptorInformation);
       }
     }
-  });
+  }
 
-  // Once we have finished finding a single descriptor
-  this.on('completedProcedure', function descriptorDiscoveryComplete(procedure) {
+  // Keep reading the next handle until it is not a descriptor
+  this.on('findInformationFound', findDescriptorInformation);
+
+  function descriptorDiscoveryComplete(procedure) {
 
     // If this was called for this peripheral
     if (procedure.connection === characteristic._peripheral.connection) {
@@ -1306,7 +1332,10 @@ BluetoothController.prototype.discoverDescriptorsOfCharacteristic = function(cha
         });
       }
     }
-  });
+  }
+
+  // Once we have finished finding a single descriptor
+  this.on('completedProcedure', descriptorDiscoveryComplete);
 
   // Read the first subsequent handle
   this.messenger.findHandle(characteristic._peripheral, characteristic.handle + offset, function(err, response) {
@@ -1801,7 +1830,7 @@ BluetoothPin.prototype.setPinWatches = function(type, callback) {
 }
 
 BluetoothController.prototype.readADC = function(callback) {
-  this.messenger.once('ADCRead', function(adc) {
+  this.once('ADCRead', function(adc) {
     /* From the datasheet:
     In the example case of 12 effective bits decimation, you will need to read
     the left-most 12 bits of the value to interpret it. It is a 12-bit 2's
@@ -1826,6 +1855,123 @@ BluetoothController.prototype.readADC = function(callback) {
     }
   }.bind(this));
 }
+
+// Set whether a we can be bonded to
+BluetoothController.prototype.setBondable = function(bondable, callback) {
+  this.messenger.setBondable(bondable ? 1 : 0, callback);
+}
+// Get bonds with current devices
+BluetoothController.prototype.getBonds = function(callback) {
+  var bonds = [];
+  var numBondsToSatisfy = 0;
+  this.on('bondStatus', function bondStatus(status) {
+    console.log("Got this buddy!", status);
+    bonds.push(status);
+
+    if (bonds.length === bumBondsToSatisfy) {
+      this.removeListener('bondStatus', bondStatus);
+      callback && callback(null, bonds);
+    }
+  }.bind(this));
+
+  this.messenger.getBonds(function (err, response) {
+    if (err) {
+      callback && callback(err);
+    }
+    else if (response.bonds === 0) {
+      callback && callback(null, bonds);
+    }
+    else {
+      numBondsToSatisfy = response.bonds;
+    }
+  });
+}
+
+// Delete any bonds with devices
+BluetoothController.prototype.deleteBond = function(peripheral, callback) {
+  this.messenger.deleteBond(peripheral, callback);
+}
+
+BluetoothController.prototype.startEncryption = function(peripheral, callback) {
+  var self = this;
+
+  function successHandler(status) {
+    console.log("Got a connection status", status);
+    if (status.connection === peripheral.connection) {
+      peripheral.bondHandle = status.bonding;;
+      removeHandlers();
+      callback && callback(null, peripheral.bondHandle);
+    }
+  }
+
+  function failHandler(failDetails) {
+    console.log("Failure details", failDetails);
+    if (peripheral.connection === failDetails.handle) {
+      removeHandlers();
+      callback && callback(failDetails.reason);
+    }
+  }
+
+  function removeHandlers() {
+    self.removeListener('connectionStatus', successHandler);
+    self.removeListener('bondingFail', failHandler);
+  }
+
+  this.on('connectionStatus', successHandler);
+  this.on('bondingFail', failHandler);
+
+  this.messenger.startEncryption(peripheral, true, function(err, response) {
+    if (err) {
+      callback && callback(err);
+    }
+  });
+}
+
+BluetoothController.prototype.enterPasskey = function(peripheral, passKey, callback) {
+  if (passKey < 0 || passkey > 999999) {
+    return callback && callback(new Error("Passkey must be between 0 and 999999 inclusive."));
+  }
+  else {
+    this.messenger.enterPasskey(peripheral, passKey, callback);
+  }
+}
+
+BluetoothController.prototype.setEncryptionSize = function(size, callback) {
+  // Enable/disable protection, set same key size, no smp io input/output
+  if (size < 7 || size > 16) {
+    return callback && callback(new Error("Invalid encryption key size. Must be between 7 and 16 bytes"));
+  }
+  else {
+    this.messenger.setSecurityParameters(this._MITMEnabled, size, 3, function(err, response) {
+      if (!err) {
+        this._minKeySize = size;
+      }
+
+      callback && callback(err);
+    });
+  }
+}
+
+BluetoothController.prototype.setOOBData = function(data, callback) {
+  if (!Buffer.isBuffer(data) || (data.length != 0 && data.length != 16)) {
+    return callback && callback(new Error("OOB Data must be a buffer of 0 or 16 octets long"));
+  }
+  else {
+    this.messenger.setOOBData(data, callback);
+  }
+}
+
+BluetoothController.prototype.enableMITMProtection = function(enable, callback) {
+  // Enable/disable protection, set same key size, no smp io input/output
+  this.messenger.setSecurityParameters(enable ? 1 : 0, this._minKeySize, 3, function(err, response) {
+    if (!err) {
+      this._MITMEnabled = enable;
+    }
+
+    callback && callback(err);
+  });
+}
+
 
 /*************************************************************
 PUBLIC API

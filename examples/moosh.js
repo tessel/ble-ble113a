@@ -25,23 +25,29 @@ function startReadingMeter(meterSample) {
       for (var i = 0; i < 3; i++) {
         voltage += value[3+i] << (i*8);
       }
-      voltage = (0x1000000 - voltage)  * (1.51292917e-04);
+      voltage = (0x1000000 - voltage) * (1.51292917e-04);
 
       console.log("Voltage", voltage);
     });
 
+    console.log("Turning on async readings...");
     meterSample.startNotifications();
 }
 
 function setMeterSettings(mooshimeter, callback) {
   if (mooshimeter) {
     // Find the characteristic with meter settings
+    console.log("Searching for characteristics...");
     mooshimeter.discoverCharacteristics(['ffa2', 'ffa6'], function(err, characteristics) {
+
+      console.log("Characteristics Found.");
       var meterSample = characteristics[0];
       var meterSettings = characteristics[1];
 
       // Update meter settings struct to start reading...
+      console.log("Turning on analog reads");
       meterSettings.write(new Buffer([3, 2, 0, 0, 0, 0, 0, 0, 23]), function(err, valueWritten) {
+        console.log("Turned on!");
         callback && callback(meterSample);
       });
     });
@@ -49,9 +55,13 @@ function setMeterSettings(mooshimeter, callback) {
 }
 
 function connectToMoosh(callback) {
+  console.log("Trying to find mooshimeter...");
   bluetooth.filterDiscover(mooshFilter, function(err, moosh) {
+    console.log("Found Moosh. Stopping scan...");
     bluetooth.stopScanning(function(err) {
+      console.log("Scan stopped. Attemping to connect to moosh...");
       moosh.connect(function(err) {
+        console.log("Connected!");
         callback && callback(moosh);
       });
     });

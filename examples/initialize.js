@@ -2,6 +2,7 @@ var tessel = require('tessel');
 var blePort = tessel.port('a');
 
 var ble = require('../').use(blePort);
+
 ble.on('ready', function(err) {
 	if (err) return console.log(err);
   console.log("Module found");
@@ -22,8 +23,8 @@ ble.on('scanStop', function(err) {
 
 ble.on('discover', function(peripheral) {
   console.log("We found this peripheral!", peripheral.toString());
-	ble.stopScanning();
 });
+
 
 
 setInterval(function() {}, 20000);
