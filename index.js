@@ -1889,7 +1889,13 @@ BluetoothController.prototype.getBonds = function(callback) {
 
 // Delete any bonds with devices
 BluetoothController.prototype.deleteBond = function(peripheral, callback) {
-  this.messenger.deleteBond(peripheral, callback);
+  this.messenger.deleteBond(peripheral, function(err) {
+    if (!err) {
+      peripheral.bondHandle = 0xff;
+    }
+
+    callback && callback(err);
+  });
 }
 
 BluetoothController.prototype.startEncryption = function(peripheral, callback) {
