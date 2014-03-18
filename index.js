@@ -132,9 +132,6 @@ BluetoothController.prototype.matchAdvDataUUID = function(data) {
       for (var j in datum.data) {
         // Grab the uuid
         var uuid = datum.data[j];
-        // Strip the '0x'
-        uuid = uuid.substr(2).toLowerCase();
-
         // For each filter uuid
         for (var k in this.filteredUUIDs) {
           // Grab the filter
@@ -280,9 +277,7 @@ BluetoothController.prototype.onAttributeValue = function(value) {
     }
   }
 
-  setImmediate(function() {
-    this.emit('attributeValue', value);
-  }.bind(this));
+  this.emit('attributeValue', value);
 }
 
 BluetoothController.prototype.onRemoteWrite = function(value) {
@@ -629,7 +624,6 @@ BluetoothController.prototype.createServiceFromGroup = function(peripheral, ret,
     if (!(service = peripheral[uuid.toString()])) {
       // Make a new service
       service = new Service(peripheral, uuid, groupItem.start, groupItem.end);
-
       // Add this services to the peripherals data structure
       peripheral.syncService(service);
     }
@@ -699,12 +693,21 @@ BluetoothController.prototype.discoverCharacteristics = function(peripheral, uui
 
   async.series(funcs, function(err, characteristics) {
 
-    callback && callback(err, characteristics)
+    var ret = [];
 
-    if (!err && characteristics.length) {
+    // Weed out any characteristics that weren't found
+    for (var j in characteristics) {
+      if (characteristics[j]) {
+        ret.push(characteristics[j]);
+      }
+    }
+
+    callback && callback(err, ret)
+
+    if (!err && ret.length) {
       setImmediate(function() {
-        this.emit('characteristicsDiscover', characteristics);
-        peripheral.emit('characteristicsDiscover', characteristics);
+        this.emit('characteristicsDiscover', ret);
+        peripheral.emit('characteristicsDiscover', ret);
       }.bind(this));
     }
 
@@ -721,16 +724,21 @@ BluetoothController.prototype.discoverCharacteristic = function(peripheral, char
 
   function charDiscoveryComplete(procedure) {
     if (procedure.connection === peripheral.connection) {
+      self.removeListener('attributeValue', listener);
+      self.removeListener('completedProcedure', charDiscoveryComplete);
+
       if (procedure.result != 0) {
-        callback && callback(procedure.result);
+        if (procedure.result.message === "Attribute Not Found") {
+          return callback && callback(null, null);
+        }
+        else {
+          return callback && callback(procedure.result);
+        }
       }
       else {
 
-        self.removeListener('attributeValue', listener);
-        self.removeListener('completedProcedure', charDiscoveryComplete);
-
         if (ret.length != 1) {
-          return callback && callback(null, []);
+          return callback && callback(null, null);
         }
         else {
           self.discoverCharacteristicUUID(peripheral, ret[0], callback);
@@ -841,6 +849,12 @@ BluetoothController.prototype.createCharacteristicFromInformationFound = functio
   if (peripheral.connection === info.connection) {
     // Turn the uuid into a string
     var uuid = new UUID(info.uuid);
+    console.log(attributes, uuid.toString());
+    console.log("UUID Should be:", uuid.toString());
+    // console.log(peripheral.services[uuid.toString()]);
+    // console.log(Service.isStandardService(uuid.toString()));
+    console.log(Descriptor.isStandardDescriptor(uuid.toString()));
+    console.log(attributes[uuid.toString()]);
     // If this uuid isn't a service or a descriptor, or any other generic type
     if (!peripheral.services[uuid.toString()] &&
         !Service.isStandardService(uuid.toString()) &&
@@ -849,6 +863,8 @@ BluetoothController.prototype.createCharacteristicFromInformationFound = functio
 
       // Make a new one
       var characteristic = new Characteristic(peripheral, uuid, info.chrhandle);
+
+      console.log("ADding this:", characteristic.toString());
 
       // Sync the new one with the correct service
       peripheral.syncCharacteristic(characteristic);
@@ -964,6 +980,8 @@ BluetoothController.prototype.readAttribute = function(attribute, callback) {
   var ret;
 
   function valueListener(reading) {
+    console.log("Reading this many", reading.value.length);
+    console.log("this", reading.value);
     // If this is our first read of several or if this will be the only read
     if (readNum === 0 || (reading.type == 0)) {
       // Assign the value
@@ -1029,6 +1047,10 @@ BluetoothController.prototype.write = function(characteristic, value, callback) 
   }.bind(this));
 }
 BluetoothController.prototype.writeAttribute = function(attribute, value, callback) {
+
+  if (value.length > 98) {
+    return callback && callback(new Error("Writes must be less than or equal to 98 bytes"));
+  }
 
   // Write has to be in 20 byte increments
   this.splitWriteIntoBuffers(value, function(err, buffers) {
@@ -1102,6 +1124,7 @@ BluetoothController.prototype.prepareAttributeWrite = function(attribute, multip
         if (offset < multipleBuffers.length) {
 
           // Send another part of the buffer off
+          console.log("Writing ",  offset, multipleBuffers[offset]);
           self.messenger.prepareWrite(attribute, multipleBuffers[offset], offset*bufSize, function(err, response) {
             // If there was a problem with the request
             if (err) {
@@ -1131,9 +1154,9 @@ BluetoothController.prototype.prepareAttributeWrite = function(attribute, multip
             // If there was no error
             else {
               //Concat all the buffers into one
-              var ret;
-              for (var i = 0; i < multipleBuffers.length; i++) {
-                ret = Buffer.concat(ret, multipleBuffers[i]);
+              var ret = multipleBuffers[0];
+              for (var i = 1; i < multipleBuffers.length; i++) {
+                ret = Buffer.concat([ret, multipleBuffers[i]]);
               }
 
               // Call callback
@@ -1156,6 +1179,7 @@ BluetoothController.prototype.prepareAttributeWrite = function(attribute, multip
   // Function for writing each subsequent buffer
   this.on('completedProcedure', bufferWriteIterate);
 
+console.log("Writing ", offset, multipleBuffers[offset]);
   this.messenger.prepareWrite(attribute, multipleBuffers[offset], offset * bufSize, function(err, response) {
     // If there was a problem with the request
     if (err) {
@@ -1200,6 +1224,7 @@ BluetoothController.prototype.splitWriteIntoBuffers = function(value, callback) 
 
     // Get the number of buffers we'll need
     var iter = Math.ceil(buf.length/maxBufLen);
+    console.log("iter", iter);
 
     // Prepare array for buffers
     var ret = new Array(iter);
@@ -1208,18 +1233,19 @@ BluetoothController.prototype.splitWriteIntoBuffers = function(value, callback) 
       // Grab the start byte
       var start = i * maxBufLen;
       // Put that start plus next 20 bytes (or if it's the last, just grab remainder)
-      var end = (i == iter-1 ? buf.length % maxBufLen : maxBufLen);
+      var end;
+      if (i == (iter-1)) {
+        end = buf.length;
+      }
+      else {
+        end = start + maxBufLen;
+      }
       // Slice it and throw it into our return array
-      ret[i] = buf.slice(start, start + end);
+      ret[i] = buf.slice(start, end);
     }
 
-    if (ret.length > maxNumBufs) {
-      callback && callback(new Error("Write data must be 100 bytes or less"));
-    }
-    else {
-      // Return array
-      callback && callback(null, ret);
-    }
+    // Return array
+    callback && callback(null, ret);
   }
 }
 
@@ -1601,12 +1627,18 @@ BluetoothController.prototype.maxNumValues = function(callback) {
   }.bind(this));
 }
 BluetoothController.prototype.readLocalValue = function(index, offset, callback) {
-  this.messenger.readLocalValue(this._localHandles[index], offset, function(err, response) {
+  this.messenger.readLocalHandle(this._localHandles[index], offset, callback);
+}
+BluetoothController.prototype.writeLocalValue = function(index, data, callback) {
+  this.messenger.writeLocalHandle(this._localHandles[index], data, callback);
+}
+BluetoothController.prototype.readLocalHandle = function(handle, offset, callback) {
+  this.messenger.readLocalValue(handle, offset, function(err, response) {
     callback && callback(err, response.value);
   });
 }
-BluetoothController.prototype.writeLocalValue = function(index, data, callback) {
-  this.messenger.writeLocalValue(this._localHandles[index], data, function(err, response) {
+BluetoothController.prototype.writeLocalHandle = function(handle, data, callback) {
+  this.messenger.writeLocalValue(handle, data, function(err, response) {
     callback && callback(err);
   });
 }
@@ -1865,7 +1897,6 @@ BluetoothController.prototype.getBonds = function(callback) {
   var bonds = [];
   var numBondsToSatisfy = 0;
   this.on('bondStatus', function bondStatus(status) {
-    console.log("Got this buddy!", status);
     bonds.push(status);
 
     if (bonds.length === bumBondsToSatisfy) {
