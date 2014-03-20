@@ -346,7 +346,7 @@ BluetoothController.prototype.onBondStatus = function(bondStatus) {
 BluetoothController.prototype.startScanning = function(options, callback) {
 
   // If the user just passed in a function, make allow duplicates a null
-  if (typeof options == "function") {
+  if (typeof options == "function" || (!options && !callback)) {
     callback = options;
     options = {};
   }
