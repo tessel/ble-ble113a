@@ -518,7 +518,7 @@ characteristic.handle
 characteristic.name
 characteristic.type
 characteristic.descriptors
-characteristic.lastReadValue
+characteristic.value
 ```
 ### Characteristic Commands
 ```js
