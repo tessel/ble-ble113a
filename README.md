@@ -16,7 +16,125 @@ If you are using Tessel V1 (should say TM-00-00 on the back), you should wire th
 
 If you have Tessel V2 or later, you can use module port a, b, or d.
 
-##Example
+##Examples
+### Master - Subscribing to updates from a peripheral with known profile (example with bluetooth-enabled multimeter, mooshimeter).
+
+```js
+var tessel = require('tessel');
+var blePort = tessel.port('a');
+var bleDriver = require('ble113a');
+
+bluetooth = bleDriver.use(blePort, function(err) {
+  if (err) {
+    return console.log("Failed to connect", err);
+  }
+  else {
+    // Connect to moosh
+    connectToMoosh(function(moosh) {
+      // Tell the meter to start reading, pass back char to read
+      setMeterSettings(moosh, function(meterSample) {
+        // Start reading that char
+        startReadingMeter(meterSample);
+      });
+    });
+  }
+});
+
+function startReadingMeter(meterSample) {
+
+    meterSample.on('notification', function(value) {
+      var voltage = 0;
+      for (var i = 0; i < 3; i++) {
+        voltage += value[3+i] << (i*8);
+      }
+      voltage = (0x1000000 - voltage) * (1.51292917e-04);
+
+      console.log("Voltage", voltage);
+    });
+
+    console.log("Turning on async readings...");
+    meterSample.startNotifications();
+}
+
+function setMeterSettings(mooshimeter, callback) {
+  if (mooshimeter) {
+    // Find the characteristic with meter settings
+    console.log("Searching for characteristics...");
+    mooshimeter.discoverCharacteristics(['ffa2', 'ffa6'], function(err, characteristics) {
+
+      console.log("Characteristics Found.");
+      var meterSample = characteristics[0];
+      var meterSettings = characteristics[1];
+
+      // Update meter settings struct to start reading...
+      console.log("Turning on analog reads");
+      meterSettings.write(new Buffer([3, 2, 0, 0, 0, 0, 0, 0, 23]), function(err, valueWritten) {
+        console.log("Turned on!");
+        callback && callback(meterSample);
+      });
+    });
+  }
+}
+
+function connectToMoosh(callback) {
+
+  bluetooth.startScanning({serviceUUIDs:['ffa0']});
+
+  bluetooth.once('discover', function(moosh) {
+    bluetooth.stopScanning(function(stopError) {
+      moosh.connect(function(connectError) {
+        callback && callback(moosh);
+      })
+    })
+  });
+}
+```
+
+### Peripheral - Updating multiple characteristics
+```js
+var tessel= require('tessel');
+var blePort = tessel.port('a');
+var accelPort = tessel.port('b');
+var ambientPort = tessel.port('c');
+
+var ble;
+var accel;
+var ambient;
+
+// Connect to BLE
+ble = require('ble-ble113a').use(blePort, function(err) {
+  // Connect to Accel
+  accel = require('accel-mma84', function(err) {
+    // Connect to ambient
+    ambient = require('ambient-attx4', function(err) {
+      // start adveristing to any listening masters
+      ble.startAdvertising();
+    });
+  });
+});
+
+// Once a master connects
+ble.on('ready', function(master) {
+  // Start streaming light data
+  ambient.on('light', function(lightValues) {
+    // Save it to the first available characteristic
+    ble.writeLocalValue(0, lightValues);
+  });
+  
+  // Start streaming sound data
+  ambient.on('sound', function(soundValues) {
+    // Save it to the next available characteristic
+    ble.writeLocalValue(1, soundValues);
+  });
+  
+  // Start streaming accelerometer data
+  accel.on('data', function(accelValues) {
+    // Save it to the next available characteristic
+    ble.writeLocalValue(2, accelValues);
+  });
+});
+
+```
 ## API 
 
 ## Bluetooth (Primary Controller)
