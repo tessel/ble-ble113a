@@ -6,7 +6,7 @@ var ble = require('../').use(blePort);
 ble.on('ready', function(err) {
 	if (err) return console.log(err);
   console.log("Module found");
-  ble.startScanning();
+  ble.startScanning({allowDuplicates:true});
 });
 
 ble.on('error', function(err) {
