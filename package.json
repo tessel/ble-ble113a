@@ -26,15 +26,6 @@
   "dependencies": {
     "bglib" : "*",
     "async" : "*",
-    "mocha" : "*",
-    "chai" : "*",
-    "sinon-chai" : "*"
-  },
-  "devDependencies" :
-  {
-    "mocha" : "*",
-    "chai" : "*",
-    "sinon-chai" : "*"
   },
   "hardware" :
   {
