@@ -3,18 +3,18 @@ Driver for the ble-ble113 Tessel Bluetooth Low Energy module ([BlueGiga BLE113](
 
 ##Under Development
 
-The BLE Library is still under heavy development and most functionality isn't available but the functions outlined below work. __You will need to update your firmware to our [January 3 release](https://github.com/tessel/firmware/releases/tag/2014-01-03) (or later) in order to use this library__. That's because this is a relatively bulky code package and our old USB driver code didn't allocate enough memory.
+The BLE Library is still under heavy development and may have bugs.
 
 You can add more functionality if you want to look at the [BlueGiga BLE113 Datasheet](http://www.bluegiga.com/en-US/products/bluetooth-4.0-modules/ble113-bluetooth--smart-module/documentation/). You'll have to make an account on their website.
+
+Email jon@technical.io with any questions/concerns
 
 ##Installation
 ```sh
 npm install ble-ble113a
 ```
 
-If you are using Tessel V1 (should say TM-00-00 on the back), you should wire the module to the GPIO port because UART isn't routed to the module ports in that hardware revision. GPIO 3, 2, and 1 on GPIO port goes to GPIO 3, 2, and 1 on module, respectively. 
-
-If you have Tessel V2 or later, you can use module port a, b, or d.
+If you have Tessel V2 (TM-00-02) or later, you can use module port a, b, or d. We'll be implementing software uart on port c in the near future. 
 
 ##Examples
 ### Master - Subscribing to updates from a peripheral with known profile (example with bluetooth-enabled multimeter, mooshimeter).
@@ -591,9 +591,6 @@ descriptor.on('descriptorRead', function(valueRead) {...} );
 
 descriptor.on('descriptorWrite', function(valuewritten) {...} );
 ```
-
-
-Email jon@technical.io with any questions/concerns
 
 ## License
 
