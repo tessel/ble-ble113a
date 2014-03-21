@@ -350,6 +350,7 @@ BluetoothController.prototype.startScanning = function(options, callback) {
     callback = options;
     options = {};
   }
+
   this._allowDuplicates = (options.allowDuplicates ? true : false);
 
   this.filteredUUIDs = (options.serviceUUIDs ? options.serviceUUIDs : []);
