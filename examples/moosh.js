@@ -55,31 +55,16 @@ function setMeterSettings(mooshimeter, callback) {
 }
 
 function connectToMoosh(callback) {
-  console.log("Trying to find mooshimeter...");
-  bluetooth.filterDiscover(mooshFilter, function(err, moosh) {
-    console.log("Found Moosh. Stopping scan...");
-    bluetooth.stopScanning(function(err) {
-      console.log("Scan stopped. Attemping to connect to moosh...");
-      moosh.connect(function(err) {
-        console.log("Connected!");
+
+  bluetooth.startScanning({serviceUUIDs:['ffa0']});
+
+  bluetooth.once('discover', function(moosh) {
+    bluetooth.stopScanning(function(stopError) {
+      moosh.connect(function(connectError) {
         callback && callback(moosh);
-      });
-    });
+      })
+    })
   });
-
-  bluetooth.startScanning();
-}
-
-function mooshFilter(peripheral, callback) {
-  for (var i = 0; i < peripheral.advertisingData.length; i++) {
-    var packet = peripheral.advertisingData[i];
-
-    if (packet.type = 'Incomplete List of 16-bit Service Class UUIDs'
-        && packet.data[0] == '0xffa0') {
-      return callback(true);
-    }
-  }
-  return  callback(false);
 }
 
 
