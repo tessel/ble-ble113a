@@ -30,7 +30,7 @@ var failed = false;
 var failTimeout;
 
 console.log("Setting up tests...");
-console.log("Note: Still need to verify, handle writing (remote and local), notifications, and indications.");
+console.log("Note: Still need to verify, remote handle writing, notifications, and indications.");
 
 bluetooth = bleDriver.use(blePort, function(err) {
   if (err) {
@@ -68,12 +68,14 @@ function beginTesting() {
     // discoverAllAttributesTest
      // writeDescriptorTest,
      // readDescriptorTest,
-     // notificationTest
+     // notificationTest,
      // signalStrengthTest,
      // systemCommandsTest,
      // maxNumValuesTest,
      // advertisingTest,
-     readWriteValueTest
+     // readWriteValueTest,
+     // readWriteLongValueTest,
+     remoteWriteTest
     ],
 
   function(err) {
@@ -302,74 +304,98 @@ function beginTesting() {
 //   });
 // }
 //
-// function remoteStatusUpdateTest(callback) {
-//   bluetooth.startAdvertising(function(err) {
-//     if (err) {
-//       return failModule("Beginning Advertisement", err);
-//     }
-//     bluetooth.once('connect', function(connection) {
-//       console.log("Connected!", connection);
-//       bluetooth.on('remoteNotification', function(connection, index) {
-//         console.log("Master watching notifications!", connection, index);
-//         bluetooth.once('disconnect', function(connection, reason) {
-//           console.log("Disconnected!", connection, reason);
-//         })
-//       });
-//     })
-//   })
-// }
-// function remoteWriteTest(callback) {
-//   bluetooth.startAdvertising(function(err) {
-//     if (err) {
-//       return failModule("Beginning Advertisement", err);
-//     }
-//     bluetooth.once('connect', function(connection) {
-//       console.log("Connected!", connection);
-//       bluetooth.on('remoteWrite', function(connection, handle, value) {
-//         console.log("Value was written!", connection, handle, value.toString());
-//         bluetooth.once('disconnect', function(connection, reason) {
-//           console.log("Disconnected!", connection, reason);
-//         })
-//       });
-//     })
-//   })
-// }
-//
-// function readWriteLongValueTest(callback) {
-//   var testPhrase = "Alpha Bar Cappa Foo Something Super Long"
-//   bluetooth.writeLocalValue(0, testPhrase, function(err) {
-//     if (err) {
-//       return failModule("Writing local value", err);
-//     }
-//     else {
-//       bluetooth.readLocalValue(0, 0, function(err, value) {
-//         var repeat = value;
-//         if (err) {
-//           return failModule("Reading local value", err);
-//         }
-//         else if (value.toString() == testPhrase) {
-//           return failModule("Comparing written with long read local");
-//         }
-//         else {
-//           bluetooth.readLocalValue(0, 32, function(err, value) {
-//             repeat = Buffer.concat([repeat, value]);
-//             if (err) {
-//               return failModule("Reading local value", err);
-//             }
-//             else if (repeat.toString() != testPhrase) {
-//               return failModule("Comparing written with long read local");
-//             }
-//             else {
-//               console.log("Read Write Test Complete");
-//               callback && callback()
-//             }
-//           });
-//         }
-//       });
-//     }
-//   })
-// }
-//
+function remoteStatusUpdateTest(callback) {
+  bluetooth.startAdvertising(function(err) {
+    if (err) {
+      return failModule("Beginning Advertisement", err);
+    }
+    bluetooth.once('connect', function(connection) {
+      console.log("Connected!", connection);
+      bluetooth.on('remoteNotification', function(connection, index) {
+        console.log("Master watching notifications!", connection, index);
+        bluetooth.once('disconnect', function(connection, reason) {
+          console.log("Disconnected!", connection, reason);
+        })
+      });
+    })
+  })
+}
+function remoteWriteTest(callback) {
+  connectToMaster(function(err, master) {
+    if (err) {
+      return callback && callback(err);
+    }
+    else {
+      master.discoverCharacteristics(['883f1e6b76f64da187eb6bdbdb617888'], function(err, characteristics) {
+        if (err) {
+          return callback && callback(err);
+        }
+        else {
+          characteristics[0].write(new Buffer('Will it work'), function(err, written) {
+            if (err) {
+              return callback && callback(err);
+            }
+            else {
+              master.disconnect(function(err) {
+                if (err) {
+                  return callback && callback(err);
+                }
+                else {
+                  callback && callback();
+                } 
+              })
+            }
+          });
+        }
+      });
+    }
+  });
+  bluetooth.once('connect', function(connection) {
+    bluetooth.once('remoteWrite', function(connection, handle, value) {
+      bluetooth.once('disconnect', function(connection, reason) {
+        console.log("Remote Write Test passed!");
+        return callback && callback();
+      })
+    });
+  })
+}
+
+function readWriteLongValueTest(callback) {
+  console.log("Testing read write of long local value");
+  var testPhrase = "Alpha Bar Cappa Foo Something Super Long"
+  bluetooth.writeLocalValue(0, testPhrase, function(err) {
+    if (err) {
+      return callback && callback(err);
+    }
+    else {
+      bluetooth.readLocalValue(0, 0, function(err, value) {
+        var repeat = value;
+        if (err) {
+          return callback && callback(err);
+        }
+        else if (value.toString() == testPhrase) {
+          return callback && callback("Invalid read after first write");
+        }
+        else {
+          bluetooth.readLocalValue(0, 32, function(err, value) {
+            repeat = Buffer.concat([repeat, value]);
+            if (err) {
+              return callback && callback(err);
+            }
+            else if (repeat.toString() != testPhrase) {
+              return callback && callback("Invalid read after second write");
+            }
+            else {
+              console.log("Testing read write of long local value Passed!");
+              callback && callback()
+            }
+          });
+        }
+      });
+    }
+  })
+}
+
 function readWriteValueTest(callback) {
   var testPhrase = "Alpha Bar Cappa Foo";
   bluetooth.writeLocalValue(0, testPhrase, function(err) {
@@ -1299,15 +1325,21 @@ function discoverSpecificServicesTest(peripheral, callback) {
   });
 }
 
-
+function connectToMaster(callback) {
+  connectToTestModule(slaveB, bluetooth, callback);
+}
 function connectToSlaveB(callback) {
-  slaveB.startAdvertising(function(err) {
+  connectToTestModule(bluetooth, slaveB, callback);
+}
+
+function connectToTestModule(masterModule, slaveModule, callback) {
+  slaveModule.startAdvertising(function(err) {
     if (err) {
       return failModule(err);
     }
     else {
-      bluetooth.once('discover', function(slave) {
-        bluetooth.stopScanning(function(err) {
+      masterModule.once('discover', function(slave) {
+        masterModule.stopScanning(function(err) {
           if (err) {
             return callback && callback(err);
           }
@@ -1323,7 +1355,7 @@ function connectToSlaveB(callback) {
         });
       });
 
-      bluetooth.startScanning({serviceUUIDs:["08c8c7a06cc511e3981f0800200c9a66"]}, function(err) {
+      masterModule.startScanning({serviceUUIDs:["08c8c7a06cc511e3981f0800200c9a66"]}, function(err) {
         if (err) {
           return callback && callback(err);
         }

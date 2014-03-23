@@ -769,6 +769,7 @@ BluetoothController.prototype.discoverCharacteristic = function(peripheral, char
 
   this.on('completedProcedure', charDiscoveryComplete);
 
+  console.log("Searching for you", characteristicUUID);
   // Request only the value of the characteristic with this handle
   this.messenger.discoverCharacteristicsInRangeForUUID(peripheral, 0x0001, 0xFFFF, characteristicUUID, function(err, response) {
     // If there was a problem with the request
@@ -1044,6 +1045,7 @@ BluetoothController.prototype.readAttribute = function(attribute, callback) {
 
 
 BluetoothController.prototype.write = function(characteristic, value, callback) {
+  console.log("Going to write characteristic", characteristic.handle);
   this.writeAttribute(characteristic, value, function(err, written) {
 
     callback && callback(err, written);
@@ -1071,6 +1073,7 @@ BluetoothController.prototype.writeAttribute = function(attribute, value, callba
     else {
       // If there is only one buffer
       if (buffers.length == 1) {
+        console.log("Writing immediately...");
         // We can send it immediately
         this.writeAttributeImmediately(attribute, buffers[0], callback);
       }
