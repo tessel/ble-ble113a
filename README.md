@@ -312,6 +312,8 @@ bluetooth.on( 'remoteIndication', function(index) {...} );
 
 bluetooth.on( 'remoteUpdateStop', function(index) {...} );
 
+bluetooth.on( 'indicated', function(connection, index) {...} );
+
 ```
 
 ### Hardware

@@ -59,6 +59,7 @@ function BluetoothController(hardware, callback) {
   this.messenger.on('portStatus', this.onPortStatus.bind(this));
   this.messenger.on('ADCRead', this.onADCRead.bind(this));
   this.messenger.on('bondStatus', this.onBondStatus.bind(this));
+  this.messenger.on('indicated', this.onIndicated.bind(this));
 
   // Once the messenger says we're ready, call callback and emit event
   this.messenger.once('ready', this.bootSequence.bind(this, callback));
@@ -338,6 +339,14 @@ BluetoothController.prototype.onADCRead = function(adcRead) {
 
 BluetoothController.prototype.onBondStatus = function(bondStatus) {
   this.emit('bondStatus', bondStatus);
+}
+
+BluetoothController.prototype.onIndicated = function(indicated) {
+  var index = this._localHandles.indexOf(indicated.attrhandle);
+  console.log("Index", index);
+  if (index != -1) {
+    this.emit('indicated', indicated.connection, index);
+  }
 }
 
 /**********************************************************
@@ -769,7 +778,6 @@ BluetoothController.prototype.discoverCharacteristic = function(peripheral, char
 
   this.on('completedProcedure', charDiscoveryComplete);
 
-  console.log("Searching for you", characteristicUUID);
   // Request only the value of the characteristic with this handle
   this.messenger.discoverCharacteristicsInRangeForUUID(peripheral, 0x0001, 0xFFFF, characteristicUUID, function(err, response) {
     // If there was a problem with the request
@@ -1045,7 +1053,6 @@ BluetoothController.prototype.readAttribute = function(attribute, callback) {
 
 
 BluetoothController.prototype.write = function(characteristic, value, callback) {
-  console.log("Going to write characteristic", characteristic.handle);
   this.writeAttribute(characteristic, value, function(err, written) {
 
     callback && callback(err, written);
@@ -1073,7 +1080,6 @@ BluetoothController.prototype.writeAttribute = function(attribute, value, callba
     else {
       // If there is only one buffer
       if (buffers.length == 1) {
-        console.log("Writing immediately...");
         // We can send it immediately
         this.writeAttributeImmediately(attribute, buffers[0], callback);
       }

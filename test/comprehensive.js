@@ -30,7 +30,7 @@ var failed = false;
 var failTimeout;
 
 console.log("Setting up tests...");
-console.log("Note: Still need to verify, remote handle writing, notifications, and indications.");
+console.log("Note: Still need to verify multiple peripherals & security methods.");
 
 bluetooth = bleDriver.use(blePort, function(err) {
   if (err) {
@@ -69,13 +69,16 @@ function beginTesting() {
      // writeDescriptorTest,
      // readDescriptorTest,
      // notificationTest,
+     // indicationTest
      // signalStrengthTest,
      // systemCommandsTest,
      // maxNumValuesTest,
      // advertisingTest,
      // readWriteValueTest,
      // readWriteLongValueTest,
-     remoteWriteTest
+     // remoteWriteTest,
+     // remoteNotificationStatusUpdateTest,
+     remoteIndicationStatusUpdateTest
     ],
 
   function(err) {
@@ -86,34 +89,6 @@ function beginTesting() {
       return passModule();
     }
   });
-  // portTest(function() {
-    // scanTest(function() {
-      // filterTest(function() {
-        // connectTest(function() {
-          // serviceDiscoveryTest(function() {
-            // characteristicDiscoveryTest(function() {
-              // characteristicServiceDiscoveryTest(function() {
-                 // discoverAllTest(passModule);
-                  // readCharacteristicTest(passModule);
-                  // writeCharacteristicTest(passModule);
-                  // writeLongCharacteristicTest(passModule);
-                  // discoverAllDescriptorsTest(passModule);
-                  // discoverCharacteristicDescriptorTest(passModule);
-                  // discoverAllAttributesTest(passModule);
-                  // readDescriptorTest(passModule);
-                  // writeDescriptorTest(passModule);
-                  // notificationTest(passModule);
-                  // indicationTest(passModule);
-                  // signalStrengthTest(passModule);
-                  // systemCommandsTest(passModule);
-                  // advertisingTest(passModule);
-                  // advertisementDataTest(passModule);
-                  // readFirmwareTest(passModule);
-                  // maxNumberValueTest(passModule)
-                  // readWriteValueTest(passModule);
-                  // readWriteLongValueTest(passModule);
-                  // remoteWriteTest(passModule);
-                  // remoteStatusUpdateTest(passModule);
 }
 
 // function bondingTest(callback) {
@@ -304,20 +279,76 @@ function beginTesting() {
 //   });
 // }
 //
-function remoteStatusUpdateTest(callback) {
-  bluetooth.startAdvertising(function(err) {
+function remoteIndicationStatusUpdateTest(callback) {
+  connectToMaster(function(err, master) {
     if (err) {
-      return failModule("Beginning Advertisement", err);
+      return callback && callback(err);
     }
-    bluetooth.once('connect', function(connection) {
-      console.log("Connected!", connection);
-      bluetooth.on('remoteNotification', function(connection, index) {
-        console.log("Master watching notifications!", connection, index);
-        bluetooth.once('disconnect', function(connection, reason) {
-          console.log("Disconnected!", connection, reason);
-        })
+    else {
+      master.discoverCharacteristics(['883f1e6b76f64da187eb6bdbdb617888'], function(err, characteristics) {
+        if (err) {
+          return callback && callback(err);
+        }
+        else {
+          characteristics[0].startIndications(function(err, value) {
+            if (err) {
+              return callback && callback(err);
+            }
+            else {
+              master.disconnect(function(err) {
+                if (err) {
+                  return callback && callback(err);
+                }
+              })
+            }
+          });
+        }
       });
-    })
+    }
+  });
+  bluetooth.once('connect', function(connection) {
+    bluetooth.once('remoteIndication', function(connection, handle, value) {
+      bluetooth.once('disconnect', function(connection, reason) {
+        console.log("Remote Indication Test passed!");
+        return callback && callback();
+      })
+    });
+  })
+}
+function remoteNotificationStatusUpdateTest(callback) {
+  connectToMaster(function(err, master) {
+    if (err) {
+      return callback && callback(err);
+    }
+    else {
+      master.discoverCharacteristics(['883f1e6b76f64da187eb6bdbdb617888'], function(err, characteristics) {
+        if (err) {
+          return callback && callback(err);
+        }
+        else {
+          characteristics[0].startNotifications(function(err, value) {
+            if (err) {
+              return callback && callback(err);
+            }
+            else {
+              master.disconnect(function(err) {
+                if (err) {
+                  return callback && callback(err);
+                }
+              })
+            }
+          });
+        }
+      });
+    }
+  });
+  bluetooth.once('connect', function(connection) {
+    bluetooth.once('remoteNotification', function(connection, handle, value) {
+      bluetooth.once('disconnect', function(connection, reason) {
+        console.log("Remote Notification Test passed!");
+        return callback && callback();
+      })
+    });
   })
 }
 function remoteWriteTest(callback) {
@@ -340,9 +371,6 @@ function remoteWriteTest(callback) {
                 if (err) {
                   return callback && callback(err);
                 }
-                else {
-                  callback && callback();
-                } 
               })
             }
           });
@@ -425,7 +453,6 @@ function readFirmwareTest(callback) {
     if (err) {
       return callback && callback(err);
     }
-    console.log("Got this version", version);
     console.log("Read Firmware Version Test Passed.");
     callback && callback();
   });
@@ -553,85 +580,90 @@ function signalStrengthTest(callback) {
   });
 }
 //
-// function indicationTest(callback) {
-//   connectToMoosh(function(moosh) {
-//     console.log("Connected to moosh. Searching for chars...");
-//     moosh.discoverCharacteristics(['ffa2', 'ffa6'], function(err, characteristics) {
-//       if (err) {
-//         return failModule("Discovering meter settings and sample chars", err);
-//       }
-//       else {
-//         console.log("Got these: ", characteristics.toString());
-//         if (characteristics.length == 2) {
-//           var meterSettings = characteristics[1];
-//           var meterSample = characteristics[0];
-//           meterSample.once('indication', function(value) {
-//             console.log("Got indications of this value!", value);
-//             meterSample.stopNotifications(function(err) {
-//               if (err) {
-//                 return failModule("Stopping indications", err);
-//                 console.log("Stopped indications...");
-//               }
-//
-//             });
-//           });
-//           console.log("Starting indications...");
-//           meterSample.confirmIndication(function(err) {
-//             if (err) {
-//               return failModule("Confirming indication...", err);
-//             }
-//             console.log("Confirmation sent");
-//           });
-//           // meterSample.startIndications(function(err) {
-//           //   if (err) {
-//           //     failModule("Starting indications", err);
-//           //   }
-//           //   console.log("Starting meter sampling...")
-//           //   meterSettings.write(new Buffer([3, 2, 0, 0, 0, 0, 0, 0, 23]), function(err, written) {
-//           //     if (err) {
-//           //       return failModule("Writing to characteristic in indication test", err);
-//           //     }
-//           //     else {
-//           //       console.log("Meter is sampling...");
-//           //     }
-//           //   });
-//           // });
-//         }
-//       }
-//     });
-//   });
-// }
-//
 function notificationTest(callback) {
-  connectToSlaveB(function(err, slave) {
+  console.log("Notification Test...");
+  connectToMaster(function(err, master) {
     if (err) {
       return callback && callback(err);
     }
-    console.log("Connected to slave. Searching for chars...");
-    slave.discoverCharacteristics(['883f1e6b76f64da187eb6bdbdb617888'], function(err, characteristics) {
+    master.discoverCharacteristics(['883f1e6b76f64da187eb6bdbdb617888'], function(err, characteristics) {
       if (err) {
         return callback && callback(err);
       }
       else {
         if (characteristics.length) {
           var char = characteristics[0];
+          var testValue = new Buffer("Hi Test Friend.");
           char.once('notification', function(value) {
-            console.log("Got notified of this value!", value);
-            char.stopNotifications(function(err) {
-              if (err) {
-                return callback && callback(err);
-              }
-              console.log("Stopped notifications...");
-            });
+            if (value.toString() === testValue.toString()) {
+              char.stopNotifications(function(err) {
+                if (err) {
+                  return callback && callback(err);
+                }
+                console.log("Notification Test Passed");
+                return callback && callback();
+              });
+            }
+            else {
+              return callback && callback(new Error("Different string reported by notification"));
+            }
           });
-          console.log("Starting notifications...");
+
           char.startNotifications(function(err) {
             if (err) {
               return callback && callback(err);
             }
             else {
-              console.log("Started notifications");
-              slaveB.writeLocalHandle(0, new Buffer("Hey there friend."), function(err) {
+              bluetooth.writeLocalValue(0, testValue, function(err) {
+                if (err) {
+                  return callback && callback(err);
+                }
+              })
+            }
+          });
+        }
+      }
+    });
+  });
+}
+function indicationTest(callback) {
+  console.log("Indication Test...");
+  connectToMaster(function(err, master) {
+    if (err) {
+      return callback && callback(err);
+    }
+    master.discoverCharacteristics(['883f1e6b76f64da187eb6bdbdb617888'], function(err, characteristics) {
+      if (err) {
+        return callback && callback(err);
+      }
+      else {
+        if (characteristics.length) {
+          var char = characteristics[0];
+          var testValue = new Buffer("Hi Test Friend.");
+          char.once('indication', function(value) {
+            console.log("Got an actual indication!", value);
+            if (value.toString() === testValue.toString()) {
+              bluetooth.once('indicated', function() {
+                char.stopIndications(function(err) {
+                  if (err) {
+                    return callback && callback(err);
+                  }
+                  console.log("Indication Test Passed");
+                  return callback && callback();
+                });
+              })
+            }
+            else {
+              return callback && callback(new Error("Different string reported by indication"));
+            }
+          });
+          console.log("Starting indications!");
+          char.startIndications(function(err) {
+            if (err) {
+              return callback && callback(err);
+            }
+            else {
+              bluetooth.writeLocalValue(0, testValue, function(err) {
                 if (err) {
                   return callback && callback(err);
                 }
@@ -1561,7 +1593,6 @@ function scanTest(callback) {
 
       // When the scan starts, trip the gate
       bluetooth.once('scanStart', function() {
-        console.log("Scan start ")
         gate++;
       });
 
@@ -1586,7 +1617,6 @@ function scanTest(callback) {
 
       // Start scanning
       bluetooth.startScanning(function(err) {
-        console.log("Started scanning!")
         if (err) {
           // If there was an error, fail
           return callback && callback(err);
@@ -1596,7 +1626,6 @@ function scanTest(callback) {
         // When we discover a peripheral, stop the scan
         bluetooth.once('discover', function(peripheral) {
           bluetooth.stopScanning(function(err) {
-            console.log("Stopped scanning!")
             gate++;
             if (err) {
               callback && callback(err);
