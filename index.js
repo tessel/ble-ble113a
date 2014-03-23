@@ -1641,12 +1641,12 @@ BluetoothController.prototype.writeLocalValue = function(index, data, callback) 
   this.messenger.writeLocalHandle(this._localHandles[index], data, callback);
 }
 BluetoothController.prototype.readLocalHandle = function(handle, offset, callback) {
-  this.messenger.readLocalValue(handle, offset, function(err, response) {
+  this.messenger.readLocalHandle(handle, offset, function(err, response) {
     callback && callback(err, response.value);
   });
 }
 BluetoothController.prototype.writeLocalHandle = function(handle, data, callback) {
-  this.messenger.writeLocalValue(handle, data, function(err, response) {
+  this.messenger.writeLocalHandle(handle, data, function(err, response) {
     callback && callback(err);
   });
 }

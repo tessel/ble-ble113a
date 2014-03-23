@@ -64,8 +64,10 @@ function beginTesting() {
      // includedServiceTest
      // discoverAllTest
      // discoverCharacteristicDescriptorTest
-     writeDescriptorTest,
-     discoverAllAttributesTest
+    // discoverAllAttributesTest
+     // writeDescriptorTest,
+     // readDescriptorTest,
+     notificationTest
     ],
 
   function(err) {
@@ -524,46 +526,47 @@ function signalStrengthTest(callback) {
 //   });
 // }
 //
-// function notificationTest(callback) {
-//   connectToMoosh(function(moosh) {
-//     console.log("Connected to moosh. Searching for chars...");
-//     moosh.discoverCharacteristics(['ffa2', 'ffa6'], function(err, characteristics) {
-//       if (err) {
-//         return failModule("Discovering meter settings and sample chars", err);
-//       }
-//       else {
-//         if (characteristics.length == 2) {
-//           var meterSettings = characteristics[1];
-//           var meterSample = characteristics[0];
-//           meterSample.once('notification', function(value) {
-//             console.log("Got notified of this value!", value);
-//             meterSample.stopNotifications(function(err) {
-//               if (err) {
-//                 return failModule("Stopping notifications", err);
-//               }
-//               console.log("Stopped notifications...");
-//             });
-//           });
-//           console.log("Starting notifications...");
-//           meterSample.startNotifications(function(err) {
-//             if (err) {
-//               failModule("Starting notifications", err);
-//             }
-//             console.log("Starting meter sampling...")
-//             meterSettings.write(new Buffer([3, 2, 0, 0, 0, 0, 0, 0, 23]), function(err, written) {
-//               if (err) {
-//                 return failModule("Writing to characteristic in notification test", err);
-//               }
-//               else {
-//                 console.log("Meter is sampling...");
-//               }
-//             });
-//           });
-//         }
-//       }
-//     });
-//   });
-// }
+function notificationTest(callback) {
+  connectToSlaveB(function(err, slave) {
+    if (err) {
+      return callback && callback(err);
+    }
+    console.log("Connected to slave. Searching for chars...");
+    slave.discoverCharacteristics(['883f1e6b76f64da187eb6bdbdb617888'], function(err, characteristics) {
+      if (err) {
+        return callback && callback(err);
+      }
+      else {
+        if (characteristics.length) {
+          var char = characteristics[0];
+          char.once('notification', function(value) {
+            console.log("Got notified of this value!", value);
+            char.stopNotifications(function(err) {
+              if (err) {
+                return callback && callback(err);
+              }
+              console.log("Stopped notifications...");
+            });
+          });
+          console.log("Starting notifications...");
+          char.startNotifications(function(err) {
+            if (err) {
+              return callback && callback(err);
+            }
+            else {
+              console.log("Started notifications");
+              slaveB.writeLocalHandle(0, new Buffer("Hey there friend."), function(err) {
+                if (err) {
+                  return callback && callback(err);
+                }
+              })
+            }
+          });
+        }
+      }
+    });
+  });
+}
 
 function readDescriptorTest(callback) {
   console.log("Beginning read descriptor test.");
@@ -590,10 +593,16 @@ function readDescriptorTest(callback) {
                 gate++;
               });
               descriptors[0].once('descriptorRead', function(value) {
-                console.log("Read this:", value);
                 if (gate === 3) {
-                  console.log("Descriptor Read Test Passed.")
-                  bluetooth.reset(callback);
+                  slave.disconnect(function(err) {
+                    if (err) {
+                      return callback && callback(err);
+                    }
+                    else {
+                      console.log("Descriptor Read Test Passed.");
+                      bluetooth.reset(callback);
+                    }
+                  })
                 }
               });
               descriptors[0].read(function(err, value) {
@@ -645,8 +654,15 @@ function writeDescriptorTest(callback) {
               descriptors[0].once('descriptorWrite', function(charWritten) {
                 console.log("wrote this:", value);
                 if (gate === 3) {
-                  console.log("Descriptor Read Test Passed.")
-                  bluetooth.reset(callback);
+                  slave.disconnect(function(err) {
+                    if (err) {
+                      return callback && callback(err);
+                    }
+                    else {
+                      console.log("Descriptor Read Test Passed.");
+                      bluetooth.reset(callback);
+                    }
+                  })
                 }
               });
               descriptors[0].write( new Buffer("hey jon"), function(err) {
