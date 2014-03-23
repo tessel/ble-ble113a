@@ -1615,7 +1615,7 @@ BluetoothController.prototype.advDataHelper = function(data, advParam, callback)
 }
 
 BluetoothController.prototype.getFirmwareVersion = function(callback) {
-  this.messenger.readLocalValue(this._firmwareVersionHandle, 0, function(err, response) {
+  this.messenger.readLocalHandle(this._firmwareVersionHandle, 0, function(err, response) {
 
     var version;
     if (response.value) {
@@ -1635,10 +1635,10 @@ BluetoothController.prototype.maxNumValues = function(callback) {
   }.bind(this));
 }
 BluetoothController.prototype.readLocalValue = function(index, offset, callback) {
-  this.messenger.readLocalHandle(this._localHandles[index], offset, callback);
+  this.readLocalHandle(this._localHandles[index], offset, callback);
 }
 BluetoothController.prototype.writeLocalValue = function(index, data, callback) {
-  this.messenger.writeLocalHandle(this._localHandles[index], data, callback);
+  this.writeLocalHandle(this._localHandles[index], data, callback);
 }
 BluetoothController.prototype.readLocalHandle = function(handle, offset, callback) {
   this.messenger.readLocalHandle(handle, offset, function(err, response) {

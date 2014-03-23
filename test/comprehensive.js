@@ -30,6 +30,7 @@ var failed = false;
 var failTimeout;
 
 console.log("Setting up tests...");
+console.log("Note: Still need to verify, handle writing (remote and local), notifications, and indications.");
 
 bluetooth = bleDriver.use(blePort, function(err) {
   if (err) {
@@ -67,7 +68,12 @@ function beginTesting() {
     // discoverAllAttributesTest
      // writeDescriptorTest,
      // readDescriptorTest,
-     notificationTest
+     // notificationTest
+     // signalStrengthTest,
+     // systemCommandsTest,
+     // maxNumValuesTest,
+     // advertisingTest,
+     readWriteValueTest
     ],
 
   function(err) {
@@ -364,114 +370,158 @@ function beginTesting() {
 //   })
 // }
 //
-// function readWriteValueTest(callback) {
-//   var testPhrase = "Alpha Bar Cappa Foo"
-//   bluetooth.writeLocalValue(0, testPhrase, function(err) {
-//     if (err) {
-//       return failModule("Writing local value", err);
-//     }
-//     else {
-//       bluetooth.readLocalValue(0, 0, function(err, value) {
-//         if (err) {
-//           return failModule("Reading local value", err);
-//         }
-//         else if (value.toString() != testPhrase) {
-//           return failModule("Comparing written with read local");
-//         }
-//         else {
-//           console.log("Read Write Test Complete");
-//           callback && callback()
-//         }
-//       });
-//     }
-//   })
-// }
-//
+function readWriteValueTest(callback) {
+  var testPhrase = "Alpha Bar Cappa Foo";
+  bluetooth.writeLocalValue(0, testPhrase, function(err) {
+    if (err) {
+      return callback && callback(err);
+    }
+    else {
+      bluetooth.readLocalValue(0, 0, function(err, value) {
+        if (err) {
+          return callback && callback(err);
+        }
+        else if (value.toString() != testPhrase) {
+          return callback && callback(new Error("Invalid test read."));
+        }
+        else {
+          console.log("Read Write Test Complete");
+          callback && callback()
+        }
+      });
+    }
+  })
+}
+
 function readFirmwareTest(callback) {
+  console.log("Read Firmware Version Test");
   bluetooth.getFirmwareVersion(function(err, version) {
     if (err) {
-      return failModule("Reading firmware", err);
+      return callback && callback(err);
     }
     console.log("Got this version", version);
-
+    console.log("Read Firmware Version Test Passed.");
+    callback && callback();
   });
 }
-//
-// function maxNumberValueTest(callback) {
-//   bluetooth.maxNumValues(function(err, max) {
-//     if (err) {
-//       failModule("Getting max values", err);
-//     }
-//     if (max <= 0) {
-//       failModule("Getting actual max value");
-//     }
-//     else {
-//         console.log("Max Num Values Test Passed.");
-//         callback && callback();
-//     }
-//   });
-// }
-//
+
+function maxNumValuesTest(callback) {
+  bluetooth.maxNumValues(function(err, max) {
+    if (err) {
+      return callback && callback(err);
+    }
+    if (max <= 0) {
+      return callback && callback(new Error("Invalid number of max values."));
+    }
+    else {
+      console.log("Max Num Values Test Passed.");
+      callback && callback();
+    }
+  });
+}
+
 // // Can't make this test until we use multiple modules
 // function advertisementDataTest(callback) {
 // }
 //
 //
-// function advertisingTest(callback) {
-//   bluetooth.once('startAdvertising', function() {
-//     console.log("Started advertising");
-//     bluetooth.once('connect', function() {
-//       bluetooth.once('disconnect', function(reason) {
-//         console.log("Disconnected from master...");
-//         bluetooth.once('stopAdvertising', function(err) {
-//           if (err) {
-//             return failModule("Stopping advertisement event", err);
-//           }
-//           console.log("Advertising Test Passed.");
-//           bluetooth.reset(callback);
-//         });
-//         bluetooth.stopAdvertising(function(err) {
-//           if (err) {
-//             return failModule("Stopping advertisement", err);
-//           }
-//         });
-//       });
-//     });
-//   });
-//   bluetooth.startAdvertising(function(err) {
-//     if (err) {
-//       return failModule("Starting to advertise", err);
-//     }
-//   });
-// }
+function advertisingTest(callback) {
+  console.log("Beginning advertising test...");
+  bluetooth.once('startAdvertising', function() {
+    bluetooth.once('connect', function() {
+      bluetooth.once('disconnect', function(reason) {
+        bluetooth.once('stopAdvertising', function(err) {
+          if (err) {
+            return callback && callback(err);
+          }
+          else {
+            console.log("Advertising Test Passed.");
+            bluetooth.reset(callback);
+          }
+        });
+        bluetooth.stopAdvertising(function(err) {
+          if (err) {
+            return callback && callback(err);
+          }
+        });
+      });
+    });
+    slaveB.startScanning({serviceUUIDs:['08c8c7a06cc511e3981f0800200c9a66']}, function(err) {
+      if (err) {
+        return callback && callback(err);
+      }
+      else {
+        slaveB.on('discover', function(peripheral) {
+          console.log("Discovered the advertising ble");
+          slaveB.stopScanning(function(err) {
+            if (err) {
+              return callback && callback(err);
+            }else {
+              console.log("stopped scan");
+              slaveB.connect(peripheral, function(err) {
+                console.log("connected");
+                if (err) {
+                  return callback && callback(err);
+                }
+                else {
+                  peripheral.disconnect(function(err) {
+                    if (err) {
+                      return callback && callback(err);
+                    }
+                  });
+                }
+              })
+            }
+          })
+        })
+      }
+    })
+  });
+  bluetooth.startAdvertising(function(err) {
+    if (err) {
+      return callback && callback(err);
+    }
+  });
+}
 function systemCommandsTest(callback) {
   bluetooth.getBluetoothAddress(function(err, address) {
     if (err) {
-      return failModule("Retrieving address", err);
+      return callback && callback(err);
     }
     bluetooth.getMaxConnections(function(err, max) {
       if (err) {
-        return failModule("Retrieving max connections", err);
+        return callback && callback(err);
       }
-      console.log("System Commands Test Passed.");
+      else {
+        console.log("System Commands Test Passed.");
+        callback && callback();
+      }
     });
   })
 }
 
 function signalStrengthTest(callback) {
+  console.log("Starting singal strength test...");
   connectToSlaveB(function(err, slave) {
     if (err) {
       return callback && callback(err);
     }
     slave.updateRssi(function(err, rssi) {
+      console.log("GOT THIS", rssi);
       if (err) {
-        return failModule("Getting signal strength", err);
+        return callback && callback(err);
       }
       if (rssi > 0) {
-        return failModule("Invalid Rssi value" + rssi.toString());
+        return callback && callback(new Error("Invalid RSSI Value:" + rssi.toString()));
       }
-      slave.disconnect(function() {
-        bluetooth.reset( callback);
+      slave.disconnect(function(err) {
+        if (err) {
+          return callback && callback(err);
+        }
+        else {
+          console.log("Successfully passed signal strength test", rssi.toString());
+          bluetooth.reset( callback);
+        }
       });
     });
   });
