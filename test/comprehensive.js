@@ -78,7 +78,8 @@ function beginTesting() {
      // readWriteLongValueTest,
      // remoteWriteTest,
      // remoteNotificationStatusUpdateTest,
-     remoteIndicationStatusUpdateTest
+     // remoteIndicationStatusUpdateTest,
+     bondingTest
     ],
 
   function(err) {
@@ -91,194 +92,178 @@ function beginTesting() {
   });
 }
 
-// function bondingTest(callback) {
-//   bluetooth.setBondable(true, function(err) {
-//     if (err) {
-//       return failModule("Setting to bondable", err);
-//     }
-//     else {
-//       console.log("Set to bondable successful...");
-//       connectToMoosh(function(moosh) {
-//         bluetooth.on('disconnect', function(peripheral, reason) {
-//           console.log(peripheral.toString() + "disconnected because" + reason);
-//         });
-//         bluetooth.startEncryption(moosh, function(err) {
-//           if (err) {
-//             return failModule("Starting encryption", err);
-//           }
-//           else {
-//             console.log("Successfully encrypted connection!");
-//             bluetooth.getBonds(function(err, bonds) {
-//               if (err) {
-//                 return failModule("Retrieving bonds", err);
-//               }
-//               else {
-//                 console.log("Got these bonds: ", bonds);
-//               }
-//             });
-//           }
-//         });
-//       });
-//     }
-//   })
-// }
-//
-// function gpioWatchChangeTest(callback) {
-//   var gpio = bluetooth.gpio("p0_2");
-//   var trig = tessel.port('b').gpio(2).output();
-//   trig.high();
-//   gpio.watch('change', function(err, timestamp, type) {
-//     console.log("Got this int", err, timestamp, type);
-//     if (err) {
-//       return failModule("Error setting watch on gpio", err);
-//     }
-//     else {
-//       gpio.unwatch('change', function(err) {
-//         if (err) {
-//           return failModule("Error removing watch", err);
-//         }
-//         var timeout = setTimeout(function() {
-//           gpio.removeAllListeners();
-//           console.log("GPIO Watch Test Passed!");
-//           callback && callback();
-//         }, 2000);
-//         gpio.on('change', function(err, timestamp, type) {
-//           console.log("Somehow it was hit!", err, timestamp, type);
-//           clearTimeout(timeout);
-//
-//           return failModule("Pin Watch interrupt fired after unwatch.");
-//         });
-//         trig.high();
-//       });
-//     }
-//   });
-//   setTimeout(function() {
-//     trig.low();
-//   }, 1000);
-// }
-//
-// function gpioWatchTest(callback) {
-//   var gpio = bluetooth.gpio("p0_2");
-//   var trig = tessel.port('b').gpio(2).output();
-//   gpio.watch('rise', function(err, timestamp, type) {
-//     console.log("Got this", err, timestamp, type);
-//     if (err) {
-//       return failModule("Error setting watch on gpio", err);
-//     }
-//     else {
-//       gpio.unwatch('rise', function(err) {
-//         if (err) {
-//           return failModule("Error removing watch", err);
-//         }
-//         var timeout = setTimeout(function() {
-//           gpio.removeAllListeners();
-//           console.log("GPIO Watch Test Passed!");
-//           callback && callback();
-//         }, 2000);
-//         gpio.on('rise', function() {
-//           clearTimeout(timeout);
-//
-//           return failModule("Pin Watch interrupt fired after unwatch.");
-//         });
-//       });
-//     }
-//   });
-//   setTimeout(function() {
-//     trig.high();
-//   }, 1000);
-// }
-//
-// function gpioWriteTest(callback) {
-//   var gpio = bluetooth.gpio("p0_2");
-//   var reader = tessel.port('b').gpio(2).input();
-//   gpio.setOutput(true, function(err) {
-//     if (err) {
-//       return failModule ("Setting GPIO as output");
-//     }
-//     else {
-//       var value = reader.readSync();
-//       if (value != 1) {
-//         return failModule("Writing correct GPIO value");
-//       }
-//       else {
-//         gpio.write(0, function(err) {
-//           if (err) {
-//             return failModule("Writing to gpio", err);
-//           }
-//           value = reader.readSync();
-//           if (value != 0) {
-//             return failModule("Writing correct GPIO value again...");
-//           }
-//           else {
-//             console.log("GPIO Writing Test Passed.");
-//             callback && callback();
-//           }
-//         })
-//       }
-//
-//     }
-//   });
-// }
-// // This requires "p0_2" to be connected to port b, gpio 2
-// function gpioReadTest(callback) {
-//   var gpio = bluetooth.gpio("p0_2");
-//   var writer = tessel.port('b').gpio(2).output();
-//   writer.high();
-//   gpio.read(function(err, value) {
-//     if (err) {
-//       return failModule("Reading gpio", err);
-//     }
-//     else if (value != 1) {
-//       return failModule("Reading correct gpio value");
-//     }
-//     else {
-//     writer.low();
-//     gpio.read(function(err, value) {
-//       if (err) {
-//         return failModule("Reading GPIO again", err);
-//       }
-//       else if (value != 0 ) {
-//         return failModule("Reading correct gpio value the second time");
-//       }
-//       else {
-//         console.log("GPIO Read Test Passed");
-//         callback && callback();
-//       }
-//     });
-//     }
-//   });
-// }
-//
-// // This currently requires a Seeeduino programmed
-// // to send an 11 char string back (listening on address 0x40)
-// function i2cTest(callback) {
-//   var testString = "Hell yeah!";
-//   var master = bluetooth.I2C(0x40);
-//   master.transfer(testString, testString.length, function(err, rx) {
-//     if (err) {
-//       failModule("Transferring i2c data", err);
-//     }
-//     else if (testString.length != rx.length) {
-//       failModule("Receiving correct number of bytes");
-//     }
-//     else {
-//       console.log("I2C test passed.");
-//       callback && callback();
-//     }
-//   });
-// }
-//
-// function ADCTest(callback) {
-//   var adcread = tessel.port('b').gpio(3).output();
-//   adcread.high();
-//   bluetooth.readADC(function(err, value) {
-//     adcread.low();
-//     bluetooth.readADC(function(err, value) {
-//       callback && callback();
-//     });
-//   });
-// }
-//
+function bondingTest(callback) {
+  bluetooth.setBondable(true, function(err) {
+    if (err) {
+      return failModule("Setting to bondable", err);
+    }
+    else {
+      console.log("Set to bondable successful...");
+      connectToSlaveB(function(err, slave) {
+        if (err) {
+          return callback && callback(err);
+        }
+        bluetooth.on('disconnect', function(peripheral, reason) {
+          console.log(peripheral.toString() + "disconnected because" + reason);
+        });
+        bluetooth.startEncryption(slave, function(err) {
+          if (err) {
+            return callback && callback(err);
+          }
+          else {
+            console.log("Successfully encrypted connection!");
+            bluetooth.getBonds(function(err, bonds) {
+              if (err) {
+                return callback && callback(err);
+              }
+              else {
+                console.log("Got these bonds: ", bonds);
+              }
+            });
+          }
+        });
+      });
+    }
+  })
+}
+
+function gpioWatchChangeTest(callback) {
+  var gpio = bluetooth.gpio("p0_2");
+  var trig = tessel.port('b').gpio(2).output();
+  trig.high();
+  gpio.watch('change', function(err, timestamp, type) {
+    if (err) {
+      return callback && callback(err);
+    }
+    else {
+      gpio.unwatch('change', function(err) {
+        if (err) {
+          return callback && callback(err);
+        }
+        var timeout = setTimeout(function() {
+          gpio.removeAllListeners();
+          console.log("GPIO Watch Test Passed!");
+          callback && callback();
+        }, 2000);
+        gpio.on('change', function(err, timestamp, type) {
+          clearTimeout(timeout);
+
+          return callback && callback(new Error("Interrupt fired after removed"));
+        });
+        trig.high();
+      });
+    }
+  });
+  setTimeout(function() {
+    trig.low();
+  }, 1000);
+}
+
+function gpioWriteTest(callback) {
+  var gpio = bluetooth.gpio("p0_2");
+  var reader = tessel.port('b').gpio(2).input();
+  gpio.setOutput(true, function(err) {
+    if (err) {
+      return callback && callback(err);
+    }
+    else {
+      var value = reader.readSync();
+      if (value != 1) {
+        return callback && callback(new Error("Incorrect GPIO value written."));
+      }
+      else {
+        gpio.write(0, function(err) {
+          if (err) {
+            return callback && callback(err);
+          }
+          value = reader.readSync();
+          if (value != 0) {
+            return callback && callback(new Error("Incorrect GPIO value written."));
+          }
+          else {
+            console.log("GPIO Writing Test Passed.");
+            callback && callback();
+          }
+        })
+      }
+
+    }
+  });
+}
+
+// This requires "p0_2" to be connected to port b, gpio 2
+function gpioReadTest(callback) {
+  var gpio = bluetooth.gpio("p0_2");
+  var writer = tessel.port('b').gpio(2).output();
+  writer.high();
+  gpio.read(function(err, value) {
+    if (err) {
+      return callback && callback(err);
+    }
+    else if (value != 1) {
+      return callback && callback(new Error("Incorrect GPIO value written."));
+    }
+    else {
+    writer.low();
+    gpio.read(function(err, value) {
+      if (err) {
+        return callback && callback(err);
+      }
+      else if (value != 0 ) {
+        return callback && callback(new Error("Incorrect GPIO value written."));
+      }
+      else {
+        console.log("GPIO Read Test Passed");
+        callback && callback();
+      }
+    });
+    }
+  });
+}
+
+// This currently requires a Seeeduino programmed
+// to send an 11 char string back (listening on address 0x40)
+function i2cTest(callback) {
+  console.log("Testing i2c...");
+  var testString = "Hell yeah!";
+  var master = bluetooth.I2C(0x40);
+  master.transfer(testString, testString.length, function(err, rx) {
+    if (err) {
+      callback && callback(err);
+    }
+    else if (testString.length != rx.length) {
+      callback && callback(new Error("Receiving correct number of bytes"));
+    }
+    else {
+      console.log("I2C test passed.");
+      callback && callback();
+    }
+  });
+}
+
+function ADCTest(callback) {
+  console.log("Testing ADC...");
+  var adcread = tessel.port('b').gpio(3).output();
+  adcread.high();
+  bluetooth.readADC(function(err, value) {
+    if (value != 1) {
+      return callback && callback(new Error("Incorrect adc read"));
+    }
+    else{
+      adcread.low();
+      bluetooth.readADC(function(err, value) {
+        if (value != 0) {
+            return callback && callback(new Error("Incorrect adc read"));
+          }
+          else {
+            console.log("ADC Test passed!");
+            callback && callback();
+          }
+      });
+    }
+  });
+}
+
 function remoteIndicationStatusUpdateTest(callback) {
   connectToMaster(function(err, master) {
     if (err) {
