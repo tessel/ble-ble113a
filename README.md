@@ -218,9 +218,6 @@ bluetooth.startIndications( characteristic, function(err) {...} );
 // Stop receiving remote characteristic updates and indicate it was received
 bluetooth.stopIndications( characteristic, function(err) {...} );
 
-// Indicate that a notification was received (should always be called after receiving notification)
-bluetooth.confirmIndication( characteristic, function(err) {...} );
-
 // Get signal strength of peripheral that we're conneted to
 bluetooth.updateRSSI( peripheral, function(err, rssi) {...} );
 
