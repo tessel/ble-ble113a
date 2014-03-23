@@ -508,7 +508,7 @@ BluetoothController.prototype.discoverAllServices = function(peripheral, callbac
 BluetoothController.prototype.discoverServices = function(peripheral, filter, callback)
 {
   // Discover the services of this device
-  this.serviceDiscovery(peripheral, function(err, allServices) {
+  this.serviceDiscovery(peripheral, false, function(err, allServices) {
     if (err) {
       return callback && callback(err);
     }
@@ -531,13 +531,19 @@ BluetoothController.prototype.discoverServices = function(peripheral, filter, ca
 }
 
 // TODO: Implement this function
-BluetoothController.prototype.discoverIncludedServices = function(peripheral, serviceUUID) {
+BluetoothController.prototype.discoverIncludedServices = function(peripheral, callback) {
 
-  this.on('groupFound', this.createService)
-  this.messenger.discoverIncludedServices(peripheral, serviceUUID, callback);
+  this.serviceDiscovery(peripheral, true, function(err, services) {
+    if (err) {
+      return callback && callback(err);
+    }
+    else {
+
+    }
+  })
 }
 
-BluetoothController.prototype.serviceDiscovery = function(peripheral, callback) {
+BluetoothController.prototype.serviceDiscovery = function(peripheral, included, callback) {
 
   var services = [];
 
@@ -561,14 +567,28 @@ BluetoothController.prototype.serviceDiscovery = function(peripheral, callback) 
     }
   });
 
-  // Request the messenger to start discovering services
-  this.messenger.discoverServices(peripheral, function(err, response) {
-    // If there was a problem with the request
-    if (err) {
-      // Call callback immediately
-      return callback && callback(err);
-    }
-  }.bind(this));
+  var discoveryProcedure;
+
+  if (included) {
+    // Request the messenger to start discovering services
+    this.messenger.discoverIncludedServices(peripheral, function(err, response) {
+      // If there was a problem with the request
+      if (err) {
+        // Call callback immediately
+        return callback && callback(err);
+      }
+    });
+  }
+  else {
+    // Request the messenger to start discovering services
+    this.messenger.discoverServices(peripheral, function(err, response) {
+      // If there was a problem with the request
+      if (err) {
+        // Call callback immediately
+        return callback && callback(err);
+      }
+    });
+  }
 }
 BluetoothController.prototype.attributeDiscoveryHandler = function(err, filter, attributes, callback) {
   // If there was an error, report it
@@ -849,12 +869,7 @@ BluetoothController.prototype.createCharacteristicFromInformationFound = functio
   if (peripheral.connection === info.connection) {
     // Turn the uuid into a string
     var uuid = new UUID(info.uuid);
-    console.log(attributes, uuid.toString());
-    console.log("UUID Should be:", uuid.toString());
-    // console.log(peripheral.services[uuid.toString()]);
-    // console.log(Service.isStandardService(uuid.toString()));
-    console.log(Descriptor.isStandardDescriptor(uuid.toString()));
-    console.log(attributes[uuid.toString()]);
+
     // If this uuid isn't a service or a descriptor, or any other generic type
     if (!peripheral.services[uuid.toString()] &&
         !Service.isStandardService(uuid.toString()) &&
@@ -863,8 +878,6 @@ BluetoothController.prototype.createCharacteristicFromInformationFound = functio
 
       // Make a new one
       var characteristic = new Characteristic(peripheral, uuid, info.chrhandle);
-
-      console.log("ADding this:", characteristic.toString());
 
       // Sync the new one with the correct service
       peripheral.syncCharacteristic(characteristic);
@@ -980,8 +993,6 @@ BluetoothController.prototype.readAttribute = function(attribute, callback) {
   var ret;
 
   function valueListener(reading) {
-    console.log("Reading this many", reading.value.length);
-    console.log("this", reading.value);
     // If this is our first read of several or if this will be the only read
     if (readNum === 0 || (reading.type == 0)) {
       // Assign the value
@@ -1124,7 +1135,6 @@ BluetoothController.prototype.prepareAttributeWrite = function(attribute, multip
         if (offset < multipleBuffers.length) {
 
           // Send another part of the buffer off
-          console.log("Writing ",  offset, multipleBuffers[offset]);
           self.messenger.prepareWrite(attribute, multipleBuffers[offset], offset*bufSize, function(err, response) {
             // If there was a problem with the request
             if (err) {
@@ -1179,7 +1189,6 @@ BluetoothController.prototype.prepareAttributeWrite = function(attribute, multip
   // Function for writing each subsequent buffer
   this.on('completedProcedure', bufferWriteIterate);
 
-console.log("Writing ", offset, multipleBuffers[offset]);
   this.messenger.prepareWrite(attribute, multipleBuffers[offset], offset * bufSize, function(err, response) {
     // If there was a problem with the request
     if (err) {
@@ -1224,7 +1233,6 @@ BluetoothController.prototype.splitWriteIntoBuffers = function(value, callback) 
 
     // Get the number of buffers we'll need
     var iter = Math.ceil(buf.length/maxBufLen);
-    console.log("iter", iter);
 
     // Prepare array for buffers
     var ret = new Array(iter);
@@ -1933,7 +1941,6 @@ BluetoothController.prototype.startEncryption = function(peripheral, callback) {
   var self = this;
 
   function successHandler(status) {
-    console.log("Got a connection status", status);
     if (status.connection === peripheral.connection) {
       peripheral.bondHandle = status.bonding;;
       removeHandlers();
@@ -1942,7 +1949,6 @@ BluetoothController.prototype.startEncryption = function(peripheral, callback) {
   }
 
   function failHandler(failDetails) {
-    console.log("Failure details", failDetails);
     if (peripheral.connection === failDetails.handle) {
       removeHandlers();
       callback && callback(failDetails.reason);

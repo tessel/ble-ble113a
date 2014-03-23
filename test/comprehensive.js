@@ -50,17 +50,22 @@ bluetooth = bleDriver.use(blePort, function(err) {
 function beginTesting() {
   console.log("Commencing tests.");
   async.waterfall([
-    // portTest,
-    // , scanTest
-    // , filterTest
+    //portTest,
+    //scanTest, 
+      // filterTest,
     // , connectTest
-    // , serviceDiscoveryTest
+     // serviceDiscoveryTest
     // , characteristicDiscoveryTest
-    // , characteristicServiceDiscoveryTest
+    // characteristicServiceDiscoveryTest
     // , discoverAllTest
     // , readCharacteristicTest
     // , writeCharacteristicTest
-     writeLongCharacteristicTest
+     // writeLongCharacteristicTest
+     // includedServiceTest
+     // discoverAllTest
+     // discoverCharacteristicDescriptorTest
+     writeDescriptorTest,
+     discoverAllAttributesTest
     ],
 
   function(err) {
@@ -99,21 +104,6 @@ function beginTesting() {
                   // readWriteLongValueTest(passModule);
                   // remoteWriteTest(passModule);
                   // remoteStatusUpdateTest(passModule);
-                  // ADCTest(passModule);
-                  // i2cTest(passModule);
-                    //  gpioReadTest(passModule);
-                    // gpioWriteTest(function() {
-                    //   gpioReadTest(passModule);
-                    // })
-                  // gpioWatchTest(passModule);
-                  // gpioWatchChangeTest(passModule);
-                  // bondingTest(passModule);
-            // });
-          // });
-        // });
-      // });
-  //   });
-  // });
 }
 
 // function bondingTest(callback) {
@@ -395,15 +385,15 @@ function beginTesting() {
 //   })
 // }
 //
-// function readFirmwareTest(callback) {
-//   bluetooth.getFirmwareVersion(function(err, version) {
-//     if (err) {
-//       return failModule("Reading firmware", err);
-//     }
-//     console.log("Got this version", version);
-//
-//   });
-// }
+function readFirmwareTest(callback) {
+  bluetooth.getFirmwareVersion(function(err, version) {
+    if (err) {
+      return failModule("Reading firmware", err);
+    }
+    console.log("Got this version", version);
+
+  });
+}
 //
 // function maxNumberValueTest(callback) {
 //   bluetooth.maxNumValues(function(err, max) {
@@ -452,33 +442,38 @@ function beginTesting() {
 //     }
 //   });
 // }
-// function systemCommandsTest(callback) {
-//   bluetooth.getBluetoothAddress(function(err, address) {
-//     if (err) {
-//       return failModule("Retrieving address", err);
-//     }
-//     bluetooth.getMaxConnections(function(err, max) {
-//       if (err) {
-//         return failModule("Retrieving max connections", err);
-//       }
-//       console.log("System Commands Test Passed.");
-//     });
-//   })
-// }
-//
-// function signalStrengthTest(callback) {
-//   connectToMoosh(function(moosh) {
-//     moosh.updateRssi(function(err, rssi) {
-//       if (err) {
-//         return failModule("Getting signal strength", err);
-//       }
-//       if (rssi > 0) {
-//         return failModule("Invalid Rssi value" + rssi.toString());
-//       }
-//       moosh.disconnect(callback);
-//     });
-//   });
-// }
+function systemCommandsTest(callback) {
+  bluetooth.getBluetoothAddress(function(err, address) {
+    if (err) {
+      return failModule("Retrieving address", err);
+    }
+    bluetooth.getMaxConnections(function(err, max) {
+      if (err) {
+        return failModule("Retrieving max connections", err);
+      }
+      console.log("System Commands Test Passed.");
+    });
+  })
+}
+
+function signalStrengthTest(callback) {
+  connectToSlaveB(function(err, slave) {
+    if (err) {
+      return callback && callback(err);
+    }
+    slave.updateRssi(function(err, rssi) {
+      if (err) {
+        return failModule("Getting signal strength", err);
+      }
+      if (rssi > 0) {
+        return failModule("Invalid Rssi value" + rssi.toString());
+      }
+      slave.disconnect(function() {
+        bluetooth.reset( callback);
+      });
+    });
+  });
+}
 //
 // function indicationTest(callback) {
 //   connectToMoosh(function(moosh) {
@@ -569,196 +564,189 @@ function beginTesting() {
 //     });
 //   });
 // }
-// function writeDescriptorTest(callback) {
-//   connectToMoosh(function(moosh) {
-//     moosh.discoverCharacteristics(['ffa2'], function(err, characteristics) {
-//       if (err) {
-//         return failModule("Discovering characteristic in write descriptor test", err);
-//       }
-//       else {
-//         if (characteristics.length == 1) {
-//           characteristics[0].discoverAllDescriptors(function(err, descriptors) {
-//             if (err) {
-//               return failModule("Writing characteristic descriptor", err);
-//             }
-//             var gate = 0;
-//             if (descriptors.length) {
-//               bluetooth.once('descriptorWrite', function(descriptor, value) {
-//                 gate++;
-//               });
-//               moosh.once('descriptorWrite', function(descriptor, value) {
-//                 gate++;
-//               });
-//               descriptors[0].once('descriptorWrite', function(value) {
-//
-//                 if (gate === 3) {
-//                   console.log("Descriptor Write Test Passed.")
-//                   // bluetooth.reset(callback);
-//                 }
-//               });
-//               descriptors[0].write(new Buffer([0x1, 0x0]), function(err, value) {
-//                 if (err) {
-//                   return failModule("writing descriptor", err);
-//                 }
-//                 else {
-//                   gate++;
-//                 }
-//               });
-//             }
-//             else {
-//               return failModule("Reading correct number of descriptors");
-//             }
-//           });
-//         }
-//         else {
-//           return failModule("Reading correct number of characteristics");
-//         }
-//       }
-//     });
-//   });
-// }
-// function readDescriptorTest(callback) {
-//   connectToMoosh(function(moosh) {
-//
-//     moosh.discoverCharacteristics(['ffa2'], function(err, characteristics) {
-//       if (err) {
-//         return failModule("Discovering characteristic in read descriptor test", err);
-//       }
-//       else {
-//         if (characteristics.length == 1) {
-//           characteristics[0].discoverAllDescriptors(function(err, descriptors) {
-//             if (err) {
-//               return failModule("Reading characteristic descriptor", err);
-//             }
-//             var gate = 0;
-//             if (descriptors.length) {
-//               bluetooth.once('descriptorRead', function(descriptor, value) {
-//                 gate++;
-//               });
-//               moosh.once('descriptorRead', function(descriptor, value) {
-//                 gate++;
-//               });
-//               descriptors[0].once('descriptorRead', function(value) {
-//
-//                 if (gate === 3) {
-//                   console.log("Descriptor Read Test Passed.")
-//                   bluetooth.reset(callback);
-//                 }
-//               });
-//               descriptors[0].read(function(err, value) {
-//                 if (err) {
-//                   return failModule("Reading descriptor", err);
-//                 }
-//                 else {
-//                   gate++;
-//                 }
-//               });
-//             }
-//             else {
-//               return failModule("Reading correct number of descriptors");
-//             }
-//           });
-//         }
-//         else {
-//           return failModule("Reading correct number of characteristics");
-//         }
-//       }
-//     });
-//   })
-// }
-//
-//
-// function discoverAllAttributesTest(callback) {
-//   connectToMoosh(function(moosh) {
-//     moosh.discoverAllAttributes(function(err, results) {
-//       if (err) {
-//         return failModule("Discovering all attributes", results);
-//       }
-//       else {
-//         if (results.services.length === 0) {
-//           return failModule("Discovering correct number of services");
-//         }
-//         if (results.characteristics.length === 0) {
-//           return failModule("Discovering correct number of characteristics");
-//         }
-//         if (results.descriptors.length === 0) {
-//           return failModule("Discovering correct number of descriptors");
-//         }
-//         moosh.disconnect(function() {
-//           bluetooth.reset(callback);
-//         });
-//       }
-//     });
-//   });
-// }
-//
-// function discoverCharacteristicDescriptorTest(callback) {
-//   connectToMoosh(function(moosh) {
-//     moosh.discoverAllCharacteristics(function(err, characteristics) {
-//       if (err) {
-//         return failModule("Discovering single characteristic in descriptor discovery", err);
-//       }
-//       else {
-//         var char;
-//         for (var i = 0; i < characteristics.length; i++) {
-//           if (characteristics[i].uuid.toString() === "ffa6") {
-//             char = characteristics[i];
-//           }
-//         }
-//
-//         if (char) {
-//           char.discoverAllDescriptors(function(err, descriptors) {
-//             if (err) {
-//               return failModule("Discovering descriptors of characteristic", err);
-//             }
-//             else {
-//               console.log("Found these descriptors lying around", descriptors.toString());
-//             }
-//           });
-//         }
-//         else {
-//           console.log("No char match found");
-//         }
-//       }
-//     });
-//   });
-// }
-//
-// function discoverAllDescriptorsTest(callback) {
-//   connectToMoosh(function(moosh) {
-//     moosh.discoverAllDescriptors(function(err, descriptors) {
-//       if (err) {
-//         return failModule("Discovering all descriptors", err);
-//       }
-//       else {
-//         console.log("Here are the descriptors", descriptors.toString());
-//         moosh.disconnect(function(err) {
-//           if (err) {
-//             return failModule("Disconnecting from moosh", err);
-//           }
-//           else {
-//             bluetooth.reset(callback);
-//           }
-//         });
-//       }
-//     });
-//   });
-// }
-//
-// function discoverSpecificService(callback) {
-//   connectToMoosh(function(moosh) {
-//     var meterSettings = "ffa2";
-//     bluetooth.discoverSpecificServices(moosh, [meterSettings], function(err, services) {
-//       if (err) {
-//         return failModule("Discovering specific service quickly", err);
-//       }
-//       else {
-//         console.log("Found these services", services);
-//       }
-//     })
-//   })
-// }
-//
+
+function readDescriptorTest(callback) {
+  console.log("Beginning read descriptor test.");
+  connectToSlaveB(function(err, slave) {
+    if (err) {
+      return callback && callback(err);
+    }
+    slave.discoverCharacteristics(['883f1e6b76f64da187eb6bdbdb617888'], function(err, characteristics) {
+      if (err) {
+        return callback && callback(err);
+      }
+      else {
+        if (characteristics.length == 1) {
+          characteristics[0].discoverAllDescriptors(function(err, descriptors) {
+            if (err) {
+              return callback && callback(err);
+            }
+            var gate = 0;
+            if (descriptors.length) {
+              bluetooth.once('descriptorRead', function(descriptor, value) {
+                gate++;
+              });
+              slave.once('descriptorRead', function(descriptor, value) {
+                gate++;
+              });
+              descriptors[0].once('descriptorRead', function(value) {
+                console.log("Read this:", value);
+                if (gate === 3) {
+                  console.log("Descriptor Read Test Passed.")
+                  bluetooth.reset(callback);
+                }
+              });
+              descriptors[0].read(function(err, value) {
+                if (err) {
+                  return callback && callback(err);
+                }
+                else {
+                  gate++;
+                }
+              });
+            }
+            else {
+              return callback && callback(new Error("Read incorrect number of descriptors."));
+            }
+          });
+        }
+        else {
+          return callback && callback(new Error("Read incorrect number of characteristics."));
+        }
+      }
+    });
+  })
+}
+
+function writeDescriptorTest(callback) {
+  console.log("Beginning write descriptor test.");
+  connectToSlaveB(function(err, slave) {
+    if (err) {
+      return callback && callback(err);
+    }
+    slave.discoverCharacteristics(['50888c106cc511e3981f0800200c9a66'], function(err, characteristics) {
+      if (err) {
+        return callback && callback(err);
+      }
+      else {
+        if (characteristics.length == 1) {
+          characteristics[0].discoverAllDescriptors(function(err, descriptors) {
+            if (err) {
+              return callback && callback(err);
+            }
+            var gate = 0;
+            if (descriptors.length) {
+              bluetooth.once('descriptorWrite', function(descriptor, written) {
+                gate++;
+              });
+              slave.once('descriptorWrite', function(descriptor, written) {
+                gate++;
+              });
+              descriptors[0].once('descriptorWrite', function(charWritten) {
+                console.log("wrote this:", value);
+                if (gate === 3) {
+                  console.log("Descriptor Read Test Passed.")
+                  bluetooth.reset(callback);
+                }
+              });
+              descriptors[0].write( new Buffer("hey jon"), function(err) {
+                if (err) {
+                  return callback && callback(err);
+                }
+                else {
+                  gate++;
+                }
+              });
+            }
+            else {
+              return callback && callback(new Error("Read incorrect number of descriptors."));
+            }
+          });
+        }
+        else {
+          return callback && callback(new Error("Read incorrect number of characteristics."));
+        }
+      }
+    });
+  })
+}
+
+function discoverAllAttributesTest(callback) {
+  console.log("Testing discovery of all attributes...");
+  connectToSlaveB(function(err, slave) {
+    if (err) {
+      return callback && callback(err);
+    }
+    slave.discoverAllAttributes(function(err, results) {
+      if (err) {
+        return callback && callback(err);
+      }
+      else {
+        if (results.services.length === 0) {
+          return callback && callback(new Error("Discovered incorrect number of services"));
+        }
+        else if (results.characteristics.length === 0) {
+          return callback && callback(new Error("Discovered incorrect number of characteristics"))
+        }
+        else if (results.descriptors.length === 0) {
+          return callback && callback(new Error("Discovered incorrect number of descriptors"))
+        }
+        else {
+          slave.disconnect(function(err) {
+            if (err) {
+              return callback && callback(err);
+            }
+            else {
+              console.log("Discovery of all attributes passed.");
+              bluetooth.reset(callback);
+            }
+          });
+        }
+      }
+    });
+  });
+}
+
+function discoverCharacteristicDescriptorTest(callback) {
+  connectToSlaveB(function(err, slave) {
+    if (err) {
+      callback && callback(err);
+    }
+    slave.discoverCharacteristics(['883f1e6b76f64da187eb6bdbdb617888'], function(err, characteristics) {
+      if (err) {
+        callback && callback(err);
+      }
+      else {
+        var char;
+        for (var i = 0; i < characteristics.length; i++) {
+          if (characteristics[i].uuid.toString() === "883f1e6b76f64da187eb6bdbdb617888") {
+            char = characteristics[i];
+          }
+        }
+
+        if (char) {
+          char.discoverAllDescriptors(function(err, descriptors) {
+            if (err) {
+              callback && callback(err);
+            }
+            else if (descriptors.length === 2) {
+              console.log("Descriptor discovery test passed.");
+              callback && callback();
+            }
+            else {
+              return callback && callback(new Error("Invalid number of descriptors returned"));
+            }
+          });
+        }
+        else {
+          return callback && callback(new Error("Unable to find char in descriptor test..."));
+        }
+      }
+    });
+  });
+}
+
+
 function writeLongCharacteristicTest(callback) {
   connectToSlaveB(function(err, slave) {
     if (err) {
@@ -914,133 +902,132 @@ function readCharacteristicTest(callback) {
     }
   });
 }
-//
-// function discoverAllTest(callback) {
-//     connectToMoosh(function(moosh) {
-//     var gate = 0;
-//     moosh.on('servicesDiscover', function(services) {
-//       gate++;
-//     });
-//     bluetooth.on('servicesDiscover', function(services) {
-//       gate++;
-//     });
-//     moosh.on('characteristicsDiscover', function(characteristics) {
-//       if (gate != 4) {
-//         return failModule("Didn't hit all the gates" + gate.toString());
-//       }
-//       else {
-//         moosh.disconnect(function(err) {
-//           bluetooth.reset(callback);
-//         });
-//       }
-//     });
-//     bluetooth.on('characteristicsDiscover', function(characteristics) {
-//       gate++
-//     });
-//     moosh.discoverAllServicesAndCharacteristics(function(err, result) {
-//       if (err) {
-//         return failModule("Discovering all services and chars", err);
-//       }
-//       else if (result.services.length != 0 && result.characteristics.length != 0) {
-//         console.log("Heck yes!", result);
-//       }
-//
-//       gate++;
-//     });
-//   });
-// }
-//
 
-// function characteristicServiceDiscoveryTest(callback) {
-//   // connectToMoosh(function(moosh) {
-//   //   completeServiceCharacteristicDiscoveryTest(moosh, function() {
-//   //     moosh.disconnect(function(err) {
-//   //       if (err) {
-//   //         return failModule("Disconnect from moosh in char service disco test", err);
-//   //       }
-//         connectToMoosh(function(moosh) {
-//           console.log("Connected!");
-//           subsetServiceCharacteristicDiscoveryTest(moosh, function() {
-//             moosh.disconnect(function(err) {
-//               if (err) {
-//                 return failModule("Disconnect from moosh in char service disco test", err);
-//               }
-//                 // serviceSyncingDiscoveryTest(function() {
-//                     bluetooth.reset(callback);
-//                 // });
-//               });
-//             });
-//           });
-//   //   });
-//   // });
-// }
-//
-// function serviceSyncingDiscoveryTest(callback) {
-//   connectToMoosh(function(moosh) {
-//     bluetooth.discoverAllCharacteristics(moosh, function() {
-//       bluetooth.discoverAllServices(moosh, function() {
-//         if (moosh._unassignedCharacteristics.length == 0) {
-//           moosh.disconnect(function(err) {
-//             if (err) {
-//               return failModule("Disconnect from moosh in char service disco test", err);
-//             }
-//             console.log("Completed service syncing test.");
-//             bluetooth.reset(callback);
-//           });
-//         }
-//         else {
-//           console.log("Shit length: ", moosh._unassignedCharacteristics.length);
-//           return failModule("Still have unassigned characteristics after discovery");
-//         }
-//       });
-//     });
-//   });
-// }
-//
-// function completeServiceCharacteristicDiscoveryTest(peripheral, callback) {
-//   console.log("Discovering all services");
-//   peripheral.discoverAllServices(function(err, services) {
-//     if (err) {
-//       return failModule("Discovering all services", err);
-//     }
-//     console.log("Done discovering all services", services);
-//     console.log("From the horse's mouth: ", peripheral.services);
-//     peripheral.discoverAllCharacteristics(function(err, characteristics) {
-//       if (err) {
-//         return failModule("Discovering all chars", err);
-//       }
-//       callback && callback();
-//     });
-//   });
-// }
-//
-// function subsetServiceCharacteristicDiscoveryTest(peripheral, callback) {
-//   peripheral.discoverAllServices(function(err, services) {
-//     if (err) {
-//     return failModule("Discovering all services", err);
-//     }
-//     services.forEach(function(service) {
-//       if (service.uuid.toString() === "ffa0") {
-//         var reqChar = ["ffa6"];
-//         service.discoverAllCharacteristics(function(err, allChars) {
-//           console.log("Discovered all: ", allChars.toString());
-//           if (allChars.length >= reqChar.length) {
-//             console.log("Disocvering specific");
-//             service.discoverCharacteristics(reqChar, function(err, subsetChars) {
-//               console.log("Then found these: ", subsetChars.toString());
-//               if (subsetChars.length == reqChar.length) {
-//                 callback();
-//               }
-//               else {
-//                 return failModule("Characteristic Length validation");
-//               }
-//             });
-//           }
-//         });
-//       }
-//     })
-//   });
-// }
+function discoverAllTest(callback) {
+  connectToSlaveB(function(err, slave) {
+      if (err) {
+        return callback && callback(err);
+      }
+    var gate = 0;
+    slave.on('servicesDiscover', function(services) {
+      gate++;
+    });
+    bluetooth.on('servicesDiscover', function(services) {
+      gate++;
+    });
+    slave.on('characteristicsDiscover', function(characteristics) {
+      if (gate != 4) {
+        return callback && callback(new Error("Didn't hit all the gates" + gate.toString()));
+      }
+      else {
+        slave.disconnect(function(err) {
+          bluetooth.reset(callback);
+        });
+      }
+    });
+    bluetooth.on('characteristicsDiscover', function(characteristics) {
+      gate++
+    });
+    slave.discoverAllServicesAndCharacteristics(function(err, result) {
+      if (err) {
+        return callback && callback(err);
+      }
+      gate++;
+    });
+  });
+}
+
+
+function characteristicServiceDiscoveryTest(callback) {
+  console.log("Begin characteristic-service discovery tests (for syncing)...");
+  connectToSlaveB(function(err, slave) {
+    if (err) {
+      return callback && callback(err);
+    }
+    else {
+      subsetServiceCharacteristicDiscoveryTest(slave, function(err) {
+        if (err) {
+          return callback && callback(err);
+        }
+        else {
+          slave.services = {};
+          slave._unassignedCharacteristics = {};
+
+          console.log("That other test");
+          serviceSyncingDiscoveryTest(slave, function(err) {
+            if (err) {
+              return callback && callback(err);
+            }
+            else {
+              slave.disconnect(function(err) {
+                if (err) {
+                  return callback && callback(err);
+                }
+                else {
+                  bluetooth.reset(callback);
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+  });
+}
+
+function serviceSyncingDiscoveryTest(slave, callback) {
+  console.log("Attempting service syncing discovery test. This could take a while...");
+  bluetooth.discoverAllCharacteristics(slave, function() {
+    bluetooth.discoverAllServices(slave, function() {
+      if (slave._unassignedCharacteristics.length == 0) {
+        slave.disconnect(function(err) {
+          if (err) {
+            return callback && callback(err);
+          }
+          console.log("Completed service syncing test.");
+          bluetooth.reset(callback);
+        });
+      }
+      else {
+        console.log("Shit length: ", slave._unassignedCharacteristics.length);
+        return callback && callback(new Error("Service syncing not complete."));
+      }
+    });
+  });
+}
+
+
+function subsetServiceCharacteristicDiscoveryTest(peripheral, callback) {
+  console.log("Testing subset of service characteristics...");
+  peripheral.discoverAllServices(function(err, services) {
+    if (err) {
+      return callback && callback(err);
+    }
+    console.log("Discovered services", services.length);
+    services.forEach(function(service) {
+      if (service.uuid.toString() === "d752c5fb13804cd5b0efcac7d72cff20") {
+        var reqChar = ["883f1e6b76f64da187eb6bdbdb617888"];
+        console.log("Service match.");
+        service.discoverAllCharacteristics(function(err, allChars) {
+          console.log("Discovered all: ", allChars.toString());
+          if (allChars.length >= reqChar.length) {
+            console.log("Disocvering specific");
+            service.discoverCharacteristics(reqChar, function(err, subsetChars) {
+              console.log("Then found these: ", subsetChars.toString());
+              if (subsetChars.length == reqChar.length) {
+                console.log("Subset of service characteristics passed.");
+                callback();
+              }
+              else {
+                return callback && callback(new Error("Invalid length of requested chars"));
+              }
+            });
+          }
+        });
+      }
+    })
+  });
+}
 
 /*
 Tests surrounding discovering characteristics
@@ -1050,17 +1037,16 @@ Tests surrounding discovering characteristics
   characteristic sync when they're discovered before their service
 */
 function characteristicDiscoveryTest(callback) {
-  // console.log("Beginning characteristic discovery test");
   connectToSlaveB(function(err, slave) {
     if (err) {
       return callback && callback(err);
     }
     else {
-      // allCharacteristicDiscoveryTest(slave, function(err) {
-      //   if (err) {
-      //     return callback && callback(err);
-      //   }
-      //   else {
+      allCharacteristicDiscoveryTest(slave, function(err) {
+        if (err) {
+          return callback && callback(err);
+        }
+        else {
           specificCharacteristicDiscoveryTest(slave, function(err) {
             if (err) {
               return callback && callback(err);
@@ -1072,15 +1058,15 @@ function characteristicDiscoveryTest(callback) {
               bluetooth.reset(callback);
             });
           });
-      //   }
-      // });
+        }
+      });
     }
   });
 }
 
 function specificCharacteristicDiscoveryTest(peripheral, callback) {
   var reqChar = ["ffa6", "883f1e6b76f64da187eb6bdbdb617888", "50888c106cc511e3981f0800200c9a66"];
-  console.log("Specific characteristic discovery test");
+  console.log("Specific characteristic discovery test...");
   peripheral.discoverCharacteristics(reqChar, function(err, pc) {
     if (err) {
       return callback && callback(err);
@@ -1108,7 +1094,6 @@ function specificCharacteristicDiscoveryTest(peripheral, callback) {
 function allCharacteristicDiscoveryTest(peripheral, callback) {
   console.log("Discovering all characteristics...");
   peripheral.discoverAllCharacteristics(function(err, pc) {
-    console.log("Hit the callback");
     if (err) {
       return callback && callback(err);
     }
@@ -1116,15 +1101,37 @@ function allCharacteristicDiscoveryTest(peripheral, callback) {
       if (err) {
         return callback && callback(err);
       }
-      console.log("PC Length: ", pc.length);
-      console.log("MC Length: ", mc.length);
       if (pc.length != mc.length || pc.length === 0) {
         return callback && callback(new Error("Peripheral char length does not equal controller char length"));
       }
       else {
+        console.log("All Characteristic Discovery Test Passed.");
         callback && callback();
       }
     });
+  });
+}
+
+function includedServiceTest(callback) {
+  connectToSlaveB(function(err, slave) {
+    if (err) {
+      return callback && callback(err);
+    }
+    else {
+      bluetooth.discoverIncludedServices(slave, function(err, included) {
+        if (err) {
+          return callback && callback(err);
+        }
+        else {
+          if (included.length === 1) {
+            console.log("Included Service test complete.");
+          }
+          else {
+            return callback && callback(new Error("Invalid return num of included services."));
+          }
+        }
+      });
+    }
   });
 }
 

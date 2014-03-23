@@ -254,9 +254,9 @@ bluetooth.on( 'characteristicRead', function(characteristicRead, valueRead) {...
 
 bluetooth.on( 'characteristicWrite', function(characteristicWritten, valueWritten) {...} );
 
-bluetooth.on( 'descriptorRead', function(characteristicRead, valueRead) {...} );
+bluetooth.on( 'descriptorRead', function(descriptorRead, valueRead) {...} );
 
-bluetooth.on( 'descriptorWrite', function(characteristicWritten, valueWritten) {...} );
+bluetooth.on( 'descriptorWrite', function(descriptorWritten, valueWritten) {...} );
 
 bluetooth.on( 'notification', function(characteristic, valueUpdated) {...} );
 
