@@ -1068,9 +1068,9 @@ BluetoothController.prototype.write = function(characteristic, value, callback) 
 }
 BluetoothController.prototype.writeAttribute = function(attribute, value, callback) {
 
-  if (value.length > 98) {
-    return callback && callback(new Error("Writes must be less than or equal to 98 bytes"));
-  }
+  // if (value.length > 98) {
+  //   return callback && callback(new Error("Writes must be less than or equal to 98 bytes"));
+  // }
 
   // Write has to be in 20 byte increments
   this.splitWriteIntoBuffers(value, function(err, buffers) {

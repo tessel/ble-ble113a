@@ -18,7 +18,7 @@ var bluetooth;
 var peripheral;
 
 var slaveBPort = tessel.port('b');
-var slaveDPort = tessel.port('c');
+var slaveDPort = tessel.port('d');
 
 var slaveB;
 var slaveD;
@@ -61,7 +61,7 @@ function beginTesting() {
     // , discoverAllTest
     // , readCharacteristicTest
     // , writeCharacteristicTest
-     // writeLongCharacteristicTest
+     writeLongCharacteristicTest
      // includedServiceTest
      // discoverAllTest
      // discoverCharacteristicDescriptorTest
@@ -79,7 +79,7 @@ function beginTesting() {
      // remoteWriteTest,
      // remoteNotificationStatusUpdateTest,
      // remoteIndicationStatusUpdateTest,
-     bondingTest
+     // bondingTest
     ],
 
   function(err) {
