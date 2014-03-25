@@ -303,11 +303,11 @@ bluetooth.on( 'remoteWrite', function(connection, index, valueWritten) {...} );
 
 bluetooth.on( 'remoteReadRequest', function(connection, index) {...} );
 
-bluetooth.on( 'remoteNotification', function(index) {...} );
+bluetooth.on( 'remoteNotification', function(connection, index) {...} );
 
-bluetooth.on( 'remoteIndication', function(index) {...} );
+bluetooth.on( 'remoteIndication', function(connection, index) {...} );
 
-bluetooth.on( 'remoteUpdateStop', function(index) {...} );
+bluetooth.on( 'remoteUpdateStop', function(connection, index) {...} );
 
 bluetooth.on( 'indicated', function(connection, index) {...} );
 

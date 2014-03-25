@@ -90,7 +90,7 @@ BluetoothController.prototype.bootSequence = function(callback, err) {
   this.messenger.removeAllListeners('ready');
 
   // Call the callback
-  callback && callback(err);
+  callback && callback(err, this);
 }
 
 BluetoothController.prototype.reset = function(callback) {
@@ -311,7 +311,7 @@ BluetoothController.prototype.onRemoteStatus = function(status) {
     }
 
     setImmediate(function() {
-      this.emit(action, index);
+      this.emit(action, status.connection, index);
     }.bind(this));
   }
 }
