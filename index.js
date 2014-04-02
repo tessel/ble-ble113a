@@ -2024,6 +2024,10 @@ BluetoothController.prototype.enableMITMProtection = function(enable, callback) 
   });
 }
 
+BluetoothController.prototype.dfuUpdate = function(callback) {
+  var dfuUpdate = require('./firmware_update/ble-dfu')(this.messenger, callback);
+}
+
 
 /*************************************************************
 PUBLIC API
