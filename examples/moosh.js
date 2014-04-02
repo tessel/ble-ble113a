@@ -20,18 +20,16 @@ bluetooth = bleDriver.use(blePort, function(err) {
 
 function startReadingMeter(meterSample) {
 
-    meterSample.on('notification', function(value) {
-      var voltage = 0;
-      for (var i = 0; i < 3; i++) {
-        voltage += value[3+i] << (i*8);
-      }
-      voltage = (0x1000000 - voltage) * (1.51292917e-04);
+  function sampleRead(value) {
+    var voltageBuffer = new Buffer([value[5], value[4], value[3], 0x00]);
+    var voltage = ((voltageBuffer.readInt32BE(0) + 290304) * (2.5e-08));
+    console.log("Voltage", voltage);
+    meterSample.read();
+  }
 
-      console.log("Voltage", voltage);
-    });
+  meterSample.on('characteristicRead', sampleRead);
 
-    console.log("Turning on async readings...");
-    meterSample.startNotifications();
+  meterSample.read();
 }
 
 function setMeterSettings(mooshimeter, callback) {
