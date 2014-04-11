@@ -1605,11 +1605,11 @@ BluetoothController.prototype.stopAdvertising = function(callback) {
 }
 
 BluetoothController.prototype.setAdvertisingData = function(data, callback) {
-  this.advHelper(data, 0, callback);
+  this.advDataHelper(data, 0, callback);
 }
 
 BluetoothController.prototype.setScanResponseData = function(data, callback) {
-  this.advHelper(data, 1, callback);
+  this.advDataHelper(data, 1, callback);
 }
 BluetoothController.prototype.advDataHelper = function(data, advParam, callback) {
   this.messenger.setAdvertisementData(advParam, data, function(err, response) {
