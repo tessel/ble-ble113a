@@ -45,6 +45,8 @@ function BluetoothController(hardware, callback) {
   this._MITMEnabled = false;
   this._minKeySize = 7;
 
+  this._userAdvData = true;
+
   this.messenger.on('scanStart', this.onScanStart.bind(this));
   this.messenger.on('scanStop', this.onScanStop.bind(this));
   this.messenger.on('discover', this.onDiscover.bind(this));
@@ -1558,7 +1560,7 @@ BluetoothController.prototype.getMaxConnections = function(callback) {
 }
 
 BluetoothController.prototype.startAdvertising = function(callback) {
-  this.messenger.startAdvertising(function(err, response) {
+  this.messenger.startAdvertising(this._userAdvData, function(err, response) {
 
     if (!err) {
       this.advertising = true;
@@ -1616,9 +1618,15 @@ BluetoothController.prototype.advDataHelper = function(data, advParam, callback)
 
     callback && callback(err);
 
-    setImmediate(function() {
-      this.emit('error');
-    }.bind(this));
+    if (err) {
+      setImmediate(function() {
+        this.emit('error');
+      }.bind(this));
+      this._userAdvData = false;
+    }
+    else {
+      this._userAdvData = true;
+    }
 
   }.bind(this));
 }
