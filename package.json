@@ -4,7 +4,7 @@
   "description": "Library to run the Bluetooth BLE113 Tessel Module.",
   "main": "index.js",
   "scripts": {
-    "test": "node test/comprehensive.js"
+    "test": "./testsuite.js"
   },
   "repository": {
     "type": "git",
@@ -30,6 +30,14 @@
   "hardware" :
   {
     "./firmware_update" : false,
-    "./examples" : false
+    "./examples" : false,
+    "tape": false,
+    "tap": false,
+    "shelljs": false
+  },
+  "devDependencies": {
+    "tape": "~2.3.2",
+    "tap": "git+https://github.com/tcr/node-tap.git#3cb76e",
+    "shelljs": "~0.3.0"
   }
 }
