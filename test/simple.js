@@ -1,6 +1,6 @@
 var tessel = require('tessel');
 
-var master = tessel.port['A'];
+var master = tessel.port[process.argv[2] || 'A'];
 
 var passedLED = tessel.led(1);
 var errLED = tessel.led(2);
