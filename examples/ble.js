@@ -1,3 +1,13 @@
+// Any copyright is dedicated to the Public Domain.
+// http://creativecommons.org/publicdomain/zero/1.0/
+
+/*********************************************
+This Bluetooth Low Energy module demo turns
+the module on, starts it advertising as a
+peripheral, and writes information when
+connected.
+*********************************************/
+
 var tessel = require('tessel');
 var blePort = tessel.port['A'];
 

@@ -1,3 +1,12 @@
+// Copyright 2014 Technical Machine, Inc. See the COPYRIGHT
+// file at the top-level directory of this distribution.
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
 var Peripheral = require('./lib/peripheral');
 var Descriptor = require('./lib/descriptor');
 var Characteristic = require('./lib/characteristic');
@@ -10,13 +19,7 @@ var events = require('events');
 var util = require('util');
 var async = require('async');
 
-/*************************************************************
-Function:     BluetoothController
-Description:  Instantiate a Bluetooth Controller object. Controls
-        all BLE Central and Peripheral methods (depending)
-        on role.
-Params:     hardware - the module port ble was plugged in to
-*************************************************************/
+// Instantiate a Bluetooth Controller object. Controls all BLE Central and Peripheral methods (depending on role).
 function BluetoothController(hardware, callback) {
   this.hardware = hardware;
   this.isAdvertising = false;
