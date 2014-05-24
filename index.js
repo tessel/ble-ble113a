@@ -10,20 +10,6 @@ var events = require('events');
 var util = require('util');
 var async = require('async');
 
-
-/*************************************************************
-Function:     connect
-Description:  Set the module port of the Bluetooth module
-        so the Tessel can begin communicating.
-Params:     hardware - the module port ble was plugged in to
-        callback - a callback for what happens after connecting
-*************************************************************/
-function use(hardware, callback) {
-  var controller = new BluetoothController(hardware, callback);
-
-  return controller;
-}
-
 /*************************************************************
 Function:     BluetoothController
 Description:  Instantiate a Bluetooth Controller object. Controls
@@ -2042,9 +2028,17 @@ BluetoothController.prototype.dfuUpdate = function(callback) {
   var dfuUpdate = require('./firmware_update/ble-dfu')(this.messenger, callback);
 }
 
-
 /*************************************************************
-PUBLIC API
+Function:     connect
+Description:  Set the module port of the Bluetooth module
+        so the Tessel can begin communicating.
+Params:     hardware - the module port ble was plugged in to
+        callback - a callback for what happens after connecting
 *************************************************************/
-module.exports.use = use;
+function use(hardware, callback) {
+  var controller = new BluetoothController(hardware, callback);
+  return controller;
+}
+
 module.exports.BluetoothController = BluetoothController;
+module.exports.use = use;
