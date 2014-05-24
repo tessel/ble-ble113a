@@ -1,20 +1,13 @@
 #Bluetooth Low Energy
 Driver for the ble-ble113 Tessel Bluetooth Low Energy module ([BlueGiga BLE113](http://www.mouser.com/ds/2/52/BLE113_Datasheet-224874.pdf)).
 
-##Under Development
-
-The BLE Library is still under heavy development and may have bugs.
-
-You can add more functionality if you want to look at the [BlueGiga BLE113 Datasheet](http://www.bluegiga.com/en-US/products/bluetooth-4.0-modules/ble113-bluetooth--smart-module/documentation/). You'll have to make an account on their website.
-
 Email jon@technical.io with any questions/concerns
 
 ##Installation
 ```sh
 npm install ble-ble113a
 ```
-
-If you have Tessel V2 (TM-00-02) or later, you can use module port a, b, or d. We'll be implementing software uart on port c in the near future. 
+You can use module port a, b, or d. We'll be implementing software uart on port c in the near future. 
 
 ##Examples
 ### Master - Subscribing to updates from a peripheral with known profile (example with bluetooth-enabled multimeter, mooshimeter).
