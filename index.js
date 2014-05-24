@@ -1655,6 +1655,12 @@ BluetoothController.prototype.readLocalValue = function(index, offset, callback)
   this.readLocalHandle(this._localHandles[index], offset, callback);
 }
 BluetoothController.prototype.writeLocalValue = function(index, data, callback) {
+  if (!Buffer.isBuffer(data)) {
+    if (callback) {
+      callback(new Error("Value must be a buffer."));
+    }
+    return;
+  }
   this.writeLocalHandle(this._localHandles[index], data, callback);
 }
 BluetoothController.prototype.readLocalHandle = function(handle, offset, callback) {
