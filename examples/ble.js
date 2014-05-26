@@ -9,9 +9,7 @@ connected.
 *********************************************/
 
 var tessel = require('tessel');
-var blePort = tessel.port['A'];
-
-var ble = require('../').use(blePort);
+var ble = require('../').use(tessel.port['A']); // Replace '../' with 'ble-ble113a' in your own code
 
 var interval;
 
