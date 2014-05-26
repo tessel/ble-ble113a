@@ -1,6 +1,6 @@
 {
   "name": "ble-ble113a",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Library to run the Bluetooth BLE113 Tessel Module.",
   "main": "index.js",
   "scripts": {
