@@ -1,7 +1,15 @@
-var tessel = require('tessel');
-var blePort = tessel.port['A'];
+// Any copyright is dedicated to the Public Domain.
+// http://creativecommons.org/publicdomain/zero/1.0/
 
-var ble = require('../').use(blePort);
+/*********************************************
+This Bluetooth Low Energy module demo turns
+the module on, starts it advertising as a
+peripheral, and writes information when
+connected.
+*********************************************/
+
+var tessel = require('tessel');
+var ble = require('../').use(tessel.port['A']); // Replace '../' with 'ble-ble113a' in your own code
 
 var interval;
 

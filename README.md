@@ -1,13 +1,11 @@
 #Bluetooth Low Energy
 Driver for the ble-ble113 Tessel Bluetooth Low Energy module ([BlueGiga BLE113](http://www.mouser.com/ds/2/52/BLE113_Datasheet-224874.pdf)).
 
-Email jon@technical.io with any questions/concerns
-
 ##Installation
 ```sh
 npm install ble-ble113a
 ```
-You can use module port a, b, or d. We'll be implementing software uart on port c in the near future. 
+You can use module port A, B, or D. We'll be implementing software UART on port C in the near future.
 
 ##Examples
 ### Master - Subscribing to updates from a peripheral with known profile (example with bluetooth-enabled multimeter, mooshimeter).
@@ -113,13 +111,13 @@ ble.on('ready', function(master) {
     // Save it to the first available characteristic
     ble.writeLocalValue(0, lightValues);
   });
-  
+
   // Start streaming sound data
   ambient.on('sound', function(soundValues) {
     // Save it to the next available characteristic
     ble.writeLocalValue(1, soundValues);
   });
-  
+
   // Start streaming accelerometer data
   accel.on('data', function(accelValues) {
     // Save it to the next available characteristic
@@ -128,462 +126,364 @@ ble.on('ready', function(master) {
 });
 
 ```
-## API 
+## API
 
 ## Bluetooth (Primary Controller)
 
 ### Master Commands
 
+##### * `bluetooth.startScanning([options], function(err))` Start searching for BLE peripherals (options dict is... optional).
 ```js
-var tessel = require('tessel');
-var bluetooth = require('ble-ble113a').use(tessel.port('a'));
-
-// Start searching for BLE peripherals (options dict is... optional)
-bluetooth.startScanning([options], function(err) {...} );
-// allowed options are:
-/*
-options = 
+options =
 {
   // Boolean of whether duplicate peripherals should be reported
   allowDuplicates:true/false,
   // An array of uuids that, if existing in advertising data, will cause peripheral to be reported as discovered
   serviceUUIDs:['ffa0']
 }
-*/
-// Stop Searching for BLE peripherals
-bluetooth.stopScanning( function(err) {...} );
-
-bluetooth.connect( peripheral, function(err) {...} );
-
-bluetooth.disconnect( peripheral, function(err) {..} );
-
-// Search for specific Services by passing in array of uuids. Returns array of Service objects
-bluetooth.discoverServices( peripheral, [serviceUUIDs], function(err, services) {...} );
-
-// Search for all Services of a peripheral. Returns array of Service objects
-bluetooth.discoverAllServices( peripheral, function(err, services) {...} );
-
-// Find what services are included in this service, if any (pretty rare)
-bluetooth.discoverIncludedServices( periphreal, serviceUUID, function(err, includedServices) {...} );
-
-// Search for specific Characteristics by passing in array of uuids. Returns array of Characteristic objects
-bluetooth.discoverCharacteristics( peripheral, [characteristicsUUIDs], function(err, characteristics) {...} );
-
-// Search for all Characterisitcs of a peripheral. Returns array of Charateristic objects
-bluetooth.discoverAllCharacteristics( peripheral, function(err, characteristics) {...} );
-
-// Return all services and characteristics of a peripheral. Returns 
-bluetooth.discoverAllServicesAndCharacteristics( peripheral, function(err, results) {...} );
-
-// Discover specific UUIDs of a service
-bluetooth.discoverCharacteristicsOfService( service, [characteristicUUIDs], function(err, characteristics) {...} );
-
-// Discover the characteristics of a specific service
-bluetooth.discoverAllCharacteristicsOfService( service, function(err, characteristics) {...} );
-
-// Discover the descriptors of a specific service
-bluetooth.discoverDescriptorsOfCharacteristic( characteristic, function(err, descriptors) {...} );
-
-// Read all the services, characteristics, and descriptors of a peripheral
-bluetooth.discoverAllAttributes( peripheral, function(err, attributes) {...} );
-
-// Get the value of a remote characteristic
-bluetooth.read( characteristic, function(err, value) {...} );
-
-// Write the value of a remote characteristic. Value should be a buffer
-bluetooth.write( characteristic, value, function(err) {...} );
-
-// Get the value of a remote descriptor
-bluetooth.readDescriptor( descriptor, function(err, value) {...} );
-
-// Get the value of a remote descriptor
-bluetooth.writeDescriptor( descriptor, value function(err) {...} );
-
-// Subscribe to remote characteristic updates without having to indicate it was received
-bluetooth.startNotifications( characteristic, function(err) {...} );
-
-// stop being notified about remote characteristic updates
-bluetooth.stopNotifications( characteristic, function(err) {...} );
-
-// Subscribe to remote characteristic updates and indicate it was received
-bluetooth.startIndications( characteristic, function(err) {...} );
-
-// Stop receiving remote characteristic updates and indicate it was received
-bluetooth.stopIndications( characteristic, function(err) {...} );
-
-// Get signal strength of peripheral that we're conneted to
-bluetooth.updateRSSI( peripheral, function(err, rssi) {...} );
-
-// Reset the module (useful in case of unexpected state)
-bluetooth.reset( function(err) {...} );
-
 ```
+
+##### * `bluetooth.stopScanning(callback(err))` Stop Searching for BLE peripherals
+
+##### * `bluetooth.connect(peripheral, callback(err))`
+
+##### * `bluetooth.disconnect(peripheral, callback(err)`
+
+##### * `bluetooth.discoverServices(peripheral, [serviceUUIDs], callback(err, services))` Search for specific Services by passing in array of uuids. Returns array of Service objects
+
+##### * `bluetooth.discoverAllServices(peripheral, callback(err, services))` Search for all Services of a peripheral. Returns array of Service objects.
+
+##### * `bluetooth.discoverIncludedServices(periphreal, serviceUUID, callback(err, includedServices))` Find what services are included in this service, if any (pretty rare)
+
+##### * `bluetooth.discoverCharacteristics(peripheral, [characteristicsUUIDs], callback(err, characteristics))` Search for specific Characteristics by passing in array of uuids. Returns array of Characteristic objects
+
+##### * `bluetooth.discoverAllCharacteristics(peripheral, callback(err, characteristics))` Search for all Characteristics of a peripheral. Returns array of Characteristic objects
+
+##### * `bluetooth.discoverAllServicesAndCharacteristics(peripheral, callback(err, results))` Return all services and characteristics of a peripheral.
+
+##### * `bluetooth.discoverCharacteristicsOfService(service, [characteristicUUIDs], callback(err, characteristics))` Discover specific UUIDs of a service.
+
+##### * `bluetooth.discoverAllCharacteristicsOfService(service, callback(err, characteristics))` Discover the characteristics of a specific service.
+
+##### * `bluetooth.discoverDescriptorsOfCharacteristic(characteristic, callback(err, descriptors))` Discover the descriptors of a specific service.
+
+##### * `bluetooth.discoverAllAttributes(peripheral, callback(err, attributes))` Read all the services, characteristics, and descriptors of a peripheral.
+
+##### * `bluetooth.read(characteristic, callback(err, value))` Get the value of a remote characteristic.
+
+##### * `bluetooth.write(characteristic, value, callback(err))` Write the value of a remote characteristic. Value should be a buffer.
+
+##### * `bluetooth.readDescriptor(descriptor, callback(err, value))` Get the value of a remote descriptor.
+
+##### * `bluetooth.writeDescriptor(descriptor, value callback(err))` Get the value of a remote descriptor.
+
+##### * `bluetooth.startNotifications(characteristic, callback(err))` Subscribe to remote characteristic updates without having to indicate it was received.
+
+##### * `bluetooth.stopNotifications(characteristic, callback(err))` Stop being notified about remote characteristic updates.
+
+##### * `bluetooth.startIndications(characteristic, callback(err))` Subscribe to remote characteristic updates and indicate it was received.
+
+##### * `bluetooth.stopIndications(characteristic, callback(err))` Stop receiving remote characteristic updates and indicate it was received.
+
+##### * `bluetooth.updateRSSI(peripheral, callback(err, rssi))` Get signal strength of peripheral that we're connected to.
+
+##### * `bluetooth.reset(callback(err))` Reset the module (useful in case of unexpected state).
+
 
 ### Master Events
 
-```js
-bluetooth.on( 'error', function(err) {...} );
+##### * `bluetooth.on('error', callback(err))` Emitted on error.
 
-bluetooth.on( 'scanStart', function() {...} );
+##### * `bluetooth.on('scanStart', callback())`
 
-bluetooth.on( 'scanStop', function() {...} );
+##### * `bluetooth.on('scanStop', callback())`
 
-bluetooth.on( 'discover', function(peripheral) {...} );
+##### * `bluetooth.on('discover', callback(peripheral))`
 
-bluetooth.on( 'connect', function(peripheral) {...} );
+##### * `bluetooth.on('connect', callback(peripheral))`
 
-bluetooth.on( 'disconnect', function(peripheral, reason) {...} );
+##### * `bluetooth.on('disconnect', callback(peripheral, reason))`
 
-bluetooth.on( 'servicesDiscover', function(services) {...} );
+##### * `bluetooth.on('servicesDiscover', callback(services))`
 
-bluetooth.on( 'characteristicsDiscover', function(characteristics) {...} );
+##### * `bluetooth.on('characteristicsDiscover', callback(characteristics))`
 
-bluetooth.on( 'descriptorsDiscover', function(descriptors) {...} );
+##### * `bluetooth.on('descriptorsDiscover', callback(descriptors))`
 
-bluetooth.on( 'characteristicRead', function(characteristicRead, valueRead) {...} );
+##### * `bluetooth.on('characteristicRead', callback(characteristicRead, valueRead))`
 
-bluetooth.on( 'characteristicWrite', function(characteristicWritten, valueWritten) {...} );
+##### * `bluetooth.on('characteristicWrite', callback(characteristicWritten, valueWritten))`
 
-bluetooth.on( 'descriptorRead', function(descriptorRead, valueRead) {...} );
+##### * `bluetooth.on('descriptorRead', callback(descriptorRead, valueRead))`
 
-bluetooth.on( 'descriptorWrite', function(descriptorWritten, valueWritten) {...} );
+##### * `bluetooth.on('descriptorWrite', callback(descriptorWritten, valueWritten))`
 
-bluetooth.on( 'notification', function(characteristic, valueUpdated) {...} );
+##### * `bluetooth.on('notification', callback(characteristic, valueUpdated))`
 
-bluetooth.on( 'indication', function(characteristic, valueUpdated) {...} );
+##### * `bluetooth.on('indication', callback(characteristic, valueUpdated))`
 
-bluetooth.on( 'rssiUpdate', function(peripheral, rssi) {...} );
-```
+##### * `bluetooth.on('rssiUpdate', callback(peripheral, rssi))`
+
 
 ### Slave Commands
 
-```js
-// Begin advertising to master devices
-bluetooth.startAdvertising( function(err) {...} );
+##### * `bluetooth.startAdvertising(callback(err))` Begin advertising to master devices.
 
-// Stop advertising
-bluetooth.stopAdvertising( function(err) {...} );
+##### * `bluetooth.stopAdvertising(callback(err))` Stop advertising.
 
-// Set the data the master receives in advertising packet
-bluetooth.setAdvertisingData( data, function(err) {...} );
+##### * `bluetooth.setAdvertisingData(data, callback(err))` Set the data the master receives in advertising packet.
 
-// Write a local value to be read by a master
-bluetooth.writeLocalValue( index, data, function(err) {...} );
+##### * `bluetooth.writeLocalValue(index, data, callback(err))` Write a local value to be read by a master.
 
-// Read local values that have been written. Offset is how many bytes in to read (reads in 32 byte chunks max)
-bluetooth.readLocalValue( index, offset, function(err, value) {...} );
+##### * `bluetooth.readLocalValue(index, offset, callback(err, value))` Read local values that have been written. Offset is how many bytes in to read (reads in 32 byte chunks max).
 
-// If a master device requests to read a "user" attribute, you'll need to manually send it to them
-// This should be called after the "remoteReadRequest" event. If errorCode is zero, it will send 
-// the value, else it will send the errocode back
-bluetooth.sendReadResponse( connection, errorCode, value, function(err) {...} );
+##### * `bluetooth.sendReadResponse(connection, errorCode, value, callback(err))` If a master device requests to read a "user" attribute, you'll need to manually send it to them. This should be called after the "remoteReadRequest" event. If errorCode is zero, it will send the value, else it will send the error code back.
 
-// Get max number of values (V1.0.1 is 12)
-bluetooth.maxNumValues( function(err, maxNumValues) {...} );
+##### * `bluetooth.maxNumValues(callback(err, maxNumValues))` Get max number of values (V1.0.1 is 12).
 
-```
+
 ### Slave Events
-```js
-bluetooth.on( 'startAdvertising', function() {...} );
 
-bluetooth.on( 'stopAdvertising', function() {...} );
+##### * `bluetooth.on('startAdvertising', callback())`
 
-bluetooth.on( 'connect', function(connection) {...} );
+##### * `bluetooth.on('stopAdvertising', callback())`
 
-bluetooth.on( 'disconnect', function(connection, reason) {...} );
+##### * `bluetooth.on('connect', callback(connection))`
 
-bluetooth.on( 'remoteWrite', function(connection, index, valueWritten) {...} );
+##### * `bluetooth.on('disconnect', callback(connection, reason))`
 
-bluetooth.on( 'remoteReadRequest', function(connection, index) {...} );
+##### * `bluetooth.on('remoteWrite', callback(connection, index, valueWritten))`
 
-bluetooth.on( 'remoteNotification', function(connection, index) {...} );
+##### * `bluetooth.on('remoteReadRequest', callback(connection, index))`
 
-bluetooth.on( 'remoteIndication', function(connection, index) {...} );
+##### * `bluetooth.on('remoteNotification', callback(connection, index))`
 
-bluetooth.on( 'remoteUpdateStop', function(connection, index) {...} );
+##### * `bluetooth.on('remoteIndication', callback(connection, index))`
 
-bluetooth.on( 'indicated', function(connection, index) {...} );
+##### * `bluetooth.on('remoteUpdateStop', callback(connection, index))`
 
-```
+##### * `bluetooth.on('indicated', callback(connection, index))`
+
 
 ### Hardware
-```js
 
-// Make a new I2C port on the BLE hardware
-bleI2C = bluetooth.I2C( address );
+##### * `bleI2C = bluetooth.I2C(address)` Make a new I2C port on the BLE hardware.
 
-// Transfer data over I2C
-bleI2C.transfer( txbuf, rxLen, function(err, rxbuf) {...} );
+##### * `bleI2C.transfer(txbuf, rxLen, callback(err, rxbuf))` Transfer data over I2C.
 
-// Receive data over I2C
-bleI2C.receive( len, function(err, rxbuf) {...} );
+##### * `bleI2C.receive(len, callback(err, rxbuf))` Receive data over I2C.
 
-// Send data over I2C
-bleI2C.send( txbuf, function(err) {...} );
+##### * `bleI2C.send(txbuf, callback(err))` Send data over I2C.
 
-// Get one of the two GPIO ports (pin must be 'p0_2' or 'p0_3')
-var bleGPIO = bluetooth.gpio( pin );
+##### * `var bleGPIO = bluetooth.gpio(pin)` Get one of the two GPIO ports (pin must be 'p0_2' or 'p0_3').
 
-// Configured as input or output
-bleGPIO.direction;
+##### * `bleGPIO.direction` Configured as input or output.
 
-// Set as an input
-bleGPIO.setInput( function(err) {...} );
+##### * `bleGPIO.setInput(callback(err))` Set as an input.
 
-// Set as an output with initial value
-bleGPIO.setOutput( initial, function(err) {...} );
+##### * `bleGPIO.setOutput(initial, callback(err))` Set as an output with initial value.
 
-// Write a value to the gpio port
-bleGPIO.write( value, function(err) {...} );
+##### * `bleGPIO.write(value, callback(err))` Write a value to the GPIO port.
 
-// Read a value 
-bleGPIO.read( function(err, value) {...} );
+##### * `bleGPIO.read(callback(err, value))` Read a value.
 
-// Watch one of the GPIOs for an interrupt
-bleGPIO.watch( type, function(err, time, type) {...} );
+##### * `bleGPIO.watch(type, callback(err, time, type));` Watch one of the GPIOs for an interrupt.
 
-// Stop watching the interrupt
-bleGPIO.unwatch( [type], callback );
+##### * `bleGPIO.unwatch([type], callback())` Stop watching the interrupt.
 
-// Read the ADC
-bluetooth.readADC( function(err, value) {...} );
-```
+##### * `bluetooth.readADC(callback(err, value))` Read the ADC.
+
 
 ### Security (Probably needs revision)
 
-```js
-// Set whether a peripheral can be bonded to (not sure if this pertains to master mode as well)
-bluetooth.setBondable(peripheral, bondable, function(err) {...} );
+##### * `bluetooth.setBondable(peripheral, bondable, callback(err))` Set whether a peripheral can be bonded to (not sure if this pertains to master mode as well).
 
-// Get bonds with current devices
-bluetooth.getBonds(function(err, bonds) {...} );
+##### * `bluetooth.getBonds(callback(err, bonds))` Get bonds with current devices.
 
-// Delete any bonds with devices
-bluetooth.deleteBonds( peripheral, function(err) {...} );
+##### * `bluetooth.deleteBonds(peripheral, callback(err))` Delete any bonds with devices.
 
-// Start the encyrption process
-bluetooth.startEncryption( peripheral, function(err) {...} );
+##### * `bluetooth.startEncryption(peripheral, callback(err))` Start the encryption process.
 
-// When a remote requests a passkey, you'll need to enter it
-bluetooth.enterPasskey( peripheral, function(err) {...} );
+##### * `bluetooth.enterPasskey(peripheral, callback(err))` When a remote requests a passkey, you'll need to enter it.
 
-// Set the size of the encryption key
-bluetooth.setEncryptionKeySize( keysize, function(err) {...} );
+##### * `bluetooth.setEncryptionKeySize(keysize, callback(err))` Set the size of the encryption key.
 
-// Set the out of band data
-bluetooth.setOOBData( data, function(err) {...} );
+##### * `bluetooth.setOOBData(data, callback(err))` Set the out of band data.
 
-// Choose whether to enable or disable MITM protection
-bluetooth.enableMITMProtection( enable, function(err) {...} );
-```
+##### * `bluetooth.enableMITMProtection(enable, callback(err))` Choose whether to enable or disable MITM protection.
+
 
 ### System
-```js
-// Get the current address of the device
-bluetooth.getBluetoothAddress( function(err, address) {...} );
 
-// Get how many connections are supported by the module (currently at 4)
-bluetooth.getMaxConnections(function(err, maxConnections) {...} );
+##### * `bluetooth.getBluetoothAddress(callback(err, address))` Get the current address of the device.
 
-// Reset the module
-bluetooth.reset( function(err) {...} );
-```
+##### * `bluetooth.getMaxConnections(callback(err, maxConnections))` Get how many connections are supported by the module (currently at 4).
+
+##### * `bluetooth.reset(callback(err))` Reset the module.
+
 
 ## Object Functions
+
 ### Peripheral Properties
-```js
-peripheral.rssi;
-peripheral.services;
-peripheral.characteristics;
-peripheral.advertisingData;
-peripheral.address;
-peripheral.connection;
-peripheral.flags;
-```
+
+##### * `peripheral.rssi`
+##### * `peripheral.services`
+##### * `peripheral.characteristics`
+##### * `peripheral.advertisingData`
+##### * `peripheral.address`
+##### * `peripheral.connection`
+##### * `peripheral.flags`
 
 ### Peripheral Commands
 
-```js
-// Connect to a peripheral as a master
-peripheral.connect( function(err) {...} );
+##### * `peripheral.connect(function(err))` Connect to a peripheral as a master
 
-// Disconnected from a peripheral as a master
-peripheral.disconnect( function(err) {...} );
+##### * `peripheral.disconnect(function(err))` Disconnected from a peripheral as a master
 
-// Get the peripheral's signal strength
-peripheral.updateRSSI( function(err, rssi) {...} );
+##### * `peripheral.updateRSSI(function(err, rssi))` Get the peripheral's signal strength
 
-// Discover a subset of the peripheral's services
-peripheral.discoverServices( uuids, function(err, services) {...} );
+##### * `peripheral.discoverServices(uuids, function(err, services))` Discover a subset of the peripheral's services
 
-// Discover all the peripheral's services
-peripheral.discoverAllServices( function(services) {...} );
+##### * `peripheral.discoverAllServices(function(services))` Discover all the peripheral's services
 
-// Disocver all the services and characteristics of a peripheral
-peripheral.discoverAllServicesAndCharacteristics( uuids, function(err, results) {...} );
+##### * `peripheral.discoverAllServicesAndCharacteristics(uuids, function(err, results))` Discover all the services and characteristics of a peripheral
 
-// Discover specific characteristics of a peripheral
-peripheral.discoverCharacteristics( uuids, function(err, characteristics) {..} );
+##### * `peripheral.discoverCharacteristics(uuids, function(err, characteristic))` Discover specific characteristics of a peripheral
 
-// Discover all services, characteristics, and descriptors
-peripheral.discoverAllAttributes( function(err, attributes) {...} );
+##### * `peripheral.discoverAllAttributes(function(err, attributes))` Discover all services, characteristics, and descriptors
 
-// Delete bonding data from peripheral
-peripheral.deleteBond( function(err) {...} );
+##### * `peripheral.deleteBond(function(err))` Delete bonding data from peripheral
 
-// Make connection encrypted with device
-peripheral.startEncryption( function(err) {...} );
+##### * `peripheral.startEncryption(function(err))` Make connection encrypted with device
 
-// Enter passkey for bonding
-peripheral.enterPasskey( function(err) {...} );
+##### * `peripheral.enterPasskey(function(err))` Enter passkey for bonding
 
-// print out the peripheral's data
-peripheral.toString();
+##### * `peripheral.toString()` Print out the peripheral's data
 
-```
 
 ### Peripheral Events
-```js
 
-peripheral.on( 'connect', function() {...} );
+##### * `peripheral.on('connect', callback())`
 
-peripheral.on( 'disconnect', function(reason) {...} );
+##### * `peripheral.on('disconnect', callback(reason))`
 
-peripheral.on( 'servicesDiscover', function(services) {...} );
+##### * `peripheral.on('servicesDiscover', callback(services))`
 
-peripheral.on( 'characteristicsDiscover', function(characteristics) {...} );
+##### * `peripheral.on('characteristicsDiscover', callback(characteristics))`
 
-peripheral.on( 'descriptorsDiscover', function(descriptors) {...} );
+##### * `peripheral.on('descriptorsDiscover', callback(descriptors))`
 
-peripheral.on( 'characteristicRead', function(characteristic, value) {...} );
+##### * `peripheral.on('characteristicRead', callback(characteristic, value))`
 
-peripheral.on( 'characteristicWrite', function(characteristic, value) {...} );
+##### * `peripheral.on('characteristicWrite', callback(characteristic, value))`
 
-peripheral.on( 'descriptorRead', function(characteristic, value) {...} );
+##### * `peripheral.on('descriptorRead', callback(characteristic, value))`
 
-peripheral.on( 'descriptorWrite', function(characteristic, value) {...} );
+##### * `peripheral.on('descriptorWrite', callback(characteristic, value))`
 
-peripheral.on( 'notification', function(characteristic, valueUpdated) {...} );
+##### * `peripheral.on('notification', callback(characteristic, valueUpdated))`
 
-peripheral.on( 'indication', function(characteristic, valueUpdated) {...} );
+##### * `peripheral.on('indication', callback(characteristic, valueUpdated))`
 
-peripheral.on( 'rssiUpdate', function(rssi) {...} );
+##### * `peripheral.on('rssiUpdate', callback(rssi))`
 
-```
+
 ### Service Properties
-```js
-service.uuid
-service.handle
-service.name
-service.type
-service.characteristics
-service.includedServices
-```
+
+##### * `service.uuid`
+##### * `service.handle`
+##### * `service.name`
+##### * `service.type`
+##### * `service.characteristics`
+##### * `service.includedServices`
+
 ### Service Commands
 
-```js
-// Discover what other sercices are included by this one
-service.discoverIncludedServices( function(err, includedServices) {...} ) ;
+##### * `service.discoverIncludedServices(callback(err, includedServices)) ` Discover what other sercices are included by this one
 
-// Discover the characteristics in this service
-service.discoverAllCharacteristics( function(err, characteristics) {...} );
+##### * `service.discoverAllCharacteristics(callback(err, characteristics))` Discover the characteristics in this service
 
-service.discoverCharacteristics( [characteristicUUIDs], function(err, characteristics) {...} );
+##### * `service.discoverCharacteristics([characteristicUUIDs], callback(err, characteristics))`
 
-// Print out the service
-service.toString();
-```
+##### * `service.toString()` Print out the service
+
 
 ### Service Events
 
-```js
+##### * `service.on('discoverIncludedServices', callback(includedServices))`
 
-service.on( 'discoverIncludedServices', function(includedServices) {...} );
+##### * `service.on('characteristicsDiscover', callback(characteristics))`
 
-service.on( 'characteristicsDiscover', function(characteristics) {...} );
-```
 
 ### Characteristic Properties
-```js
-characteristic.uuid
-characteristic.handle
-characteristic.name
-characteristic.type
-characteristic.descriptors
-characteristic.value
-```
+
+##### * `characteristic.uuid`
+##### * `characteristic.handle`
+##### * `characteristic.name`
+##### * `characteristic.type`
+##### * `characteristic.descriptors`
+##### * `characteristic.value`
+
 ### Characteristic Commands
-```js
-// Gather all descriptors for a characteristic
-characteristic.discoverAllDescriptors( function(err, descriptors) {...} );
 
-// Read the value of a characteristic
-characteristic.read( function(err, value) {...} );
+##### * `characteristic.discoverAllDescriptors(callback(err, descriptors))` Gather all descriptors for a characteristic.
 
-// Write the value of a characteristic
-characteristic.write( value, function(err) {...} );
+##### * `characteristic.read(callback(err, value))` Read the value of a characteristic.
 
-// Subscribe to async notifications 
-characteristic.startNotifications( function(err, value) {...} );
+##### * `characteristic.write(value, callback(err))` Write the value of a characteristic.
 
-// Unsubscribe to async notifications 
-characteristic.disableNotifications( listener, function(err) {...} );
+##### * `characteristic.startNotifications(callback(err, value))` Subscribe to async notifications.
 
-// Subscribe to indications (same as notification except you must indicate received)
-characteristic.startIndications( function(err) {...} );
+##### * `characteristic.disableNotifications(listener, callback(err))` Unsubscribe to async notifications.
 
-// Unsubscribe from indications 
-characteristic.stopIndications( function(err) {...} );
+##### * `characteristic.startIndications(callback(err))` Subscribe to indications (same as notification except you must indicate received).
 
-// Tell remote you received indication (same as notification except you must indicate received)
-characterstic.confirmIndication(function(err) {...} );
+##### * `characteristic.stopIndications(callback(err))` Unsubscribe from indications.
 
-// Print out the characteristic
-characteristic.toString();
-```
+##### * `characteristic.confirmIndication(callback(err))` Tell remote you received indication (same as notification except you must indicate received).
+
+##### * `characteristic.toString()` Print out the characteristic.
+
 
 ### Characteristic Events
-```js
 
-characteristic.on( 'characteristicRead', function(valueRead) {...} );
+##### * `characteristic.on('characteristicRead', callback(valueRead))`
 
-characteristic.on( 'characteristicWrite', function(valueWritten) {...} );
+##### * `characteristic.on('characteristicWrite', callback(valueWritten))`
 
-characteristic.on( 'discoverDescriptors', function(descriptors) {...} );
+##### * `characteristic.on('discoverDescriptors', callback(descriptors))`
 
-characteristic.on( 'notification', function(data) {...} );
+##### * `characteristic.on('notification', callback(data))`
 
-characteristic.on( 'indication', function(data) {...} );
-```
+##### * `characteristic.on('indication', callback(data))`
+
+
 ### Descriptor Properties
-```js
-descriptor.uuid
-descriptor.handle
-descriptor.name
-descriptor.type
-descriptor.value
-```
+
+##### * `descriptor.uuid`
+##### * `descriptor.handle`
+##### * `descriptor.name`
+##### * `descriptor.type`
+##### * `descriptor.value`
+
 
 ### Descriptor Commands
-```js
-// Read the value of a descriptor
-descriptor.read( function(err, value) {...} );
 
-// Write the value of a descriptor
-descriptor.write( value, function(err) {...} );
+##### * `descriptor.read(callback(err, value))` Read the value of a descriptor.
 
-// Print out the descriptor
-descriptor.toString();
-```
+##### * `descriptor.write(value, callback(err))` Write the value of a descriptor.
+
+##### * `descriptor.toString()` Print out the descriptor.
+
 
 ### Descriptor Events
-```js
 
-descriptor.on('descriptorRead', function(valueRead) {...} );
+##### * `descriptor.on('descriptorRead', callback(valueRead)`
 
-descriptor.on('descriptorWrite', function(valuewritten) {...} );
-```
+##### * `descriptor.on('descriptorWrite', callback(valuewritten)`
+
 
 ## License
 
 MIT
+APACHE
