@@ -462,7 +462,7 @@ BluetoothController.prototype.disconnect = function(peripheral, callback) {
           this.removeListener('disconnect', disconnectCallback);
 
           // Call the callback
-          if(callback) {
+          if (callback) {
             callback(reason);
           }
 
@@ -517,7 +517,7 @@ BluetoothController.prototype.discoverServices = function(peripheral, filter, ca
   // Discover the services of this device
   this.serviceDiscovery(peripheral, false, function(err, allServices) {
     if (err) {
-      if (callaback) {
+      if (callback) {
         callback(err);
       }
       return;
@@ -1273,7 +1273,7 @@ BluetoothController.prototype.splitWriteIntoBuffers = function(value, callback) 
     } else {
       // If none of the above, it's invalid. Throw an error
       if (callback) {
-        callback("Can only write strings, numbers, and buffers."); // TODO: should this be a new Error?
+        callback(new Error("Can only write strings, numbers, and buffers.")); // TODO: should this be a new Error?
       }
       return;
     }
