@@ -16,7 +16,5 @@ ble.on('ready', function(err) {
 });
 
 ble.on('discover', function(peripheral) {
-  console.log("Discovered peripheral!", peripheral);
+  console.log("Discovered peripheral!", peripheral.toString());
 });
-
-// ble.on('error', console.log(err));
