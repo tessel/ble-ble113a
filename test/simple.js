@@ -2,8 +2,8 @@ var tessel = require('tessel');
 
 var master = tessel.port[process.argv[2] || 'A'];
 
-var passedLED = tessel.led(1);
-var errLED = tessel.led(2);
+var passedLED = tessel.led[0];
+var errLED = tessel.led[1];
 passedLED.output().low();
 errLED.output().low();
 
