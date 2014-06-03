@@ -12,7 +12,7 @@ You can use module port A, B, or D. We'll be implementing software UART on port 
 
 ```js
 var tessel = require('tessel');
-var blePort = tessel.port('a');
+var blePort = tessel.port['a'];
 var bleDriver = require('ble113a');
 
 bluetooth = bleDriver.use(blePort, function(err) {
@@ -84,9 +84,9 @@ function connectToMoosh(callback) {
 ### Peripheral - Updating multiple characteristics
 ```js
 var tessel= require('tessel');
-var blePort = tessel.port('a');
-var accelPort = tessel.port('b');
-var ambientPort = tessel.port('c');
+var blePort = tessel.port['a'];
+var accelPort = tessel.port['b'];
+var ambientPort = tessel.port['c'];
 
 var ble;
 var accel;
