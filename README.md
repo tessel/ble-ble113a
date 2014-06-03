@@ -132,7 +132,7 @@ ble.on('ready', function(master) {
 
 ### Master Commands
 
-##### * `bluetooth.startScanning([options], function(err))` Start searching for BLE peripherals (options dict is... optional).
+##### * `bluetooth.startScanning([options], callback(err))` Start searching for BLE peripherals (options dict is... optional).
 ```js
 options =
 {
