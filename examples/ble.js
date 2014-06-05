@@ -8,7 +8,9 @@ you have some BLE peripherals around.
 *********************************************/
 
 var tessel = require('tessel');
-var ble = require('../').use(tessel.port['A']); // Replace '../' with 'ble-ble113a' in your own code
+var blelib = require('../'); // Replace '../' with 'ble-ble113a' in your own code
+
+var ble = blelib.use(tessel.port['A']); 
 
 ble.on('ready', function(err) {
   console.log('Scanning...');
