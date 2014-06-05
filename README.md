@@ -176,7 +176,7 @@ options =
 
 &#x20;<a href="#api-bluetooth-discoverAllServices-peripheral-callback-err-services-Search-for-all-Services-of-a-peripheral-Returns-array-of-Service-objects" name="api-bluetooth-discoverAllServices-peripheral-callback-err-services-Search-for-all-Services-of-a-peripheral-Returns-array-of-Service-objects">#</a> bluetooth<b>.discoverAllServices</b>( peripheral, callback(err, services) ) Search for all Services of a peripheral. Returns array of Service objects.  
 
-&#x20;<a href="#api-bluetooth-discoverIncludedServices-periphreal-serviceUUID-callback-err-includedServices-Find-what-services-are-included-in-this-service-if-any-pretty-rare" name="api-bluetooth-discoverIncludedServices-periphreal-serviceUUID-callback-err-includedServices-Find-what-services-are-included-in-this-service-if-any-pretty-rare">#</a> bluetooth<b>.discoverIncludedServices</b>( periphreal, serviceUUID, callback(err, includedServices)) <i>Find</i>&nbsp; what services are included in this service, if any (pretty rare).  
+&#x20;<a href="#api-bluetooth-discoverIncludedServices-periphreal-serviceUUID-callback-err-includedServices-Find-what-services-are-included-in-this-service-if-any-pretty-rare" name="api-bluetooth-discoverIncludedServices-periphreal-serviceUUID-callback-err-includedServices-Find-what-services-are-included-in-this-service-if-any-pretty-rare">#</a> bluetooth<b>.discoverIncludedServices</b>( periphreal, serviceUUID, callback(err, includedServices)) Find what services are included in this service, if any (pretty rare).  
 
 &#x20;<a href="#api-bluetooth-discoverCharacteristics-peripheral-characteristicsUUIDs-callback-err-characteristics-Search-for-specific-Characteristics-by-passing-in-array-of-uuids-Returns-array-of-Characteristic-objects" name="api-bluetooth-discoverCharacteristics-peripheral-characteristicsUUIDs-callback-err-characteristics-Search-for-specific-Characteristics-by-passing-in-array-of-uuids-Returns-array-of-Characteristic-objects">#</a> bluetooth<b>.discoverCharacteristics</b>( peripheral, [characteristicsUUIDs], callback(err, characteristics) ) Search for specific Characteristics by passing in array of uuids. Returns array of Characteristic objects  
 
@@ -282,7 +282,7 @@ bluetooth.startAdvertising(callback(err)) Begin advertising to master devices.
 &#x20;<a href="#api-bluetooth-on-indicated-callback-connection-index" name="api-bluetooth-on-indicated-callback-connection-index">#</a> bluetooth<b>.on</b>( 'indicated', callback(connection, index) )  
 
 ####Hardware
-&#x20;<a href="#api-bleI2C-bluetooth-I2C-address-Make-a-new-I2C-port-on-the-BLE-hardware" name="api-bleI2C-bluetooth-I2C-address-Make-a-new-I2C-port-on-the-BLE-hardware">#</a> <b>bleI2C</b> = bluetooth.I2C( address ) Make a new I2C port on the BLE hardware.  
+&#x20;<a href="#api-bleI2C-bluetooth-I2C-address-Make-a-new-I2C-port-on-the-BLE-hardware" name="api-bleI2C-bluetooth-I2C-address-Make-a-new-I2C-port-on-the-BLE-hardware">#</a> <b>bleI2C</b> = bluetooth.<b>I2C</b>( address ) Make a new I2C port on the BLE hardware.  
 
 &#x20;<a href="#api-bleI2C-transfer-txbuf-rxLen-callback-err-rxbuf-Transfer-data-over-I2C" name="api-bleI2C-transfer-txbuf-rxLen-callback-err-rxbuf-Transfer-data-over-I2C">#</a> bleI2C<b>.transfer</b>( txbuf, rxLen, callback(err, rxbuf) ) Transfer data over I2C.  
 
@@ -290,9 +290,9 @@ bluetooth.startAdvertising(callback(err)) Begin advertising to master devices.
 
 &#x20;<a href="#api-bleI2C-send-txbuf-callback-err-Send-data-over-I2C" name="api-bleI2C-send-txbuf-callback-err-Send-data-over-I2C">#</a> bleI2C<b>.send</b>( txbuf, callback(err) ) Send data over I2C.  
 
-&#x20;<a href="#api-var-bleGPIO-bluetooth-gpio-pin-Get-one-of-the-two-GPIO-ports-pin-must-be-p0_2-or-p0_3" name="api-var-bleGPIO-bluetooth-gpio-pin-Get-one-of-the-two-GPIO-ports-pin-must-be-p0_2-or-p0_3">#</a> var <b>bleGPIO</b> = bluetooth.gpio( pin) Get one of the two GPIO ports (pin must be 'p0\_2' or 'p0\_3' ).  
+&#x20;<a href="#api-var-bleGPIO-bluetooth-gpio-pin-Get-one-of-the-two-GPIO-ports-pin-must-be-p0_2-or-p0_3" name="api-var-bleGPIO-bluetooth-gpio-pin-Get-one-of-the-two-GPIO-ports-pin-must-be-p0_2-or-p0_3">#</a> var <b>bleGPIO</b> = bluetooth.<b>gpio</b>( pin) Get one of the two GPIO ports (pin must be 'p0\_2' or 'p0\_3' ).  
 
-&#x20;<a href="#api-bleGPIO-direction-Configured-as-input-or-output" name="api-bleGPIO-direction-Configured-as-input-or-output">#</a> bleGPIO.direction Configured as input or output.  
+&#x20;<a href="#api-bleGPIO-direction-Configured-as-input-or-output" name="api-bleGPIO-direction-Configured-as-input-or-output">#</a> bleGPIO.<b>direction</b> Configured as input or output.  
 
 &#x20;<a href="#api-bleGPIO-setInput-callback-err-Set-as-an-input" name="api-bleGPIO-setInput-callback-err-Set-as-an-input">#</a> bleGPIO<b>.setInput</b>( callback(err) ) Set as an input.  
 
@@ -311,7 +311,7 @@ bluetooth.startAdvertising(callback(err)) Begin advertising to master devices.
 ####Security
 &#x20;<a href="#api-bluetooth-setBondable-peripheral-bondable-callback-err-Set-whether-a-peripheral-can-be-bonded-to-not-sure-if-this-pertains-to-master-mode-as-well" name="api-bluetooth-setBondable-peripheral-bondable-callback-err-Set-whether-a-peripheral-can-be-bonded-to-not-sure-if-this-pertains-to-master-mode-as-well">#</a> bluetooth<b>.setBondable</b>( peripheral, bondable, callback(err)) Set whether a peripheral can be bonded to (not sure if this pertains to master mode as well ).  
 
-&#x20;<a href="#api-bluetooth-getBonds-callback-err-bonds-Get-bonds-with-current-devices" name="api-bluetooth-getBonds-callback-err-bonds-Get-bonds-with-current-devices">#</a> bluetooth<b>.getBonds</b>( callback(err, bonds) ) Get bonds with current devices.  
+&#x20;<a href="#api-bluetooth-getBonds-callback-err-bonds-Get-bonds-with-current-devices" name="api-bluetooth-getBonds-callback-err-bonds-Get-bonds-with-current-devices">#</a>bluetooth<b>.getBonds</b>( callback(err, bonds) ) Get bonds with current devices.  
 
 &#x20;<a href="#api-bluetooth-deleteBonds-peripheral-callback-err-Delete-any-bonds-with-devices" name="api-bluetooth-deleteBonds-peripheral-callback-err-Delete-any-bonds-with-devices">#</a> bluetooth<b>.deleteBonds</b>( peripheral, callback(err) ) Delete any bonds with devices.  
 
