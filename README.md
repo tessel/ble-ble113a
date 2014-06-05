@@ -155,7 +155,7 @@ ble.on('ready', function(master) {
 ###API
 ####Bluetooth (Primary Controller)
 #####Master Commands
-&#x20;<a href="#api-bluetooth-startScanning-options-callback-err-Start-searching-for-BLE-peripherals-options-dict-is-optional" name="api-bluetooth-startScanning-options-callback-err-Start-searching-for-BLE-peripherals-options-dict-is-optional">#</a> bluetooth<b>.startScanning</b>( [options], callback(err)) Start searching for BLE peripherals (<i>options</i>&nbsp; dict is\.\.\. optional ).  
+&#x20;<a href="#api-bluetooth-startScanning-options-callback-err-Start-searching-for-BLE-peripherals-options-dict-is-optional" name="api-bluetooth-startScanning-options-callback-err-Start-searching-for-BLE-peripherals-options-dict-is-optional">#</a> bluetooth<b>.startScanning</b>( [options], callback(err)) Start searching for BLE peripherals (options dict is\.\.\. optional ).  
 ```js
 options =
 {
@@ -166,21 +166,21 @@ options =
 }
 ```
 
-&#x20;<a href="#api-bluetooth-stopScanning-callback-err-Stop-Searching-for-BLE-peripherals" name="api-bluetooth-stopScanning-callback-err-Stop-Searching-for-BLE-peripherals">#</a> bluetooth<b>.stopScanning</b>( callback(err) ) Stop Searching for BLE peripherals  
+&#x20;<a href="#api-bluetooth-stopScanning-callback-err-Stop-Searching-for-BLE-peripherals" name="api-bluetooth-stopScanning-callback-err-Stop-Searching-for-BLE-peripherals">#</a> bluetooth<b>.stopScanning</b>( callback(err) ) Stop Searching for BLE peripherals.  
 
 &#x20;<a href="#api-bluetooth-connect-peripheral-callback-err" name="api-bluetooth-connect-peripheral-callback-err">#</a> bluetooth<b>.connect</b>( peripheral, callback(err) )  
 
 &#x20;<a href="#api-bluetooth-disconnect-peripheral-callback-err" name="api-bluetooth-disconnect-peripheral-callback-err">#</a> bluetooth<b>.disconnect</b>( peripheral, callback(err )  
 
-&#x20;<a href="#api-bluetooth-discoverServices-peripheral-serviceUUIDs-callback-err-services-Search-for-specific-Services-by-passing-in-array-of-uuids-Returns-array-of-Service-objects" name="api-bluetooth-discoverServices-peripheral-serviceUUIDs-callback-err-services-Search-for-specific-Services-by-passing-in-array-of-uuids-Returns-array-of-Service-objects">#</a> bluetooth<b>.discoverServices</b>( peripheral, [serviceUUIDs], callback(err, services) ) Search for specific Services by passing in array of uuids. Returns array of Service objects  
+&#x20;<a href="#api-bluetooth-discoverServices-peripheral-serviceUUIDs-callback-err-services-Search-for-specific-Services-by-passing-in-array-of-uuids-Returns-array-of-Service-objects" name="api-bluetooth-discoverServices-peripheral-serviceUUIDs-callback-err-services-Search-for-specific-Services-by-passing-in-array-of-uuids-Returns-array-of-Service-objects">#</a> bluetooth<b>.discoverServices</b>( peripheral, [serviceUUIDs], callback(err, services) ) Search for specific Services by passing in array of uuids. Returns array of Service objects.
 
 &#x20;<a href="#api-bluetooth-discoverAllServices-peripheral-callback-err-services-Search-for-all-Services-of-a-peripheral-Returns-array-of-Service-objects" name="api-bluetooth-discoverAllServices-peripheral-callback-err-services-Search-for-all-Services-of-a-peripheral-Returns-array-of-Service-objects">#</a> bluetooth<b>.discoverAllServices</b>( peripheral, callback(err, services) ) Search for all Services of a peripheral. Returns array of Service objects.  
 
 &#x20;<a href="#api-bluetooth-discoverIncludedServices-periphreal-serviceUUID-callback-err-includedServices-Find-what-services-are-included-in-this-service-if-any-pretty-rare" name="api-bluetooth-discoverIncludedServices-periphreal-serviceUUID-callback-err-includedServices-Find-what-services-are-included-in-this-service-if-any-pretty-rare">#</a> bluetooth<b>.discoverIncludedServices</b>( periphreal, serviceUUID, callback(err, includedServices)) Find what services are included in this service, if any (pretty rare).  
 
-&#x20;<a href="#api-bluetooth-discoverCharacteristics-peripheral-characteristicsUUIDs-callback-err-characteristics-Search-for-specific-Characteristics-by-passing-in-array-of-uuids-Returns-array-of-Characteristic-objects" name="api-bluetooth-discoverCharacteristics-peripheral-characteristicsUUIDs-callback-err-characteristics-Search-for-specific-Characteristics-by-passing-in-array-of-uuids-Returns-array-of-Characteristic-objects">#</a> bluetooth<b>.discoverCharacteristics</b>( peripheral, [characteristicsUUIDs], callback(err, characteristics) ) Search for specific Characteristics by passing in array of uuids. Returns array of Characteristic objects  
+&#x20;<a href="#api-bluetooth-discoverCharacteristics-peripheral-characteristicsUUIDs-callback-err-characteristics-Search-for-specific-Characteristics-by-passing-in-array-of-uuids-Returns-array-of-Characteristic-objects" name="api-bluetooth-discoverCharacteristics-peripheral-characteristicsUUIDs-callback-err-characteristics-Search-for-specific-Characteristics-by-passing-in-array-of-uuids-Returns-array-of-Characteristic-objects">#</a> bluetooth<b>.discoverCharacteristics</b>( peripheral, [characteristicsUUIDs], callback(err, characteristics) ) Search for specific Characteristics by passing in array of uuids. Returns array of Characteristic objects.  
 
-&#x20;<a href="#api-bluetooth-discoverAllCharacteristics-peripheral-callback-err-characteristics-Search-for-all-Characteristics-of-a-peripheral-Returns-array-of-Characteristic-objects" name="api-bluetooth-discoverAllCharacteristics-peripheral-callback-err-characteristics-Search-for-all-Characteristics-of-a-peripheral-Returns-array-of-Characteristic-objects">#</a> bluetooth<b>.discoverAllCharacteristics</b>( peripheral, callback(err, characteristics) ) Search for all Characteristics of a peripheral. Returns array of Characteristic objects  
+&#x20;<a href="#api-bluetooth-discoverAllCharacteristics-peripheral-callback-err-characteristics-Search-for-all-Characteristics-of-a-peripheral-Returns-array-of-Characteristic-objects" name="api-bluetooth-discoverAllCharacteristics-peripheral-callback-err-characteristics-Search-for-all-Characteristics-of-a-peripheral-Returns-array-of-Characteristic-objects">#</a> bluetooth<b>.discoverAllCharacteristics</b>( peripheral, callback(err, characteristics) ) Search for all Characteristics of a peripheral. Returns array of Characteristic objects.  
 
 &#x20;<a href="#api-bluetooth-discoverAllServicesAndCharacteristics-peripheral-callback-err-results-Return-all-services-and-characteristics-of-a-peripheral" name="api-bluetooth-discoverAllServicesAndCharacteristics-peripheral-callback-err-results-Return-all-services-and-characteristics-of-a-peripheral">#</a> bluetooth<b>.discoverAllServicesAndCharacteristics</b>( peripheral, callback(err, results) ) Return all services and characteristics of a peripheral.  
 
@@ -246,7 +246,7 @@ options =
 &#x20;<a href="#api-bluetooth-on-rssiUpdate-callback-peripheral-rssi" name="api-bluetooth-on-rssiUpdate-callback-peripheral-rssi">#</a> bluetooth<b>.on</b>( 'rssiUpdate', callback(peripheral, rssi) )  
 
 #####Slave Commands
-bluetooth.startAdvertising(callback(err)) Begin advertising to master devices.
+&#x20;<a href="#api-bluetooth-startAdvertising-callback-err-Start-advertising" name="api-bluetooth-startAdvertising-callback-err-Start-advertising">#</a> bluetooth.<b>startAdvertising</b>(callback(err)) Begin advertising to master devices.
 
 &#x20;<a href="#api-bluetooth-stopAdvertising-callback-err-Stop-advertising" name="api-bluetooth-stopAdvertising-callback-err-Stop-advertising">#</a> bluetooth<b>.stopAdvertising</b>( callback(err) ) Stop advertising.  
 
@@ -343,29 +343,29 @@ bluetooth.startAdvertising(callback(err)) Begin advertising to master devices.
 &#x20;<a href="#api-peripheral-flags" name="api-peripheral-flags">#</a> peripheral<b>.flags</b>  
 
 ####Peripheral Commands
-&#x20;<a href="#api-peripheral-connect-function-err-Connect-to-a-peripheral-as-a-master" name="api-peripheral-connect-function-err-Connect-to-a-peripheral-as-a-master">#</a> peripheral<b>.connect</b>( function(err) ) Connect to a peripheral as a master  
+&#x20;<a href="#api-peripheral-connect-function-err-Connect-to-a-peripheral-as-a-master" name="api-peripheral-connect-function-err-Connect-to-a-peripheral-as-a-master">#</a> peripheral<b>.connect</b>( function(err) ) Connect to a peripheral as a master.  
 
-&#x20;<a href="#api-peripheral-disconnect-function-err-Disconnected-from-a-peripheral-as-a-master" name="api-peripheral-disconnect-function-err-Disconnected-from-a-peripheral-as-a-master">#</a> peripheral<b>.disconnect</b>( function(err) ) Disconnected from a peripheral as a master  
+&#x20;<a href="#api-peripheral-disconnect-function-err-Disconnected-from-a-peripheral-as-a-master" name="api-peripheral-disconnect-function-err-Disconnected-from-a-peripheral-as-a-master">#</a> peripheral<b>.disconnect</b>( function(err) ) Disconnected from a peripheral as a master.  
 
-&#x20;<a href="#api-peripheral-updateRSSI-function-err-rssi-Get-the-peripheral-s-signal-strength" name="api-peripheral-updateRSSI-function-err-rssi-Get-the-peripheral-s-signal-strength">#</a> peripheral<b>.updateRSSI</b>( function(err, rssi) ) Get the peripheral's signal strength  
+&#x20;<a href="#api-peripheral-updateRSSI-function-err-rssi-Get-the-peripheral-s-signal-strength" name="api-peripheral-updateRSSI-function-err-rssi-Get-the-peripheral-s-signal-strength">#</a> peripheral<b>.updateRSSI</b>( function(err, rssi) ) Get the peripheral's signal strength.  
 
-&#x20;<a href="#api-peripheral-discoverServices-uuids-function-err-services-Discover-a-subset-of-the-peripheral-s-services" name="api-peripheral-discoverServices-uuids-function-err-services-Discover-a-subset-of-the-peripheral-s-services">#</a> peripheral<b>.discoverServices</b>( uuids, function(err, services) ) Discover a subset of the peripheral's services  
+&#x20;<a href="#api-peripheral-discoverServices-uuids-function-err-services-Discover-a-subset-of-the-peripheral-s-services" name="api-peripheral-discoverServices-uuids-function-err-services-Discover-a-subset-of-the-peripheral-s-services">#</a> peripheral<b>.discoverServices</b>( uuids, function(err, services) ) Discover a subset of the peripheral's services.  
 
-&#x20;<a href="#api-peripheral-discoverAllServices-function-services-Discover-all-the-peripheral-s-services" name="api-peripheral-discoverAllServices-function-services-Discover-all-the-peripheral-s-services">#</a> peripheral<b>.discoverAllServices</b>( function(services) ) Discover all the peripheral's services  
+&#x20;<a href="#api-peripheral-discoverAllServices-function-services-Discover-all-the-peripheral-s-services" name="api-peripheral-discoverAllServices-function-services-Discover-all-the-peripheral-s-services">#</a> peripheral<b>.discoverAllServices</b>( function(services) ) Discover all the peripheral's services.  
 
-&#x20;<a href="#api-peripheral-discoverAllServicesAndCharacteristics-uuids-function-err-results-Discover-all-the-services-and-characteristics-of-a-peripheral" name="api-peripheral-discoverAllServicesAndCharacteristics-uuids-function-err-results-Discover-all-the-services-and-characteristics-of-a-peripheral">#</a> peripheral<b>.discoverAllServicesAndCharacteristics</b>( uuids, function(err, results) ) Discover all the services and characteristics of a peripheral  
+&#x20;<a href="#api-peripheral-discoverAllServicesAndCharacteristics-uuids-function-err-results-Discover-all-the-services-and-characteristics-of-a-peripheral" name="api-peripheral-discoverAllServicesAndCharacteristics-uuids-function-err-results-Discover-all-the-services-and-characteristics-of-a-peripheral">#</a> peripheral<b>.discoverAllServicesAndCharacteristics</b>( uuids, function(err, results) ) Discover all the services and characteristics of a peripheral.  
 
-&#x20;<a href="#api-peripheral-discoverCharacteristics-uuids-function-err-characteristic-Discover-specific-characteristics-of-a-peripheral" name="api-peripheral-discoverCharacteristics-uuids-function-err-characteristic-Discover-specific-characteristics-of-a-peripheral">#</a> peripheral<b>.discoverCharacteristics</b>( uuids, function(err, characteristic) ) Discover specific characteristics of a peripheral  
+&#x20;<a href="#api-peripheral-discoverCharacteristics-uuids-function-err-characteristic-Discover-specific-characteristics-of-a-peripheral" name="api-peripheral-discoverCharacteristics-uuids-function-err-characteristic-Discover-specific-characteristics-of-a-peripheral">#</a> peripheral<b>.discoverCharacteristics</b>( uuids, function(err, characteristic) ) Discover specific characteristics of a peripheral.  
 
-&#x20;<a href="#api-peripheral-discoverAllAttributes-function-err-attributes-Discover-all-services-characteristics-and-descriptors" name="api-peripheral-discoverAllAttributes-function-err-attributes-Discover-all-services-characteristics-and-descriptors">#</a> peripheral<b>.discoverAllAttributes</b>( function(err, attributes) ) Discover all services, characteristics, and descriptors  
+&#x20;<a href="#api-peripheral-discoverAllAttributes-function-err-attributes-Discover-all-services-characteristics-and-descriptors" name="api-peripheral-discoverAllAttributes-function-err-attributes-Discover-all-services-characteristics-and-descriptors">#</a> peripheral<b>.discoverAllAttributes</b>( function(err, attributes) ) Discover all services, characteristics, and descriptors.  
 
-&#x20;<a href="#api-peripheral-deleteBond-function-err-Delete-bonding-data-from-peripheral" name="api-peripheral-deleteBond-function-err-Delete-bonding-data-from-peripheral">#</a> peripheral<b>.deleteBond</b>( function(err) ) Delete bonding data from peripheral  
+&#x20;<a href="#api-peripheral-deleteBond-function-err-Delete-bonding-data-from-peripheral" name="api-peripheral-deleteBond-function-err-Delete-bonding-data-from-peripheral">#</a> peripheral<b>.deleteBond</b>( function(err) ) Delete bonding data from peripheral.  
 
-&#x20;<a href="#api-peripheral-startEncryption-function-err-Make-connection-encrypted-with-device" name="api-peripheral-startEncryption-function-err-Make-connection-encrypted-with-device">#</a> peripheral<b>.startEncryption</b>( function(err) ) Make connection encrypted with device  
+&#x20;<a href="#api-peripheral-startEncryption-function-err-Make-connection-encrypted-with-device" name="api-peripheral-startEncryption-function-err-Make-connection-encrypted-with-device">#</a> peripheral<b>.startEncryption</b>( function(err) ) Make connection encrypted with device.  
 
-&#x20;<a href="#api-peripheral-enterPasskey-function-err-Enter-passkey-for-bonding" name="api-peripheral-enterPasskey-function-err-Enter-passkey-for-bonding">#</a> peripheral<b>.enterPasskey</b>( function(err) ) Enter passkey for bonding  
+&#x20;<a href="#api-peripheral-enterPasskey-function-err-Enter-passkey-for-bonding" name="api-peripheral-enterPasskey-function-err-Enter-passkey-for-bonding">#</a> peripheral<b>.enterPasskey</b>( function(err) ) Enter passkey for bonding.  
 
-&#x20;<a href="#api-peripheral-toString-Print-out-the-peripheral-s-data" name="api-peripheral-toString-Print-out-the-peripheral-s-data">#</a> peripheral<b>.toString</b>() Print out the peripheral's data  
+&#x20;<a href="#api-peripheral-toString-Print-out-the-peripheral-s-data" name="api-peripheral-toString-Print-out-the-peripheral-s-data">#</a> peripheral<b>.toString</b>() Print out the peripheral's data.  
 
 ####Peripheral Events
 &#x20;<a href="#api-peripheral-on-connect-callback" name="api-peripheral-on-connect-callback">#</a> peripheral<b>.on</b>( 'connect', callback() )  
@@ -401,13 +401,13 @@ bluetooth.startAdvertising(callback(err)) Begin advertising to master devices.
 &#x20;<a href="#api-service-includedServices" name="api-service-includedServices">#</a> service<b>.includedServices</b>  
 
 ####Service Commands
-&#x20;<a href="#api-service-discoverIncludedServices-callback-err-includedServices-Discover-what-other-sercices-are-included-by-this-one" name="api-service-discoverIncludedServices-callback-err-includedServices-Discover-what-other-sercices-are-included-by-this-one">#</a> service<b>.discoverIncludedServices</b>( callback(err, includedServices) ) Discover what other sercices are included by this one  
+&#x20;<a href="#api-service-discoverIncludedServices-callback-err-includedServices-Discover-what-other-sercices-are-included-by-this-one" name="api-service-discoverIncludedServices-callback-err-includedServices-Discover-what-other-sercices-are-included-by-this-one">#</a> service<b>.discoverIncludedServices</b>( callback(err, includedServices) ) Discover what other sercices are included by this one.  
 
-&#x20;<a href="#api-service-discoverAllCharacteristics-callback-err-characteristics-Discover-the-characteristics-in-this-service" name="api-service-discoverAllCharacteristics-callback-err-characteristics-Discover-the-characteristics-in-this-service">#</a> service<b>.discoverAllCharacteristics</b>( callback(err, characteristics) ) Discover the characteristics in this service  
+&#x20;<a href="#api-service-discoverAllCharacteristics-callback-err-characteristics-Discover-the-characteristics-in-this-service" name="api-service-discoverAllCharacteristics-callback-err-characteristics-Discover-the-characteristics-in-this-service">#</a> service<b>.discoverAllCharacteristics</b>( callback(err, characteristics) ) Discover the characteristics in this service.  
 
 &#x20;<a href="#api-service-discoverCharacteristics-characteristicUUIDs-callback-err-characteristics" name="api-service-discoverCharacteristics-characteristicUUIDs-callback-err-characteristics">#</a> service<b>.discoverCharacteristics</b>( [characteristicUUIDs], callback(err, characteristics) )  
 
-&#x20;<a href="#api-service-toString-Print-out-the-service" name="api-service-toString-Print-out-the-service">#</a> service<b>.toString</b>() Print out the service  
+&#x20;<a href="#api-service-toString-Print-out-the-service" name="api-service-toString-Print-out-the-service">#</a> service<b>.toString</b>() Print out the service.  
 
 
 ####Service Events
