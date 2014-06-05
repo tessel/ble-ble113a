@@ -445,6 +445,10 @@ BluetoothController.prototype.connect = function(peripheral, callback) {
 };
 
 BluetoothController.prototype.disconnect = function(peripheral, callback) {
+  if (typeof peripheral == 'function') {
+    callback = peripheral;
+    peripheral = {connection : 0};
+  }
   this.messenger.disconnect(peripheral.connection, function(err, response) {
     // If there was an error
     if (err) {
