@@ -69,10 +69,11 @@ BluetoothController.prototype.bootSequence = function(callback, err) {
     // Set default adevertising data
     // LE General Discoverable / BR/EDR not supported
     // Short device name: Tessel
-    this.setAdvertisingData([0x02, 0x01, 0x06, 0x07, 0x08, 0x54, 0x65, 0x73, 0x73, 0x65, 0x6c]);
-    setImmediate(function() {
-      this.emit('ready');
-    }.bind(this));
+    this.setAdvertisingData([0x02, 0x01, 0x06, 0x07, 0x08, 0x54, 0x65, 0x73, 0x73, 0x65, 0x6c], function(){
+      setImmediate(function() {
+        this.emit('ready');
+      }.bind(this));
+    });
   } else {
     // Emit the error
     setImmediate(function() {
