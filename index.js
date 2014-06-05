@@ -425,7 +425,6 @@ BluetoothController.prototype.connect = function(peripheral, callback) {
         }
         setImmediate(function() {
           // Let any listeners know
-          self.emit('connect', peripheral);
           peripheral.emit('connect');
         });
       }
