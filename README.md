@@ -130,7 +130,7 @@ ble = require('ble-ble113a').use(blePort, function(err) {
 });
 
 // Once a master connects
-ble.on('ready', function(master) {
+ble.on('connect', function(master) {
   // Start streaming light data
   ambient.on('light', function(lightValues) {
     // Save it to the first available characteristic
