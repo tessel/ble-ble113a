@@ -120,9 +120,9 @@ var ambient;
 // Connect to BLE
 ble = require('ble-ble113a').use(blePort, function(err) {
   // Connect to Accel
-  accel = require('accel-mma84', function(err) {
+  accel = require('accel-mma84').use(accelPort, function(err) {
     // Connect to ambient
-    ambient = require('ambient-attx4', function(err) {
+    ambient = require('ambient-attx4').use(ambientPort, function(err) {
       // start adveristing to any listening masters
       ble.startAdvertising();
     });
@@ -130,25 +130,34 @@ ble = require('ble-ble113a').use(blePort, function(err) {
 });
 
 // Once a master connects
-ble.on('ready', function(master) {
+ble.on('connect', function(master) {
   // Start streaming light data
   ambient.on('light', function(lightValues) {
     // Save it to the first available characteristic
-    ble.writeLocalValue(0, lightValues);
+    ble.writeLocalValue(0, floatArrayToBuffer(lightValues));
   });
 
   // Start streaming sound data
   ambient.on('sound', function(soundValues) {
     // Save it to the next available characteristic
-    ble.writeLocalValue(1, soundValues);
+    ble.writeLocalValue(1, floatArrayToBuffer(soundValues));
   });
 
   // Start streaming accelerometer data
   accel.on('data', function(accelValues) {
     // Save it to the next available characteristic
-    ble.writeLocalValue(2, accelValues);
-  });
+    ble.writeLocalValue(2, floatArrayToBuffer(accelValues));
+  });  
 });
+
+// Convert an array of floats to a Buffer
+function floatArrayToBuffer(array){
+  var buf = new Buffer(array.length*4);
+  for (var i=0; i < array.length; i++){
+    buf.writeFloatLE(array[i], i*4);
+  }
+  return buf;
+}
 
 ```
 
