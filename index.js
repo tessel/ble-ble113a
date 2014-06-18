@@ -15,6 +15,7 @@ var Messenger = require('./lib/messenger');
 var UUID = require('./lib/uuid');
 var Address = require('./lib/address');
 var attributes = require('./lib/attributes.json');
+var profile = require('./lib/profile.json');
 var events = require('events');
 var util = require('util');
 var async = require('async');
@@ -2156,3 +2157,4 @@ function use(hardware, callback) {
 
 module.exports.BluetoothController = BluetoothController;
 module.exports.use = use;
+module.exports.gatt_profile = profile;
