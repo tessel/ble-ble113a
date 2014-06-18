@@ -1,0 +1,125 @@
+{
+  "1800" : {
+      "id": "generic_access"
+    , "description" : "Generic Access"
+    , "characteristics" : {
+        "2A00" : {
+            "id" : "c_device_name"
+          , "description" : "Device Name"
+          , "value" : "Tessel BLE113A Module"
+        }
+      , "2A01" : {
+            "id" : "c_appearance"
+          , "description" : "Appearance"
+          , "value" : "0080"
+        }
+      }
+  }
+
+, "180A" : {
+      "id": "device_information"
+    , "description" : "Device Information"
+    , "characteristics" : {
+          "2A29" : {
+              "id" : "c_manufacturer_name"
+            , "description" : "Manufacturer Name"
+            , "value" : "Technical Machine"
+          }
+        , "2A24" : {
+              "id" : "c_model_number"
+            , "description" : "Model Number"
+            , "value" : "BLE-BLE113"
+          }
+      }
+  }
+
+, "08c8c7a0-6cc5-11e3-981f-0800200c9a66" : {
+      "description" : "Tessel Firmware Information"
+    , "characteristics" : {
+        "50888c10-6cc5-11e3-981f-0800200c9a66" : {
+            "id" : "c_tessel_firmware_version"
+          , "description" : "Firmware Version"
+          , "value" : "1.0.1"
+        }
+      }
+  }
+
+, "d752c5fb-1380-4cd5-b0ef-cac7d72cff20" : {
+      "id" : "data_transceiver"
+    , "description" : "Data Transceiving"
+    , "characteristics" : {
+        "883f1e6b-76f6-4da1-87eb-6bdbdb617888" : {
+            "id" : "c_trans_0"
+          , "description" : "Transceiver Value 0"
+          , "properties" : ["read", "write", "indicate", "notify"]
+          , "length" : "255"
+        }
+        , "21819AB0-C937-4188-B0DB-B9621E1696CD" : {
+            "id" : "c_trans_1"
+          , "description" : "Transceiver Value 1"
+          , "properties" : ["read", "write", "indicate", "notify"]
+          , "length" : "255"
+        }
+        , "57b09eae-a369-4677-bf6e-92a95baa3a38" : {
+            "id" : "c_trans_2"
+          , "description" : "Transceiver Value 2"
+          , "properties" : ["read", "write", "indicate", "notify"]
+          , "length" : "255"
+        }
+        , "6696f92e-f3c0-4d85-84dd-798b0ceff2e9" : {
+            "id" : "c_trans_3"
+          , "description" : "Transceiver Value 3"
+          , "properties" : ["read", "write", "indicate", "notify"]
+          , "length" : "255"
+        }
+        , "488b0448-3aaf-44c6-90ec-c85fd5d9f616" : {
+            "id" : "c_trans_4"
+          , "description" : "Transceiver Value 4"
+          , "properties" : ["read", "write", "indicate", "notify"]
+          , "length" : "255"
+        }
+        , "e101b160-a59b-4f24-97df-6821337b45b2" : {
+            "id" : "c_trans_5"
+          , "description" : "Transceiver Value 5"
+          , "properties" : ["read", "write", "indicate", "notify"]
+          , "length" : "255"
+        }
+        , "7834933b-3f6d-44b3-b38e-8b67a7ed6702" : {
+            "id" : "c_trans_6"
+          , "description" : "Transceiver Value 6"
+          , "properties" : ["read", "write", "indicate", "notify"]
+          , "length" : "255"
+        }
+        , "b08e1773-fbb6-428d-9e4c-d6322f7bf5fe" : {
+            "id" : "c_trans_7"
+          , "description" : "Transceiver Value 7"
+          , "properties" : ["read", "write", "indicate", "notify"]
+          , "length" : "255"
+        }
+        , "c98e8fd3-5be7-43e0-b35a-951f1a07c25c" : {
+            "id" : "c_trans_8"
+          , "description" : "Transceiver Value 8"
+          , "properties" : ["read", "write", "indicate", "notify"]
+          , "length" : "255"
+        }
+        , "977840be-8d5c-4805-a329-2f9ddc8db3a3" : {
+            "id" : "c_trans_9"
+          , "description" : "Transceiver Value 9"
+          , "properties" : ["read", "write", "indicate", "notify"]
+          , "length" : "255"
+        }
+        , "bb2ed798-9d0b-41a6-a753-31b16f93281e" : {
+            "id" : "c_trans_10"
+          , "description" : "Transceiver Value 10"
+          , "properties" : ["read", "write", "indicate", "notify"]
+          , "length" : "255"
+        }
+        , "4a0efa07-e181-4a7f-bd72-094df3e97132" : {
+            "id" : "c_trans_11"
+          , "description" : "Transceiver Value 11"
+          , "properties" : ["read", "write", "indicate", "notify"]
+          , "length" : "255"
+          }
+      }
+  }
+}

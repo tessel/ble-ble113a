@@ -21,7 +21,7 @@ you have some BLE peripherals around.
 var tessel = require('tessel');
 var blelib = require('ble-ble113a');
 
-var ble = blelib.use(tessel.port['A']); 
+var ble = blelib.use(tessel.port['A']);
 
 ble.on('ready', function(err) {
   console.log('Scanning...');
@@ -481,10 +481,18 @@ options =
 
 &#x20;<a href="#api-descriptor-on-descriptorWrite-callback-valuewritten" name="api-descriptor-on-descriptorWrite-callback-valuewritten">#</a> descriptor<b>.on</b>( 'descriptorWrite', callback(valuewritten )  
 
+###Gatt Profile
+To access the  Tessel's full Gatt profile in JSON format, use the property exposed through the library.
+
+```js
+var bleLib = require('ble-ble113a');
+bleLib.gatt_profile
+```
+
 ###Further Examples  
 * [ble Advertise](https://github.com/tessel/ble-ble113a/blob/master/examples/ble-advertise.js). This Bluetooth Low Energy module demo turns the module on, starts it advertising as a peripheral, and writes information when connected.
 
-* [ble Scan](https://github.com/tessel/ble-ble113a/blob/master/examples/ble-scan.js). This Bluetooth Low Energy module demo scans for nearby BLE peripherals. 
+* [ble Scan](https://github.com/tessel/ble-ble113a/blob/master/examples/ble-scan.js). This Bluetooth Low Energy module demo scans for nearby BLE peripherals.
 
 ## License
 MIT or Apache 2.0, at your option
