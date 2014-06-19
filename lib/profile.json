@@ -33,10 +33,10 @@
       }
   }
 
-, "08c8c7a0-6cc5-11e3-981f-0800200c9a66" : {
+, "08c8c7a06cc511e3981f0800200c9a66" : {
       "description" : "Tessel Firmware Information"
     , "characteristics" : {
-        "50888c10-6cc5-11e3-981f-0800200c9a66" : {
+        "50888c106cc511e3981f0800200c9a66" : {
             "id" : "c_tessel_firmware_version"
           , "description" : "Firmware Version"
           , "value" : "1.0.1"
@@ -44,77 +44,77 @@
       }
   }
 
-, "d752c5fb-1380-4cd5-b0ef-cac7d72cff20" : {
+, "d752c5fb13804cd5b0efcac7d72cff20" : {
       "id" : "data_transceiver"
     , "description" : "Data Transceiving"
     , "characteristics" : {
-        "883f1e6b-76f6-4da1-87eb-6bdbdb617888" : {
+        "883f1e6b76f64da187eb6bdbdb617888" : {
             "id" : "c_trans_0"
           , "description" : "Transceiver Value 0"
           , "properties" : ["read", "write", "indicate", "notify"]
           , "length" : "255"
         }
-        , "21819AB0-C937-4188-B0DB-B9621E1696CD" : {
+        , "21819AB0C9374188B0DBB9621E1696CD" : {
             "id" : "c_trans_1"
           , "description" : "Transceiver Value 1"
           , "properties" : ["read", "write", "indicate", "notify"]
           , "length" : "255"
         }
-        , "57b09eae-a369-4677-bf6e-92a95baa3a38" : {
+        , "57b09eaea3694677bf6e92a95baa3a38" : {
             "id" : "c_trans_2"
           , "description" : "Transceiver Value 2"
           , "properties" : ["read", "write", "indicate", "notify"]
           , "length" : "255"
         }
-        , "6696f92e-f3c0-4d85-84dd-798b0ceff2e9" : {
+        , "6696f92ef3c04d8584dd798b0ceff2e9" : {
             "id" : "c_trans_3"
           , "description" : "Transceiver Value 3"
           , "properties" : ["read", "write", "indicate", "notify"]
           , "length" : "255"
         }
-        , "488b0448-3aaf-44c6-90ec-c85fd5d9f616" : {
+        , "488b04483aaf44c690ecc85fd5d9f616" : {
             "id" : "c_trans_4"
           , "description" : "Transceiver Value 4"
           , "properties" : ["read", "write", "indicate", "notify"]
           , "length" : "255"
         }
-        , "e101b160-a59b-4f24-97df-6821337b45b2" : {
+        , "e101b160a59b4f2497df6821337b45b2" : {
             "id" : "c_trans_5"
           , "description" : "Transceiver Value 5"
           , "properties" : ["read", "write", "indicate", "notify"]
           , "length" : "255"
         }
-        , "7834933b-3f6d-44b3-b38e-8b67a7ed6702" : {
+        , "7834933b3f6d44b3b38e8b67a7ed6702" : {
             "id" : "c_trans_6"
           , "description" : "Transceiver Value 6"
           , "properties" : ["read", "write", "indicate", "notify"]
           , "length" : "255"
         }
-        , "b08e1773-fbb6-428d-9e4c-d6322f7bf5fe" : {
+        , "b08e1773fbb6428d9e4cd6322f7bf5fe" : {
             "id" : "c_trans_7"
           , "description" : "Transceiver Value 7"
           , "properties" : ["read", "write", "indicate", "notify"]
           , "length" : "255"
         }
-        , "c98e8fd3-5be7-43e0-b35a-951f1a07c25c" : {
+        , "c98e8fd35be743e0b35a951f1a07c25c" : {
             "id" : "c_trans_8"
           , "description" : "Transceiver Value 8"
           , "properties" : ["read", "write", "indicate", "notify"]
           , "length" : "255"
         }
-        , "977840be-8d5c-4805-a329-2f9ddc8db3a3" : {
+        , "977840be8d5c4805a3292f9ddc8db3a3" : {
             "id" : "c_trans_9"
           , "description" : "Transceiver Value 9"
           , "properties" : ["read", "write", "indicate", "notify"]
           , "length" : "255"
         }
-        , "bb2ed798-9d0b-41a6-a753-31b16f93281e" : {
+        , "bb2ed7989d0b41a6a75331b16f93281e" : {
             "id" : "c_trans_10"
           , "description" : "Transceiver Value 10"
           , "properties" : ["read", "write", "indicate", "notify"]
           , "length" : "255"
         }
-        , "4a0efa07-e181-4a7f-bd72-094df3e97132" : {
+        , "4a0efa07e1814a7fbd72094df3e97132" : {
             "id" : "c_trans_11"
           , "description" : "Transceiver Value 11"
           , "properties" : ["read", "write", "indicate", "notify"]
