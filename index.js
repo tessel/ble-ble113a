@@ -28,6 +28,8 @@ function BluetoothController(hardware, callback) {
   this._connectedPeripherals = {};
   this._discoveredPeripherals = {};
 
+  this.profile = profile;
+
   this._firmwareVersionHandle = 17;
   this._maxNumValues = { "1.0.1" : 12};
   this._localHandles = [21, 25, 29, 33, 37, 41, 45, 49, 53, 57, 61, 65];
@@ -2157,4 +2159,4 @@ function use(hardware, callback) {
 
 module.exports.BluetoothController = BluetoothController;
 module.exports.use = use;
-module.exports.gatt_profile = profile;
+module.exports.profile = profile;
