@@ -482,11 +482,15 @@ options =
 &#x20;<a href="#api-descriptor-on-descriptorWrite-callback-valuewritten" name="api-descriptor-on-descriptorWrite-callback-valuewritten">#</a> descriptor<b>.on</b>( 'descriptorWrite', callback(valuewritten )  
 
 ###Gatt Profile
-To access the  Tessel's full Gatt profile in JSON format, use the property exposed through the library.
+To access the  Tessel's full Gatt profile in JSON format, use the property exposed through the library or Bluetooth object.
 
 ```js
+var tessel = require('tessel');
 var bleLib = require('ble-ble113a');
-bleLib.gatt_profile
+bleLib.profile;
+
+var ble = bleLib.use(tessel.port['A']);
+ble.profile;
 ```
 
 ###Further Examples  
