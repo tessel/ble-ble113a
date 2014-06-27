@@ -318,7 +318,7 @@ options =
 &#x20;<a href="#api-bluetooth-readADC-callback-err-value-Read-the-ADC" name="api-bluetooth-readADC-callback-err-value-Read-the-ADC">#</a> bluetooth<b>.readADC</b>( callback(err, value) ) Read the ADC.  
 
 ####Security
-&#x20;<a href="#api-bluetooth-setBondable-peripheral-bondable-callback-err-Set-whether-a-peripheral-can-be-bonded-to-not-sure-if-this-pertains-to-master-mode-as-well" name="api-bluetooth-setBondable-peripheral-bondable-callback-err-Set-whether-a-peripheral-can-be-bonded-to-not-sure-if-this-pertains-to-master-mode-as-well">#</a> bluetooth<b>.setBondable</b>( peripheral, bondable, callback(err)) Set whether a peripheral can be bonded to (not sure if this pertains to master mode as well ).  
+&#x20;<a href="#api-bluetooth-setBondable-peripheral-bondable-callback-err-Set-whether-a-peripheral-can-be-bonded-to-not-sure-if-this-pertains-to-master-mode-as-well" name="api-bluetooth-setBondable-peripheral-bondable-callback-err-Set-whether-a-peripheral-can-be-bonded-to-not-sure-if-this-pertains-to-master-mode-as-well">#</a> bluetooth<b>.setBondable</b>( bondable, callback(err)) Set whether a peripheral can be bonded to (not sure if this pertains to master mode as well ).  
 
 &#x20;<a href="#api-bluetooth-getBonds-callback-err-bonds-Get-bonds-with-current-devices" name="api-bluetooth-getBonds-callback-err-bonds-Get-bonds-with-current-devices">#</a>bluetooth<b>.getBonds</b>( callback(err, bonds) ) Get bonds with current devices.  
 

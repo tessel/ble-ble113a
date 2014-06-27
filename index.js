@@ -2113,7 +2113,7 @@ BluetoothController.prototype.setEncryptionSize = function(size, callback) {
   if (size < 7 || size > 16) {
     return callback && callback(new Error("Invalid encryption key size. Must be between 7 and 16 bytes"));
   } else {
-    this.messenger.setSecurityParameters(this._MITMEnabled, size, 3, function(err, response) {
+    this.messenger.setSecurityParameters(this._MITMEnabled ? 1 : 0, size, 3, function(err, response) {
       if (!err) {
         this._minKeySize = size;
       }
