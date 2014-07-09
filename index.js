@@ -1473,6 +1473,14 @@ BluetoothController.prototype.writeDescriptor = function(descriptor, value, call
   }.bind(this));
 };
 
+BluetoothController.prototype.notify = function(characteristic, notify, callback) {
+  if (notify) {
+    this.startNotifications(characteristic, callback);
+  } else {
+    this.stopNotifications(characteristic, callback);
+  }
+}
+
 BluetoothController.prototype.startNotifications = function(characteristic, callback) {
   this.writeToConfigDescriptorOfCharacteristic(characteristic, new Buffer([0x01, 0x00]), function(err) {
     if (callback) {

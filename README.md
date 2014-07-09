@@ -164,7 +164,8 @@ function floatArrayToBuffer(array){
 ###API
 ####Bluetooth (Primary Controller)
 #####Master Commands
-&#x20;<a href="#api-bluetooth-startScanning-options-callback-err-Start-searching-for-BLE-peripherals-options-dict-is-optional" name="api-bluetooth-startScanning-options-callback-err-Start-searching-for-BLE-peripherals-options-dict-is-optional">#</a> bluetooth<b>.startScanning</b>( [options], callback(err)) Start searching for BLE peripherals (options dict is\.\.\. optional ).  
+&#x20;<a href="#api-bluetooth-startScanning-options-callback-err-Start-searching-for-BLE-peripherals-options-dict-is-optional" name="api-bluetooth-startScanning-options-callback-err-Start-searching-for-BLE-peripherals-options-dict-is-optional">#</a> bluetooth<b>.startScanning</b>( [options], callback(err)) <i>Start</i>&nbsp; searching for BLE peripherals (<i>options</i>&nbsp; dict is\\\.\\\.\\\. optional )  
+.  
 ```js
 options =
 {
@@ -175,54 +176,79 @@ options =
 }
 ```
 
-&#x20;<a href="#api-bluetooth-stopScanning-callback-err-Stop-Searching-for-BLE-peripherals" name="api-bluetooth-stopScanning-callback-err-Stop-Searching-for-BLE-peripherals">#</a> bluetooth<b>.stopScanning</b>( callback(err) ) Stop Searching for BLE peripherals.  
+&#x20;<a href="#api-bluetooth-stopScanning-callback-err" name="api-bluetooth-stopScanning-callback-err">#</a> bluetooth<b>.stopScanning</b>( callback(err) )  
+ Stop Searching for BLE peripherals.  
 
 &#x20;<a href="#api-bluetooth-connect-peripheral-callback-err" name="api-bluetooth-connect-peripheral-callback-err">#</a> bluetooth<b>.connect</b>( peripheral, callback(err) )  
 
 &#x20;<a href="#api-bluetooth-disconnect-peripheral-callback-err" name="api-bluetooth-disconnect-peripheral-callback-err">#</a> bluetooth<b>.disconnect</b>( peripheral, callback(err )  
 
-&#x20;<a href="#api-bluetooth-discoverServices-peripheral-serviceUUIDs-callback-err-services-Search-for-specific-Services-by-passing-in-array-of-uuids-Returns-array-of-Service-objects" name="api-bluetooth-discoverServices-peripheral-serviceUUIDs-callback-err-services-Search-for-specific-Services-by-passing-in-array-of-uuids-Returns-array-of-Service-objects">#</a> bluetooth<b>.discoverServices</b>( peripheral, [serviceUUIDs], callback(err, services) ) Search for specific Services by passing in array of uuids. Returns array of Service objects.
+&#x20;<a href="#api-bluetooth-discoverServices-peripheral-serviceUUIDs-callback-err-services" name="api-bluetooth-discoverServices-peripheral-serviceUUIDs-callback-err-services">#</a> bluetooth<b>.discoverServices</b>( peripheral, [serviceUUIDs], callback(err, services) )  
+ Search for specific Services by passing in array of uuids. Returns array of Service objects.  
 
-&#x20;<a href="#api-bluetooth-discoverAllServices-peripheral-callback-err-services-Search-for-all-Services-of-a-peripheral-Returns-array-of-Service-objects" name="api-bluetooth-discoverAllServices-peripheral-callback-err-services-Search-for-all-Services-of-a-peripheral-Returns-array-of-Service-objects">#</a> bluetooth<b>.discoverAllServices</b>( peripheral, callback(err, services) ) Search for all Services of a peripheral. Returns array of Service objects.  
+&#x20;<a href="#api-bluetooth-discoverAllServices-peripheral-callback-err-services" name="api-bluetooth-discoverAllServices-peripheral-callback-err-services">#</a> bluetooth<b>.discoverAllServices</b>( peripheral, callback(err, services) )  
+ Search for all Services of a peripheral. Returns array of Service objects.  
 
-&#x20;<a href="#api-bluetooth-discoverIncludedServices-periphreal-serviceUUID-callback-err-includedServices-Find-what-services-are-included-in-this-service-if-any-pretty-rare" name="api-bluetooth-discoverIncludedServices-periphreal-serviceUUID-callback-err-includedServices-Find-what-services-are-included-in-this-service-if-any-pretty-rare">#</a> bluetooth<b>.discoverIncludedServices</b>( periphreal, serviceUUID, callback(err, includedServices)) Find what services are included in this service, if any (pretty rare).  
+&#x20;<a href="#api-bluetooth-discoverIncludedServices-periphreal-serviceUUID-callback-err-includedServices-Find-what-services-are-included-in-this-service-if-any-pretty-rare" name="api-bluetooth-discoverIncludedServices-periphreal-serviceUUID-callback-err-includedServices-Find-what-services-are-included-in-this-service-if-any-pretty-rare">#</a> bluetooth<b>.discoverIncludedServices</b>( periphreal, serviceUUID, callback(err, includedServices)) <i>Find</i>&nbsp; what services are included in this service, <i>if</i>&nbsp; any (<i>pretty</i>&nbsp; rare )  
+.  
 
-&#x20;<a href="#api-bluetooth-discoverCharacteristics-peripheral-characteristicsUUIDs-callback-err-characteristics-Search-for-specific-Characteristics-by-passing-in-array-of-uuids-Returns-array-of-Characteristic-objects" name="api-bluetooth-discoverCharacteristics-peripheral-characteristicsUUIDs-callback-err-characteristics-Search-for-specific-Characteristics-by-passing-in-array-of-uuids-Returns-array-of-Characteristic-objects">#</a> bluetooth<b>.discoverCharacteristics</b>( peripheral, [characteristicsUUIDs], callback(err, characteristics) ) Search for specific Characteristics by passing in array of uuids. Returns array of Characteristic objects.  
+&#x20;<a href="#api-bluetooth-discoverCharacteristics-peripheral-characteristicsUUIDs-callback-err-characteristics" name="api-bluetooth-discoverCharacteristics-peripheral-characteristicsUUIDs-callback-err-characteristics">#</a> bluetooth<b>.discoverCharacteristics</b>( peripheral, [characteristicsUUIDs], callback(err, characteristics) )  
+ Search for specific Characteristics by passing in array of uuids. Returns array of Characteristic objects.  
 
-&#x20;<a href="#api-bluetooth-discoverAllCharacteristics-peripheral-callback-err-characteristics-Search-for-all-Characteristics-of-a-peripheral-Returns-array-of-Characteristic-objects" name="api-bluetooth-discoverAllCharacteristics-peripheral-callback-err-characteristics-Search-for-all-Characteristics-of-a-peripheral-Returns-array-of-Characteristic-objects">#</a> bluetooth<b>.discoverAllCharacteristics</b>( peripheral, callback(err, characteristics) ) Search for all Characteristics of a peripheral. Returns array of Characteristic objects.  
+&#x20;<a href="#api-bluetooth-discoverAllCharacteristics-peripheral-callback-err-characteristics" name="api-bluetooth-discoverAllCharacteristics-peripheral-callback-err-characteristics">#</a> bluetooth<b>.discoverAllCharacteristics</b>( peripheral, callback(err, characteristics) )  
+ Search for all Characteristics of a peripheral. Returns array of Characteristic objects.  
 
-&#x20;<a href="#api-bluetooth-discoverAllServicesAndCharacteristics-peripheral-callback-err-results-Return-all-services-and-characteristics-of-a-peripheral" name="api-bluetooth-discoverAllServicesAndCharacteristics-peripheral-callback-err-results-Return-all-services-and-characteristics-of-a-peripheral">#</a> bluetooth<b>.discoverAllServicesAndCharacteristics</b>( peripheral, callback(err, results) ) Return all services and characteristics of a peripheral.  
+&#x20;<a href="#api-bluetooth-discoverAllServicesAndCharacteristics-peripheral-callback-err-results" name="api-bluetooth-discoverAllServicesAndCharacteristics-peripheral-callback-err-results">#</a> bluetooth<b>.discoverAllServicesAndCharacteristics</b>( peripheral, callback(err, results) )  
+ Return all services and characteristics of a peripheral.  
 
-&#x20;<a href="#api-bluetooth-discoverCharacteristicsOfService-service-characteristicUUIDs-callback-err-characteristics-Discover-specific-UUIDs-of-a-service" name="api-bluetooth-discoverCharacteristicsOfService-service-characteristicUUIDs-callback-err-characteristics-Discover-specific-UUIDs-of-a-service">#</a> bluetooth<b>.discoverCharacteristicsOfService</b>( service, [characteristicUUIDs], callback(err, characteristics) ) Discover specific UUIDs of a service.  
+&#x20;<a href="#api-bluetooth-discoverCharacteristicsOfService-service-characteristicUUIDs-callback-err-characteristics" name="api-bluetooth-discoverCharacteristicsOfService-service-characteristicUUIDs-callback-err-characteristics">#</a> bluetooth<b>.discoverCharacteristicsOfService</b>( service, [characteristicUUIDs], callback(err, characteristics) )  
+ Discover specific UUIDs of a service.  
 
-&#x20;<a href="#api-bluetooth-discoverAllCharacteristicsOfService-service-callback-err-characteristics-Discover-the-characteristics-of-a-specific-service" name="api-bluetooth-discoverAllCharacteristicsOfService-service-callback-err-characteristics-Discover-the-characteristics-of-a-specific-service">#</a> bluetooth<b>.discoverAllCharacteristicsOfService</b>( service, callback(err, characteristics) ) Discover the characteristics of a specific service.  
+&#x20;<a href="#api-bluetooth-discoverAllCharacteristicsOfService-service-callback-err-characteristics" name="api-bluetooth-discoverAllCharacteristicsOfService-service-callback-err-characteristics">#</a> bluetooth<b>.discoverAllCharacteristicsOfService</b>( service, callback(err, characteristics) )  
+ Discover the characteristics of a specific service.  
 
-&#x20;<a href="#api-bluetooth-discoverDescriptorsOfCharacteristic-characteristic-callback-err-descriptors-Discover-the-descriptors-of-a-specific-service" name="api-bluetooth-discoverDescriptorsOfCharacteristic-characteristic-callback-err-descriptors-Discover-the-descriptors-of-a-specific-service">#</a> bluetooth<b>.discoverDescriptorsOfCharacteristic</b>( characteristic, callback(err, descriptors) ) Discover the descriptors of a specific service.  
+&#x20;<a href="#api-bluetooth-discoverDescriptorsOfCharacteristic-characteristic-callback-err-descriptors" name="api-bluetooth-discoverDescriptorsOfCharacteristic-characteristic-callback-err-descriptors">#</a> bluetooth<b>.discoverDescriptorsOfCharacteristic</b>( characteristic, callback(err, descriptors) )  
+ Discover the descriptors of a specific service.  
 
-&#x20;<a href="#api-bluetooth-discoverAllAttributes-peripheral-callback-err-attributes-Read-all-the-services-characteristics-and-descriptors-of-a-peripheral" name="api-bluetooth-discoverAllAttributes-peripheral-callback-err-attributes-Read-all-the-services-characteristics-and-descriptors-of-a-peripheral">#</a> bluetooth<b>.discoverAllAttributes</b>( peripheral, callback(err, attributes) ) Read all the services, characteristics, and descriptors of a peripheral.  
+&#x20;<a href="#api-bluetooth-discoverAllAttributes-peripheral-callback-err-attributes" name="api-bluetooth-discoverAllAttributes-peripheral-callback-err-attributes">#</a> bluetooth<b>.discoverAllAttributes</b>( peripheral, callback(err, attributes) )  
+ Read all the services, characteristics, and descriptors of a peripheral.  
 
-&#x20;<a href="#api-bluetooth-read-characteristic-callback-err-value-Get-the-value-of-a-remote-characteristic" name="api-bluetooth-read-characteristic-callback-err-value-Get-the-value-of-a-remote-characteristic">#</a> bluetooth<b>.read</b>( characteristic, callback(err, value) ) Get the value of a remote characteristic.  
+&#x20;<a href="#api-bluetooth-read-characteristic-callback-err-value" name="api-bluetooth-read-characteristic-callback-err-value">#</a> bluetooth<b>.read</b>( characteristic, callback(err, value) )  
+ Get the value of a remote characteristic.  
 
-&#x20;<a href="#api-bluetooth-write-characteristic-value-callback-err-Write-the-value-of-a-remote-characteristic-Value-should-be-a-buffer" name="api-bluetooth-write-characteristic-value-callback-err-Write-the-value-of-a-remote-characteristic-Value-should-be-a-buffer">#</a> bluetooth<b>.write</b>( characteristic, value, callback(err) ) Write the value of a remote characteristic. Value should be a buffer.  
+&#x20;<a href="#api-bluetooth-write-characteristic-value-callback-err" name="api-bluetooth-write-characteristic-value-callback-err">#</a> bluetooth<b>.write</b>( characteristic, value, callback(err) )  
+ Write the value of a remote characteristic. Value should be a buffer.  
 
-&#x20;<a href="#api-bluetooth-readDescriptor-descriptor-callback-err-value-Get-the-value-of-a-remote-descriptor" name="api-bluetooth-readDescriptor-descriptor-callback-err-value-Get-the-value-of-a-remote-descriptor">#</a> bluetooth<b>.readDescriptor</b>( descriptor, callback(err, value) ) Get the value of a remote descriptor.  
+&#x20;<a href="#api-bluetooth-readDescriptor-descriptor-callback-err-value" name="api-bluetooth-readDescriptor-descriptor-callback-err-value">#</a> bluetooth<b>.readDescriptor</b>( descriptor, callback(err, value) )  
+ Get the value of a remote descriptor.  
 
-&#x20;<a href="#api-bluetooth-writeDescriptor-descriptor-value-callback-err-Get-the-value-of-a-remote-descriptor" name="api-bluetooth-writeDescriptor-descriptor-value-callback-err-Get-the-value-of-a-remote-descriptor">#</a> bluetooth<b>.writeDescriptor</b>( descriptor, value callback(err) ) Get the value of a remote descriptor.  
+&#x20;<a href="#api-bluetooth-writeDescriptor-descriptor-value-callback-err" name="api-bluetooth-writeDescriptor-descriptor-value-callback-err">#</a> bluetooth<b>.writeDescriptor</b>( descriptor, <i>value</i>&nbsp; callback(err) )  
+ Get the value of a remote descriptor.  
 
-&#x20;<a href="#api-bluetooth-startNotifications-characteristic-callback-err-Subscribe-to-remote-characteristic-updates-without-having-to-indicate-it-was-received" name="api-bluetooth-startNotifications-characteristic-callback-err-Subscribe-to-remote-characteristic-updates-without-having-to-indicate-it-was-received">#</a> bluetooth<b>.startNotifications</b>( characteristic, callback(err) ) Subscribe to remote characteristic updates without having to indicate it was received.  
+&#x20;<a href="#api-bluetooth-notify-characteristic-notify-callback-err" name="api-bluetooth-notify-characteristic-notify-callback-err">#</a> bluetooth<b>.notify</b>( characteristic, notify, callback(err) )  
+ Alias for start/stopNotifications methods. notify is true/false value that indicates whether to start or stop notifications.  
 
-&#x20;<a href="#api-bluetooth-stopNotifications-characteristic-callback-err-Stop-being-notified-about-remote-characteristic-updates" name="api-bluetooth-stopNotifications-characteristic-callback-err-Stop-being-notified-about-remote-characteristic-updates">#</a> bluetooth<b>.stopNotifications</b>( characteristic, callback(err) ) Stop being notified about remote characteristic updates.  
+&#x20;<a href="#api-bluetooth-startNotifications-characteristic-callback-err" name="api-bluetooth-startNotifications-characteristic-callback-err">#</a> bluetooth<b>.startNotifications</b>( characteristic, callback(err) )  
+ Subscribe to remote characteristic updates without having to indicate it was received.  
 
-&#x20;<a href="#api-bluetooth-startIndications-characteristic-callback-err-Subscribe-to-remote-characteristic-updates-and-indicate-it-was-received" name="api-bluetooth-startIndications-characteristic-callback-err-Subscribe-to-remote-characteristic-updates-and-indicate-it-was-received">#</a> bluetooth<b>.startIndications</b>( characteristic, callback(err) ) Subscribe to remote characteristic updates and indicate it was received.  
+&#x20;<a href="#api-bluetooth-stopNotifications-characteristic-callback-err" name="api-bluetooth-stopNotifications-characteristic-callback-err">#</a> bluetooth<b>.stopNotifications</b>( characteristic, callback(err) )  
+ Stop being notified about remote characteristic updates.  
 
-&#x20;<a href="#api-bluetooth-stopIndications-characteristic-callback-err-Stop-receiving-remote-characteristic-updates-and-indicate-it-was-received" name="api-bluetooth-stopIndications-characteristic-callback-err-Stop-receiving-remote-characteristic-updates-and-indicate-it-was-received">#</a> bluetooth<b>.stopIndications</b>( characteristic, callback(err) ) Stop receiving remote characteristic updates and indicate it was received.  
+&#x20;<a href="#api-bluetooth-startIndications-characteristic-callback-err" name="api-bluetooth-startIndications-characteristic-callback-err">#</a> bluetooth<b>.startIndications</b>( characteristic, callback(err) )  
+ Subscribe to remote characteristic updates and indicate it was received.  
 
-&#x20;<a href="#api-bluetooth-updateRSSI-peripheral-callback-err-rssi-Get-signal-strength-of-peripheral-that-we-re-connected-to" name="api-bluetooth-updateRSSI-peripheral-callback-err-rssi-Get-signal-strength-of-peripheral-that-we-re-connected-to">#</a> bluetooth<b>.updateRSSI</b>( peripheral, callback(err, rssi) ) Get signal strength of peripheral that we're connected to.  
+&#x20;<a href="#api-bluetooth-stopIndications-characteristic-callback-err" name="api-bluetooth-stopIndications-characteristic-callback-err">#</a> bluetooth<b>.stopIndications</b>( characteristic, callback(err) )  
+ Stop receiving remote characteristic updates and indicate it was received.  
 
-&#x20;<a href="#api-bluetooth-reset-callback-err-Reset-the-module-useful-in-case-of-unexpected-state" name="api-bluetooth-reset-callback-err-Reset-the-module-useful-in-case-of-unexpected-state">#</a> bluetooth<b>.reset</b>( callback(err)) Reset the module (useful in case of unexpected state ).  
+&#x20;<a href="#api-bluetooth-updateRSSI-peripheral-callback-err-rssi" name="api-bluetooth-updateRSSI-peripheral-callback-err-rssi">#</a> bluetooth<b>.updateRSSI</b>( peripheral, callback(err, rssi) )  
+ Get signal strength of peripheral that we're connected to.  
+
+&#x20;<a href="#api-bluetooth-reset-callback-err-Reset-the-module-useful-in-case-of-unexpected-state" name="api-bluetooth-reset-callback-err-Reset-the-module-useful-in-case-of-unexpected-state">#</a> bluetooth<b>.reset</b>( callback(err)) <i>Reset</i>&nbsp; the module (<i>useful</i>&nbsp; in case of unexpected state )  
+.  
 
 #####Master Events
-&#x20;<a href="#api-bluetooth-on-error-callback-err-Emitted-on-error" name="api-bluetooth-on-error-callback-err-Emitted-on-error">#</a> bluetooth<b>.on</b>( 'error', callback(err) ) Emitted on error.  
+&#x20;<a href="#api-bluetooth-on-error-callback-err" name="api-bluetooth-on-error-callback-err">#</a> bluetooth<b>.on</b>( 'error', callback(err) )  
+ Emitted on error.  
 
 &#x20;<a href="#api-bluetooth-on-scanStart-callback" name="api-bluetooth-on-scanStart-callback">#</a> bluetooth<b>.on</b>( 'scanStart', callback() )  
 
@@ -255,19 +281,26 @@ options =
 &#x20;<a href="#api-bluetooth-on-rssiUpdate-callback-peripheral-rssi" name="api-bluetooth-on-rssiUpdate-callback-peripheral-rssi">#</a> bluetooth<b>.on</b>( 'rssiUpdate', callback(peripheral, rssi) )  
 
 #####Slave Commands
-&#x20;<a href="#api-bluetooth-startAdvertising-callback-err-Start-advertising" name="api-bluetooth-startAdvertising-callback-err-Start-advertising">#</a> bluetooth.<b>startAdvertising</b>(callback(err)) Begin advertising to master devices.
+&#x20;<a href="#api-bluetooth-startAdvertising-callback-err" name="api-bluetooth-startAdvertising-callback-err">#</a> bluetooth<b>.startAdvertising</b>( callback(err) )  
+ Begin advertising to master devices.  
 
-&#x20;<a href="#api-bluetooth-stopAdvertising-callback-err-Stop-advertising" name="api-bluetooth-stopAdvertising-callback-err-Stop-advertising">#</a> bluetooth<b>.stopAdvertising</b>( callback(err) ) Stop advertising.  
+&#x20;<a href="#api-bluetooth-stopAdvertising-callback-err" name="api-bluetooth-stopAdvertising-callback-err">#</a> bluetooth<b>.stopAdvertising</b>( callback(err) )  
+ Stop advertising.  
 
-&#x20;<a href="#api-bluetooth-setAdvertisingData-data-callback-err-Set-the-data-the-master-receives-in-advertising-packet" name="api-bluetooth-setAdvertisingData-data-callback-err-Set-the-data-the-master-receives-in-advertising-packet">#</a> bluetooth<b>.setAdvertisingData</b>( data, callback(err) ) Set the data the master receives in advertising packet.  
+&#x20;<a href="#api-bluetooth-setAdvertisingData-data-callback-err" name="api-bluetooth-setAdvertisingData-data-callback-err">#</a> bluetooth<b>.setAdvertisingData</b>( data, callback(err) )  
+ Set the data the master receives in advertising packet.  
 
-&#x20;<a href="#api-bluetooth-writeLocalValue-index-data-callback-err-Write-a-local-value-to-be-read-by-a-master" name="api-bluetooth-writeLocalValue-index-data-callback-err-Write-a-local-value-to-be-read-by-a-master">#</a> bluetooth<b>.writeLocalValue</b>( index, data, callback(err) ) Write a local value to be read by a master.  
+&#x20;<a href="#api-bluetooth-writeLocalValue-index-data-callback-err" name="api-bluetooth-writeLocalValue-index-data-callback-err">#</a> bluetooth<b>.writeLocalValue</b>( index, data, callback(err) )  
+ Write a local value to be read by a master.  
 
-&#x20;<a href="#api-bluetooth-readLocalValue-index-offset-callback-err-value-Read-local-values-that-have-been-written-Offset-is-how-many-bytes-in-to-read-reads-in-32-byte-chunks-max" name="api-bluetooth-readLocalValue-index-offset-callback-err-value-Read-local-values-that-have-been-written-Offset-is-how-many-bytes-in-to-read-reads-in-32-byte-chunks-max">#</a> bluetooth<b>.readLocalValue</b>( index, offset, callback(err, value)) Read local values that have been written\. Offset is how many bytes in to read (reads in 32 byte chunks max ).  
+&#x20;<a href="#api-bluetooth-readLocalValue-index-offset-callback-err-value-Read-local-values-that-have-been-written-Offset-is-how-many-bytes-in-to-read-reads-in-32-byte-chunks-max" name="api-bluetooth-readLocalValue-index-offset-callback-err-value-Read-local-values-that-have-been-written-Offset-is-how-many-bytes-in-to-read-reads-in-32-byte-chunks-max">#</a> bluetooth<b>.readLocalValue</b>( index, offset, callback(err, value)) <i>Read</i>&nbsp; local values that have been written\\\. Offset is how many bytes in to read (<i>reads</i>&nbsp; in 32 byte chunks max )  
+.  
 
-&#x20;<a href="#api-bluetooth-sendReadResponse-connection-errorCode-value-callback-err-If-a-master-device-requests-to-read-a-user-attribute-you-ll-need-to-manually-send-it-to-them-This-should-be-called-after-the-remoteReadRequest-event-If-errorCode-is-zero-it-will-send-the-value-else-it-will-send-the-error-code-back" name="api-bluetooth-sendReadResponse-connection-errorCode-value-callback-err-If-a-master-device-requests-to-read-a-user-attribute-you-ll-need-to-manually-send-it-to-them-This-should-be-called-after-the-remoteReadRequest-event-If-errorCode-is-zero-it-will-send-the-value-else-it-will-send-the-error-code-back">#</a> bluetooth<b>.sendReadResponse</b>( connection, errorCode, value, callback(err) ) If a master device requests to read a "user" attribute, you'll need to manually send it to them. This should be called after the "remoteReadRequest" event. If errorCode is zero, it will send the value, else it will send the error code back.  
+&#x20;<a href="#api-bluetooth-sendReadResponse-connection-errorCode-value-callback-err" name="api-bluetooth-sendReadResponse-connection-errorCode-value-callback-err">#</a> bluetooth<b>.sendReadResponse</b>( connection, errorCode, value, callback(err) )  
+ If a master device requests to read a "user" attribute, you'll need to manually send it to them. This should be called after the "remoteReadRequest" event. If errorCode is zero, it will send the value, else it will send the error code back.  
 
-&#x20;<a href="#api-bluetooth-maxNumValues-callback-err-maxNumValues-Get-max-number-of-values-V1-0-1-is-12" name="api-bluetooth-maxNumValues-callback-err-maxNumValues-Get-max-number-of-values-V1-0-1-is-12">#</a> bluetooth<b>.maxNumValues</b>( callback(err, maxNumValues)) Get max number of values (<i>V1\.0\.1</i>&nbsp; is 12 ).  
+&#x20;<a href="#api-bluetooth-maxNumValues-callback-err-maxNumValues-Get-max-number-of-values-V1-0-1-is-12" name="api-bluetooth-maxNumValues-callback-err-maxNumValues-Get-max-number-of-values-V1-0-1-is-12">#</a> bluetooth<b>.maxNumValues</b>( callback(err, maxNumValues)) <i>Get</i>&nbsp; max number of values (<i>V1\\\.0\\\.1</i>&nbsp; is 12 )  
+.  
 
 #####Slave Events
 &#x20;<a href="#api-bluetooth-on-startAdvertising-callback" name="api-bluetooth-on-startAdvertising-callback">#</a> bluetooth<b>.on</b>( 'startAdvertising', callback() )  
@@ -291,55 +324,77 @@ options =
 &#x20;<a href="#api-bluetooth-on-indicated-callback-connection-index" name="api-bluetooth-on-indicated-callback-connection-index">#</a> bluetooth<b>.on</b>( 'indicated', callback(connection, index) )  
 
 ####Hardware
-&#x20;<a href="#api-bleI2C-bluetooth-I2C-address-Make-a-new-I2C-port-on-the-BLE-hardware" name="api-bleI2C-bluetooth-I2C-address-Make-a-new-I2C-port-on-the-BLE-hardware">#</a> <b>bleI2C</b> = bluetooth.<b>I2C</b>( address ) Make a new I2C port on the BLE hardware.  
+&#x20;<a href="#api-bleI2C-bluetooth-I2C-address" name="api-bleI2C-bluetooth-I2C-address">#</a> <b>bleI2C</b> = bluetooth.I2C( address )  
+ Make a new I2C port on the BLE hardware.  
 
-&#x20;<a href="#api-bleI2C-transfer-txbuf-rxLen-callback-err-rxbuf-Transfer-data-over-I2C" name="api-bleI2C-transfer-txbuf-rxLen-callback-err-rxbuf-Transfer-data-over-I2C">#</a> bleI2C<b>.transfer</b>( txbuf, rxLen, callback(err, rxbuf) ) Transfer data over I2C.  
+&#x20;<a href="#api-bleI2C-transfer-txbuf-rxLen-callback-err-rxbuf" name="api-bleI2C-transfer-txbuf-rxLen-callback-err-rxbuf">#</a> bleI2C<b>.transfer</b>( txbuf, rxLen, callback(err, rxbuf) )  
+ Transfer data over I2C.  
 
-&#x20;<a href="#api-bleI2C-receive-len-callback-err-rxbuf-Receive-data-over-I2C" name="api-bleI2C-receive-len-callback-err-rxbuf-Receive-data-over-I2C">#</a> bleI2C<b>.receive</b>( len, callback(err, rxbuf) ) Receive data over I2C.  
+&#x20;<a href="#api-bleI2C-receive-len-callback-err-rxbuf" name="api-bleI2C-receive-len-callback-err-rxbuf">#</a> bleI2C<b>.receive</b>( len, callback(err, rxbuf) )  
+ Receive data over I2C.  
 
-&#x20;<a href="#api-bleI2C-send-txbuf-callback-err-Send-data-over-I2C" name="api-bleI2C-send-txbuf-callback-err-Send-data-over-I2C">#</a> bleI2C<b>.send</b>( txbuf, callback(err) ) Send data over I2C.  
+&#x20;<a href="#api-bleI2C-send-txbuf-callback-err" name="api-bleI2C-send-txbuf-callback-err">#</a> bleI2C<b>.send</b>( txbuf, callback(err) )  
+ Send data over I2C.  
 
-&#x20;<a href="#api-var-bleGPIO-bluetooth-gpio-pin-Get-one-of-the-two-GPIO-ports-pin-must-be-p0_2-or-p0_3" name="api-var-bleGPIO-bluetooth-gpio-pin-Get-one-of-the-two-GPIO-ports-pin-must-be-p0_2-or-p0_3">#</a> var <b>bleGPIO</b> = bluetooth.<b>gpio</b>( pin) Get one of the two GPIO ports (pin must be 'p0\_2' or 'p0\_3' ).  
+&#x20;<a href="#api-var-bleGPIO-bluetooth-gpio-pin-Get-one-of-the-two-GPIO-ports-pin-must-be-p0-_2-or-p0-_3" name="api-var-bleGPIO-bluetooth-gpio-pin-Get-one-of-the-two-GPIO-ports-pin-must-be-p0-_2-or-p0-_3">#</a> <i>var</i>&nbsp; <b>bleGPIO</b> = bluetooth.gpio( pin) <i>Get</i>&nbsp; one of the two GPIO ports (<i>pin</i>&nbsp; must be 'p0\\\_2' or 'p0\\\_3' )  
+.  
 
-&#x20;<a href="#api-bleGPIO-direction-Configured-as-input-or-output" name="api-bleGPIO-direction-Configured-as-input-or-output">#</a> bleGPIO.<b>direction</b> Configured as input or output.  
+&#x20;<a href="#api-bleGPIO-direction-Configured-as-input-or-output" name="api-bleGPIO-direction-Configured-as-input-or-output">#</a> bleGPIO.direction Configured as input or output.  
 
-&#x20;<a href="#api-bleGPIO-setInput-callback-err-Set-as-an-input" name="api-bleGPIO-setInput-callback-err-Set-as-an-input">#</a> bleGPIO<b>.setInput</b>( callback(err) ) Set as an input.  
+&#x20;<a href="#api-bleGPIO-setInput-callback-err" name="api-bleGPIO-setInput-callback-err">#</a> bleGPIO<b>.setInput</b>( callback(err) )  
+ Set as an input.  
 
-&#x20;<a href="#api-bleGPIO-setOutput-initial-callback-err-Set-as-an-output-with-initial-value" name="api-bleGPIO-setOutput-initial-callback-err-Set-as-an-output-with-initial-value">#</a> bleGPIO<b>.setOutput</b>( initial, callback(err) ) Set as an output with initial value.  
+&#x20;<a href="#api-bleGPIO-setOutput-initial-callback-err" name="api-bleGPIO-setOutput-initial-callback-err">#</a> bleGPIO<b>.setOutput</b>( initial, callback(err) )  
+ Set as an output with initial value.  
 
-&#x20;<a href="#api-bleGPIO-write-value-callback-err-Write-a-value-to-the-GPIO-port" name="api-bleGPIO-write-value-callback-err-Write-a-value-to-the-GPIO-port">#</a> bleGPIO<b>.write</b>( value, callback(err) ) Write a value to the GPIO port.  
+&#x20;<a href="#api-bleGPIO-write-value-callback-err" name="api-bleGPIO-write-value-callback-err">#</a> bleGPIO<b>.write</b>( value, callback(err) )  
+ Write a value to the GPIO port.  
 
-&#x20;<a href="#api-bleGPIO-read-callback-err-value-Read-a-value" name="api-bleGPIO-read-callback-err-value-Read-a-value">#</a> bleGPIO<b>.read</b>( callback(err, value) ) Read a value.  
+&#x20;<a href="#api-bleGPIO-read-callback-err-value" name="api-bleGPIO-read-callback-err-value">#</a> bleGPIO<b>.read</b>( callback(err, value) )  
+ Read a value.  
 
-&#x20;<a href="#api-bleGPIO-watch-type-callback-err-time-type-Watch-one-of-the-GPIOs-for-an-interrupt" name="api-bleGPIO-watch-type-callback-err-time-type-Watch-one-of-the-GPIOs-for-an-interrupt">#</a> bleGPIO<b>.watch</b>( type, callback(err, time, type) ) Watch one of the GPIOs for an interrupt.  
+&#x20;<a href="#api-bleGPIO-watch-type-callback-err-time-type" name="api-bleGPIO-watch-type-callback-err-time-type">#</a> bleGPIO<b>.watch</b>( type, callback(err, time, type) )  
+ Watch one of the GPIOs for an interrupt.  
 
-&#x20;<a href="#api-bleGPIO-unwatch-type-callback-Stop-watching-the-interrupt" name="api-bleGPIO-unwatch-type-callback-Stop-watching-the-interrupt">#</a> bleGPIO<b>.unwatch</b>( [type], callback() ) Stop watching the interrupt.  
+&#x20;<a href="#api-bleGPIO-unwatch-type-callback" name="api-bleGPIO-unwatch-type-callback">#</a> bleGPIO<b>.unwatch</b>( [type], callback() )  
+ Stop watching the interrupt.  
 
-&#x20;<a href="#api-bluetooth-readADC-callback-err-value-Read-the-ADC" name="api-bluetooth-readADC-callback-err-value-Read-the-ADC">#</a> bluetooth<b>.readADC</b>( callback(err, value) ) Read the ADC.  
+&#x20;<a href="#api-bluetooth-readADC-callback-err-value" name="api-bluetooth-readADC-callback-err-value">#</a> bluetooth<b>.readADC</b>( callback(err, value) )  
+ Read the ADC.  
 
 ####Security
-&#x20;<a href="#api-bluetooth-setBondable-peripheral-bondable-callback-err-Set-whether-a-peripheral-can-be-bonded-to-not-sure-if-this-pertains-to-master-mode-as-well" name="api-bluetooth-setBondable-peripheral-bondable-callback-err-Set-whether-a-peripheral-can-be-bonded-to-not-sure-if-this-pertains-to-master-mode-as-well">#</a> bluetooth<b>.setBondable</b>( bondable, callback(err)) Set whether a peripheral can be bonded to (not sure if this pertains to master mode as well ).  
+&#x20;<a href="#api-bluetooth-setBondable-bondable-callback-err-Set-whether-a-peripheral-can-be-bonded-to-not-sure-if-this-pertains-to-master-mode-as-well" name="api-bluetooth-setBondable-bondable-callback-err-Set-whether-a-peripheral-can-be-bonded-to-not-sure-if-this-pertains-to-master-mode-as-well">#</a> bluetooth<b>.setBondable</b>( bondable, callback(err)) <i>Set</i>&nbsp; whether a peripheral can be bonded to (<i>not</i>&nbsp; sure if this pertains to master mode as well )  
+.  
 
-&#x20;<a href="#api-bluetooth-getBonds-callback-err-bonds-Get-bonds-with-current-devices" name="api-bluetooth-getBonds-callback-err-bonds-Get-bonds-with-current-devices">#</a>bluetooth<b>.getBonds</b>( callback(err, bonds) ) Get bonds with current devices.  
+#bluetooth.getBonds( callback(err, bonds) ) Get bonds with current devices.
 
-&#x20;<a href="#api-bluetooth-deleteBonds-peripheral-callback-err-Delete-any-bonds-with-devices" name="api-bluetooth-deleteBonds-peripheral-callback-err-Delete-any-bonds-with-devices">#</a> bluetooth<b>.deleteBonds</b>( peripheral, callback(err) ) Delete any bonds with devices.  
+&#x20;<a href="#api-bluetooth-deleteBonds-peripheral-callback-err" name="api-bluetooth-deleteBonds-peripheral-callback-err">#</a> bluetooth<b>.deleteBonds</b>( peripheral, callback(err) )  
+ Delete any bonds with devices.  
 
-&#x20;<a href="#api-bluetooth-startEncryption-peripheral-callback-err-Start-the-encryption-process" name="api-bluetooth-startEncryption-peripheral-callback-err-Start-the-encryption-process">#</a> bluetooth<b>.startEncryption</b>( peripheral, callback(err) ) Start the encryption process.  
+&#x20;<a href="#api-bluetooth-startEncryption-peripheral-callback-err" name="api-bluetooth-startEncryption-peripheral-callback-err">#</a> bluetooth<b>.startEncryption</b>( peripheral, callback(err) )  
+ Start the encryption process.  
 
-&#x20;<a href="#api-bluetooth-enterPasskey-peripheral-callback-err-When-a-remote-requests-a-passkey-you-ll-need-to-enter-it" name="api-bluetooth-enterPasskey-peripheral-callback-err-When-a-remote-requests-a-passkey-you-ll-need-to-enter-it">#</a> bluetooth<b>.enterPasskey</b>( peripheral, callback(err) ) When a remote requests a passkey, you'll need to enter it.  
+&#x20;<a href="#api-bluetooth-enterPasskey-peripheral-callback-err" name="api-bluetooth-enterPasskey-peripheral-callback-err">#</a> bluetooth<b>.enterPasskey</b>( peripheral, callback(err) )  
+ When a remote requests a passkey, you'll need to enter it.  
 
-&#x20;<a href="#api-bluetooth-setEncryptionKeySize-keysize-callback-err-Set-the-size-of-the-encryption-key" name="api-bluetooth-setEncryptionKeySize-keysize-callback-err-Set-the-size-of-the-encryption-key">#</a> bluetooth<b>.setEncryptionKeySize</b>( keysize, callback(err) ) Set the size of the encryption key.  
+&#x20;<a href="#api-bluetooth-setEncryptionKeySize-keysize-callback-err" name="api-bluetooth-setEncryptionKeySize-keysize-callback-err">#</a> bluetooth<b>.setEncryptionKeySize</b>( keysize, callback(err) )  
+ Set the size of the encryption key.  
 
-&#x20;<a href="#api-bluetooth-setOOBData-data-callback-err-Set-the-out-of-band-data" name="api-bluetooth-setOOBData-data-callback-err-Set-the-out-of-band-data">#</a> bluetooth<b>.setOOBData</b>( data, callback(err) ) Set the out of band data.  
+&#x20;<a href="#api-bluetooth-setOOBData-data-callback-err" name="api-bluetooth-setOOBData-data-callback-err">#</a> bluetooth<b>.setOOBData</b>( data, callback(err) )  
+ Set the out of band data.  
 
-&#x20;<a href="#api-bluetooth-enableMITMProtection-enable-callback-err-Choose-whether-to-enable-or-disable-MITM-protection" name="api-bluetooth-enableMITMProtection-enable-callback-err-Choose-whether-to-enable-or-disable-MITM-protection">#</a> bluetooth<b>.enableMITMProtection</b>( enable, callback(err) ) Choose whether to enable or disable MITM protection.  
+&#x20;<a href="#api-bluetooth-enableMITMProtection-enable-callback-err" name="api-bluetooth-enableMITMProtection-enable-callback-err">#</a> bluetooth<b>.enableMITMProtection</b>( enable, callback(err) )  
+ Choose whether to enable or disable MITM protection.  
 
 ####System
-&#x20;<a href="#api-bluetooth-getBluetoothAddress-callback-err-address-Get-the-current-address-of-the-device" name="api-bluetooth-getBluetoothAddress-callback-err-address-Get-the-current-address-of-the-device">#</a> bluetooth<b>.getBluetoothAddress</b>( callback(err, address) ) Get the current address of the device.  
+&#x20;<a href="#api-bluetooth-getBluetoothAddress-callback-err-address" name="api-bluetooth-getBluetoothAddress-callback-err-address">#</a> bluetooth<b>.getBluetoothAddress</b>( callback(err, address) )  
+ Get the current address of the device.  
 
-&#x20;<a href="#api-bluetooth-getMaxConnections-callback-err-maxConnections-Get-how-many-connections-are-supported-by-the-module-currently-at-4" name="api-bluetooth-getMaxConnections-callback-err-maxConnections-Get-how-many-connections-are-supported-by-the-module-currently-at-4">#</a> bluetooth<b>.getMaxConnections</b>( callback(err, maxConnections)) Get how many connections are supported by the module (currently at 4 ).  
+&#x20;<a href="#api-bluetooth-getMaxConnections-callback-err-maxConnections-Get-how-many-connections-are-supported-by-the-module-currently-at-4" name="api-bluetooth-getMaxConnections-callback-err-maxConnections-Get-how-many-connections-are-supported-by-the-module-currently-at-4">#</a> bluetooth<b>.getMaxConnections</b>( callback(err, maxConnections)) <i>Get</i>&nbsp; how many connections are supported by the module (<i>currently</i>&nbsp; at 4 )  
+.  
 
-&#x20;<a href="#api-bluetooth-reset-callback-err-Reset-the-module" name="api-bluetooth-reset-callback-err-Reset-the-module">#</a> bluetooth<b>.reset</b>( callback(err) ) Reset the module.  
+&#x20;<a href="#api-bluetooth-reset-callback-err" name="api-bluetooth-reset-callback-err">#</a> bluetooth<b>.reset</b>( callback(err) )  
+ Reset the module.  
 
 ###Object Functions
 ####Peripheral Properties
@@ -352,29 +407,41 @@ options =
 &#x20;<a href="#api-peripheral-flags" name="api-peripheral-flags">#</a> peripheral<b>.flags</b>  
 
 ####Peripheral Commands
-&#x20;<a href="#api-peripheral-connect-function-err-Connect-to-a-peripheral-as-a-master" name="api-peripheral-connect-function-err-Connect-to-a-peripheral-as-a-master">#</a> peripheral<b>.connect</b>( function(err) ) Connect to a peripheral as a master.  
+&#x20;<a href="#api-peripheral-connect-function-err" name="api-peripheral-connect-function-err">#</a> peripheral<b>.connect</b>( function(err) )  
+ Connect to a peripheral as a master.  
 
-&#x20;<a href="#api-peripheral-disconnect-function-err-Disconnected-from-a-peripheral-as-a-master" name="api-peripheral-disconnect-function-err-Disconnected-from-a-peripheral-as-a-master">#</a> peripheral<b>.disconnect</b>( function(err) ) Disconnected from a peripheral as a master.  
+&#x20;<a href="#api-peripheral-disconnect-function-err" name="api-peripheral-disconnect-function-err">#</a> peripheral<b>.disconnect</b>( function(err) )  
+ Disconnected from a peripheral as a master.  
 
-&#x20;<a href="#api-peripheral-updateRSSI-function-err-rssi-Get-the-peripheral-s-signal-strength" name="api-peripheral-updateRSSI-function-err-rssi-Get-the-peripheral-s-signal-strength">#</a> peripheral<b>.updateRSSI</b>( function(err, rssi) ) Get the peripheral's signal strength.  
+&#x20;<a href="#api-peripheral-updateRSSI-function-err-rssi" name="api-peripheral-updateRSSI-function-err-rssi">#</a> peripheral<b>.updateRSSI</b>( function(err, rssi) )  
+ Get the peripheral's signal strength.  
 
-&#x20;<a href="#api-peripheral-discoverServices-uuids-function-err-services-Discover-a-subset-of-the-peripheral-s-services" name="api-peripheral-discoverServices-uuids-function-err-services-Discover-a-subset-of-the-peripheral-s-services">#</a> peripheral<b>.discoverServices</b>( uuids, function(err, services) ) Discover a subset of the peripheral's services.  
+&#x20;<a href="#api-peripheral-discoverServices-uuids-function-err-services" name="api-peripheral-discoverServices-uuids-function-err-services">#</a> peripheral<b>.discoverServices</b>( uuids, function(err, services) )  
+ Discover a subset of the peripheral's services.  
 
-&#x20;<a href="#api-peripheral-discoverAllServices-function-services-Discover-all-the-peripheral-s-services" name="api-peripheral-discoverAllServices-function-services-Discover-all-the-peripheral-s-services">#</a> peripheral<b>.discoverAllServices</b>( function(services) ) Discover all the peripheral's services.  
+&#x20;<a href="#api-peripheral-discoverAllServices-function-services" name="api-peripheral-discoverAllServices-function-services">#</a> peripheral<b>.discoverAllServices</b>( function(services) )  
+ Discover all the peripheral's services.  
 
-&#x20;<a href="#api-peripheral-discoverAllServicesAndCharacteristics-uuids-function-err-results-Discover-all-the-services-and-characteristics-of-a-peripheral" name="api-peripheral-discoverAllServicesAndCharacteristics-uuids-function-err-results-Discover-all-the-services-and-characteristics-of-a-peripheral">#</a> peripheral<b>.discoverAllServicesAndCharacteristics</b>( uuids, function(err, results) ) Discover all the services and characteristics of a peripheral.  
+&#x20;<a href="#api-peripheral-discoverAllServicesAndCharacteristics-uuids-function-err-results" name="api-peripheral-discoverAllServicesAndCharacteristics-uuids-function-err-results">#</a> peripheral<b>.discoverAllServicesAndCharacteristics</b>( uuids, function(err, results) )  
+ Discover all the services and characteristics of a peripheral.  
 
-&#x20;<a href="#api-peripheral-discoverCharacteristics-uuids-function-err-characteristic-Discover-specific-characteristics-of-a-peripheral" name="api-peripheral-discoverCharacteristics-uuids-function-err-characteristic-Discover-specific-characteristics-of-a-peripheral">#</a> peripheral<b>.discoverCharacteristics</b>( uuids, function(err, characteristic) ) Discover specific characteristics of a peripheral.  
+&#x20;<a href="#api-peripheral-discoverCharacteristics-uuids-function-err-characteristic" name="api-peripheral-discoverCharacteristics-uuids-function-err-characteristic">#</a> peripheral<b>.discoverCharacteristics</b>( uuids, function(err, characteristic) )  
+ Discover specific characteristics of a peripheral.  
 
-&#x20;<a href="#api-peripheral-discoverAllAttributes-function-err-attributes-Discover-all-services-characteristics-and-descriptors" name="api-peripheral-discoverAllAttributes-function-err-attributes-Discover-all-services-characteristics-and-descriptors">#</a> peripheral<b>.discoverAllAttributes</b>( function(err, attributes) ) Discover all services, characteristics, and descriptors.  
+&#x20;<a href="#api-peripheral-discoverAllAttributes-function-err-attributes" name="api-peripheral-discoverAllAttributes-function-err-attributes">#</a> peripheral<b>.discoverAllAttributes</b>( function(err, attributes) )  
+ Discover all services, characteristics, and descriptors.  
 
-&#x20;<a href="#api-peripheral-deleteBond-function-err-Delete-bonding-data-from-peripheral" name="api-peripheral-deleteBond-function-err-Delete-bonding-data-from-peripheral">#</a> peripheral<b>.deleteBond</b>( function(err) ) Delete bonding data from peripheral.  
+&#x20;<a href="#api-peripheral-deleteBond-function-err" name="api-peripheral-deleteBond-function-err">#</a> peripheral<b>.deleteBond</b>( function(err) )  
+ Delete bonding data from peripheral.  
 
-&#x20;<a href="#api-peripheral-startEncryption-function-err-Make-connection-encrypted-with-device" name="api-peripheral-startEncryption-function-err-Make-connection-encrypted-with-device">#</a> peripheral<b>.startEncryption</b>( function(err) ) Make connection encrypted with device.  
+&#x20;<a href="#api-peripheral-startEncryption-function-err" name="api-peripheral-startEncryption-function-err">#</a> peripheral<b>.startEncryption</b>( function(err) )  
+ Make connection encrypted with device.  
 
-&#x20;<a href="#api-peripheral-enterPasskey-function-err-Enter-passkey-for-bonding" name="api-peripheral-enterPasskey-function-err-Enter-passkey-for-bonding">#</a> peripheral<b>.enterPasskey</b>( function(err) ) Enter passkey for bonding.  
+&#x20;<a href="#api-peripheral-enterPasskey-function-err" name="api-peripheral-enterPasskey-function-err">#</a> peripheral<b>.enterPasskey</b>( function(err) )  
+ Enter passkey for bonding.  
 
-&#x20;<a href="#api-peripheral-toString-Print-out-the-peripheral-s-data" name="api-peripheral-toString-Print-out-the-peripheral-s-data">#</a> peripheral<b>.toString</b>() Print out the peripheral's data.  
+&#x20;<a href="#api-peripheral-toString" name="api-peripheral-toString">#</a> peripheral<b>.toString</b>()  
+ Print out the peripheral's data.  
 
 ####Peripheral Events
 &#x20;<a href="#api-peripheral-on-connect-callback" name="api-peripheral-on-connect-callback">#</a> peripheral<b>.on</b>( 'connect', callback() )  
@@ -410,13 +477,16 @@ options =
 &#x20;<a href="#api-service-includedServices" name="api-service-includedServices">#</a> service<b>.includedServices</b>  
 
 ####Service Commands
-&#x20;<a href="#api-service-discoverIncludedServices-callback-err-includedServices-Discover-what-other-sercices-are-included-by-this-one" name="api-service-discoverIncludedServices-callback-err-includedServices-Discover-what-other-sercices-are-included-by-this-one">#</a> service<b>.discoverIncludedServices</b>( callback(err, includedServices) ) Discover what other sercices are included by this one.  
+&#x20;<a href="#api-service-discoverIncludedServices-callback-err-includedServices" name="api-service-discoverIncludedServices-callback-err-includedServices">#</a> service<b>.discoverIncludedServices</b>( callback(err, includedServices) )  
+ Discover what other sercices are included by this one.  
 
-&#x20;<a href="#api-service-discoverAllCharacteristics-callback-err-characteristics-Discover-the-characteristics-in-this-service" name="api-service-discoverAllCharacteristics-callback-err-characteristics-Discover-the-characteristics-in-this-service">#</a> service<b>.discoverAllCharacteristics</b>( callback(err, characteristics) ) Discover the characteristics in this service.  
+&#x20;<a href="#api-service-discoverAllCharacteristics-callback-err-characteristics" name="api-service-discoverAllCharacteristics-callback-err-characteristics">#</a> service<b>.discoverAllCharacteristics</b>( callback(err, characteristics) )  
+ Discover the characteristics in this service.  
 
 &#x20;<a href="#api-service-discoverCharacteristics-characteristicUUIDs-callback-err-characteristics" name="api-service-discoverCharacteristics-characteristicUUIDs-callback-err-characteristics">#</a> service<b>.discoverCharacteristics</b>( [characteristicUUIDs], callback(err, characteristics) )  
 
-&#x20;<a href="#api-service-toString-Print-out-the-service" name="api-service-toString-Print-out-the-service">#</a> service<b>.toString</b>() Print out the service.  
+&#x20;<a href="#api-service-toString" name="api-service-toString">#</a> service<b>.toString</b>()  
+ Print out the service.  
 
 
 ####Service Events
@@ -433,23 +503,35 @@ options =
 &#x20;<a href="#api-characteristic-value" name="api-characteristic-value">#</a> characteristic<b>.value</b>  
 
 ####Characteristic Commands
-&#x20;<a href="#api-characteristic-discoverAllDescriptors-callback-err-descriptors-Gather-all-descriptors-for-a-characteristic" name="api-characteristic-discoverAllDescriptors-callback-err-descriptors-Gather-all-descriptors-for-a-characteristic">#</a> characteristic<b>.discoverAllDescriptors</b>( callback(err, descriptors) ) Gather all descriptors for a characteristic.  
+&#x20;<a href="#api-characteristic-discoverAllDescriptors-callback-err-descriptors" name="api-characteristic-discoverAllDescriptors-callback-err-descriptors">#</a> characteristic<b>.discoverAllDescriptors</b>( callback(err, descriptors) )  
+ Gather all descriptors for a characteristic.  
 
-&#x20;<a href="#api-characteristic-read-callback-err-value-Read-the-value-of-a-characteristic" name="api-characteristic-read-callback-err-value-Read-the-value-of-a-characteristic">#</a> characteristic<b>.read</b>( callback(err, value) ) Read the value of a characteristic.  
+&#x20;<a href="#api-characteristic-read-callback-err-value" name="api-characteristic-read-callback-err-value">#</a> characteristic<b>.read</b>( callback(err, value) )  
+ Read the value of a characteristic.  
 
-&#x20;<a href="#api-characteristic-write-value-callback-err-Write-the-value-of-a-characteristic" name="api-characteristic-write-value-callback-err-Write-the-value-of-a-characteristic">#</a> characteristic<b>.write</b>( value, callback(err) ) Write the value of a characteristic.  
+&#x20;<a href="#api-characteristic-write-value-callback-err" name="api-characteristic-write-value-callback-err">#</a> characteristic<b>.write</b>( value, callback(err) )  
+ Write the value of a characteristic.  
 
-&#x20;<a href="#api-characteristic-startNotifications-callback-err-value-Subscribe-to-async-notifications" name="api-characteristic-startNotifications-callback-err-value-Subscribe-to-async-notifications">#</a> characteristic<b>.startNotifications</b>( callback(err, value) ) Subscribe to async notifications.  
+&#x20;<a href="#api-characteristic-notify-notify-callback-err" name="api-characteristic-notify-notify-callback-err">#</a> characteristic<b>.notify</b>( notify, callback(err) )  
+ Alias for start/stopNotifications methods. notify is true/false value that indicates whether to start or stop notifications.  
 
-&#x20;<a href="#api-characteristic-disableNotifications-listener-callback-err-Unsubscribe-to-async-notifications" name="api-characteristic-disableNotifications-listener-callback-err-Unsubscribe-to-async-notifications">#</a> characteristic<b>.disableNotifications</b>( listener, callback(err) ) Unsubscribe to async notifications.  
+&#x20;<a href="#api-characteristic-startNotifications-callback-err-value" name="api-characteristic-startNotifications-callback-err-value">#</a> characteristic<b>.startNotifications</b>( callback(err, value) )  
+ Subscribe to async notifications.  
 
-&#x20;<a href="#api-characteristic-startIndications-callback-err-Subscribe-to-indications-same-as-notification-except-you-must-indicate-received" name="api-characteristic-startIndications-callback-err-Subscribe-to-indications-same-as-notification-except-you-must-indicate-received">#</a> characteristic<b>.startIndications</b>( callback(err)) Subscribe to indications (same as notification except you must indicate received ).  
+&#x20;<a href="#api-characteristic-disableNotifications-listener-callback-err" name="api-characteristic-disableNotifications-listener-callback-err">#</a> characteristic<b>.disableNotifications</b>( listener, callback(err) )  
+ Unsubscribe to async notifications.  
 
-&#x20;<a href="#api-characteristic-stopIndications-callback-err-Unsubscribe-from-indications" name="api-characteristic-stopIndications-callback-err-Unsubscribe-from-indications">#</a> characteristic<b>.stopIndications</b>( callback(err) ) Unsubscribe from indications.  
+&#x20;<a href="#api-characteristic-startIndications-callback-err-Subscribe-to-indications-same-as-notification-except-you-must-indicate-received" name="api-characteristic-startIndications-callback-err-Subscribe-to-indications-same-as-notification-except-you-must-indicate-received">#</a> characteristic<b>.startIndications</b>( callback(err)) <i>Subscribe</i>&nbsp; to indications (<i>same</i>&nbsp; as notification except you must indicate received )  
+.  
 
-&#x20;<a href="#api-characteristic-confirmIndication-callback-err-Tell-remote-you-received-indication-same-as-notification-except-you-must-indicate-received" name="api-characteristic-confirmIndication-callback-err-Tell-remote-you-received-indication-same-as-notification-except-you-must-indicate-received">#</a> characteristic<b>.confirmIndication</b>( callback(err)) Tell remote you received indication (same as notification except you must indicate received ).  
+&#x20;<a href="#api-characteristic-stopIndications-callback-err" name="api-characteristic-stopIndications-callback-err">#</a> characteristic<b>.stopIndications</b>( callback(err) )  
+ Unsubscribe from indications.  
 
-&#x20;<a href="#api-characteristic-toString-Print-out-the-characteristic" name="api-characteristic-toString-Print-out-the-characteristic">#</a> characteristic<b>.toString</b>() Print out the characteristic.  
+&#x20;<a href="#api-characteristic-confirmIndication-callback-err-Tell-remote-you-received-indication-same-as-notification-except-you-must-indicate-received" name="api-characteristic-confirmIndication-callback-err-Tell-remote-you-received-indication-same-as-notification-except-you-must-indicate-received">#</a> characteristic<b>.confirmIndication</b>( callback(err)) <i>Tell</i>&nbsp; remote you received indication (<i>same</i>&nbsp; as notification except you must indicate received )  
+.  
+
+&#x20;<a href="#api-characteristic-toString" name="api-characteristic-toString">#</a> characteristic<b>.toString</b>()  
+ Print out the characteristic.  
 
 ####Characteristic Events
 &#x20;<a href="#api-characteristic-on-characteristicRead-callback-valueRead" name="api-characteristic-on-characteristicRead-callback-valueRead">#</a> characteristic<b>.on</b>( 'characteristicRead', callback(valueRead) )  
@@ -470,11 +552,14 @@ options =
 &#x20;<a href="#api-descriptor-value" name="api-descriptor-value">#</a> descriptor<b>.value</b>  
 
 ####Descriptor Commands
-&#x20;<a href="#api-descriptor-read-callback-err-value-Read-the-value-of-a-descriptor" name="api-descriptor-read-callback-err-value-Read-the-value-of-a-descriptor">#</a> descriptor<b>.read</b>( callback(err, value) ) Read the value of a descriptor.  
+&#x20;<a href="#api-descriptor-read-callback-err-value" name="api-descriptor-read-callback-err-value">#</a> descriptor<b>.read</b>( callback(err, value) )  
+ Read the value of a descriptor.  
 
-&#x20;<a href="#api-descriptor-write-value-callback-err-Write-the-value-of-a-descriptor" name="api-descriptor-write-value-callback-err-Write-the-value-of-a-descriptor">#</a> descriptor<b>.write</b>( value, callback(err) ) Write the value of a descriptor.  
+&#x20;<a href="#api-descriptor-write-value-callback-err" name="api-descriptor-write-value-callback-err">#</a> descriptor<b>.write</b>( value, callback(err) )  
+ Write the value of a descriptor.  
 
-&#x20;<a href="#api-descriptor-toString-Print-out-the-descriptor" name="api-descriptor-toString-Print-out-the-descriptor">#</a> descriptor<b>.toString</b>() Print out the descriptor.  
+&#x20;<a href="#api-descriptor-toString" name="api-descriptor-toString">#</a> descriptor<b>.toString</b>()  
+ Print out the descriptor.  
 
 ####Descriptor Events
 &#x20;<a href="#api-descriptor-on-descriptorRead-callback-valueRead" name="api-descriptor-on-descriptorRead-callback-valueRead">#</a> descriptor<b>.on</b>( 'descriptorRead', callback(valueRead )  
