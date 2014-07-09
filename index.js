@@ -117,7 +117,6 @@ BluetoothController.prototype.onDiscover = function(peripheralData) {
         // Emit the event
         setImmediate(function() {
           this.emit('discover', peripheral);
-          console.log('');
         }.bind(this));
       }
     }
@@ -340,7 +339,6 @@ BluetoothController.prototype.onBondStatus = function(bondStatus) {
 
 BluetoothController.prototype.onIndicated = function(indicated) {
   var index = this._localHandles.indexOf(indicated.attrhandle);
-  console.log("Index", index);
   if (index != -1) {
     this.emit('indicated', indicated.connection, index);
   }
