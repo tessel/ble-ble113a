@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:tessel/beta.git"
+    "url": "git@github.com:tessel/ble-ble113a.git"
   },
 
   "author": "Jon McKay <jon@technical.io>",
