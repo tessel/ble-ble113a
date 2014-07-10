@@ -75,22 +75,25 @@ BluetoothController.prototype.bootSequence = function(callback, err) {
     this.setAdvertisingData([0x02, 0x01, 0x06, 0x07, 0x08, 0x54, 0x65, 0x73, 0x73, 0x65, 0x6c], function(){
       setImmediate(function() {
         this.emit('ready');
+        // Call the callback
+        if (callback) {
+          callback(null, this);
+        }
       }.bind(this));
     });
   } else {
     // Emit the error
     setImmediate(function() {
       this.emit('error', err);
+      // Call the callback
+      if (callback) {
+        callback(err, this);
+      }
     }.bind(this));
   }
 
   this.messenger.removeAllListeners('error');
   this.messenger.removeAllListeners('ready');
-
-  // Call the callback
-  if (callback) {
-    callback(err, this);
-  }
 };
 
 BluetoothController.prototype.reset = function(callback) {
