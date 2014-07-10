@@ -343,7 +343,6 @@ BluetoothController.prototype.onBondStatus = function(bondStatus) {
 
 BluetoothController.prototype.onIndicated = function(indicated) {
   var index = this._localHandles.indexOf(indicated.attrhandle);
-  console.log("Index", index);
   if (index != -1) {
     this.emit('indicated', indicated.connection, index);
   }
@@ -1475,6 +1474,14 @@ BluetoothController.prototype.writeDescriptor = function(descriptor, value, call
     }
   }.bind(this));
 };
+
+BluetoothController.prototype.notify = function(characteristic, notify, callback) {
+  if (notify) {
+    this.startNotifications(characteristic, callback);
+  } else {
+    this.stopNotifications(characteristic, callback);
+  }
+}
 
 BluetoothController.prototype.startNotifications = function(characteristic, callback) {
   this.writeToConfigDescriptorOfCharacteristic(characteristic, new Buffer([0x01, 0x00]), function(err) {

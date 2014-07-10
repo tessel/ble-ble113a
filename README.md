@@ -209,6 +209,8 @@ options =
 
 &#x20;<a href="#api-bluetooth-writeDescriptor-descriptor-value-callback-err-Get-the-value-of-a-remote-descriptor" name="api-bluetooth-writeDescriptor-descriptor-value-callback-err-Get-the-value-of-a-remote-descriptor">#</a> bluetooth<b>.writeDescriptor</b>( descriptor, value callback(err) ) Get the value of a remote descriptor.  
 
+&#x20;<a href="#api-bluetooth-notify-characteristic-notify-callback-err" name="api-bluetooth-notify-characteristic-notify-callback-err">#</a> bluetooth<b>.notify</b>( characteristic, notify, callback(err) )  Alias for start/stopNotifications methods. notify is true/false value that indicates whether to start or stop notifications.
+
 &#x20;<a href="#api-bluetooth-startNotifications-characteristic-callback-err-Subscribe-to-remote-characteristic-updates-without-having-to-indicate-it-was-received" name="api-bluetooth-startNotifications-characteristic-callback-err-Subscribe-to-remote-characteristic-updates-without-having-to-indicate-it-was-received">#</a> bluetooth<b>.startNotifications</b>( characteristic, callback(err) ) Subscribe to remote characteristic updates without having to indicate it was received.  
 
 &#x20;<a href="#api-bluetooth-stopNotifications-characteristic-callback-err-Stop-being-notified-about-remote-characteristic-updates" name="api-bluetooth-stopNotifications-characteristic-callback-err-Stop-being-notified-about-remote-characteristic-updates">#</a> bluetooth<b>.stopNotifications</b>( characteristic, callback(err) ) Stop being notified about remote characteristic updates.  
@@ -439,9 +441,11 @@ options =
 
 &#x20;<a href="#api-characteristic-write-value-callback-err-Write-the-value-of-a-characteristic" name="api-characteristic-write-value-callback-err-Write-the-value-of-a-characteristic">#</a> characteristic<b>.write</b>( value, callback(err) ) Write the value of a characteristic.  
 
+&#x20;<a href="#api-characteristic-notify-notify-callback-err" name="api-characteristic-notify-notify-callback-err">#</a> characteristic<b>.notify</b>( notify, callback(err) )  Alias for start/stopNotifications methods. notify is true/false value that indicates whether to start or stop notifications.
+
 &#x20;<a href="#api-characteristic-startNotifications-callback-err-value-Subscribe-to-async-notifications" name="api-characteristic-startNotifications-callback-err-value-Subscribe-to-async-notifications">#</a> characteristic<b>.startNotifications</b>( callback(err, value) ) Subscribe to async notifications.  
 
-&#x20;<a href="#api-characteristic-disableNotifications-listener-callback-err-Unsubscribe-to-async-notifications" name="api-characteristic-disableNotifications-listener-callback-err-Unsubscribe-to-async-notifications">#</a> characteristic<b>.disableNotifications</b>( listener, callback(err) ) Unsubscribe to async notifications.  
+&#x20;<a href="#api-characteristic-stopNotifications-listener-callback-err-Unsubscribe-to-async-notifications" name="api-characteristic-stopNotifications-listener-callback-err-Unsubscribe-to-async-notifications">#</a> characteristic<b>.stopNotifications</b>( listener, callback(err) ) Unsubscribe to async notifications.  
 
 &#x20;<a href="#api-characteristic-startIndications-callback-err-Subscribe-to-indications-same-as-notification-except-you-must-indicate-received" name="api-characteristic-startIndications-callback-err-Subscribe-to-indications-same-as-notification-except-you-must-indicate-received">#</a> characteristic<b>.startIndications</b>( callback(err)) Subscribe to indications (same as notification except you must indicate received ).  
 
