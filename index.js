@@ -26,7 +26,6 @@ function BluetoothController(hardware, callback) {
   this.isAdvertising = false;
   this.messenger = new Messenger(hardware);
   this._connectedPeripherals = {};
-  this._discoveredPeripherals = {};
 
   this.profile = profile;
 
@@ -113,16 +112,13 @@ BluetoothController.prototype.onScanStop = function(err, result) {
 BluetoothController.prototype.onDiscover = function(peripheralData) {
   // Try to grab this peripheral from list of previously discovered peripherals
   this.getPeripheralFromData(peripheralData.rssi, peripheralData.data, peripheralData.sender, peripheralData.address_type, function(peripheral, undiscovered) {
-  // If this peripheral hasn't been discovered or we allow duplicates
-    if (undiscovered || (this._allowDuplicates)) {
-      // If we are not filtering UUIDs or we are and this is a match
-      if (!this.filteredUUIDs.length || this.matchAdvDataUUID(peripheralData.data)) {
-        // Emit the event
-        setImmediate(function() {
-          this.emit('discover', peripheral);
-          console.log('');
-        }.bind(this));
-      }
+    // If we are not filtering UUIDs or we are and this is a match
+    if (!this.filteredUUIDs.length || this.matchAdvDataUUID(peripheralData.data)) {
+      // Emit the event
+      setImmediate(function() {
+        this.emit('discover', peripheral);
+        console.log('');
+      }.bind(this));
     }
   }.bind(this));
 };
@@ -366,8 +362,13 @@ BluetoothController.prototype.startScanning = function(options, callback) {
   // Reset discovered peripherals
   this._discoveredPeripherals = {};
 
-  // Start scanning
-  this.messenger.startScanning(this.manageRequestResult.bind(this, 'scanStart', callback));
+  // Set scan filtering parameters
+  // Accept all advertisments, respond to all masters
+  this.messenger.setFiltering(0, 0, !this._allowDuplicates, function(){
+    // Start scanning
+    this.messenger.startScanning(this.manageRequestResult.bind(this, 'scanStart', callback));
+  }.bind(this));
+
 };
 
 BluetoothController.prototype.stopScanning = function(callback) {
@@ -396,30 +397,17 @@ BluetoothController.prototype.manageRequestResult = function(event, callback, er
 BluetoothController.prototype.getPeripheralFromData = function(rssi, data, address, addressType, callback) {
 
   var addr = new Address(address);
-  // Try to grab this peripheral from list of previously discovered peripherals
-  var peripheral = this._discoveredPeripherals[addr.toString()];
+  // Make a peripheral object from the data
+  peripheral = new Peripheral(
+              this,
+              rssi,
+              data,
+              addr);
 
-  // If it hasn't been discovered yet
-  if (!peripheral) {
-    // Make a peripheral object from the data
-    peripheral = new Peripheral(
-                this,
-                rssi,
-                data,
-                addr);
+  peripheral.addressType = addressType;
 
-    peripheral.addressType = addressType;
-
-    // Put it in our discovered data structure
-    this._discoveredPeripherals[addr.toString()] = peripheral;
-
-    if (callback) {
-      callback(peripheral, true);
-    }
-  } else {
-    if (callback) {
-      callback(peripheral, false);
-    }
+  if (callback) {
+    callback(peripheral, true);
   }
 };
 
