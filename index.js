@@ -364,9 +364,13 @@ BluetoothController.prototype.startScanning = function(options, callback) {
 
   // Set scan filtering parameters
   // Accept all advertisments, respond to all masters
-  this.messenger.setFiltering(0, 0, !this._allowDuplicates, function(){
-    // Start scanning
-    this.messenger.startScanning(this.manageRequestResult.bind(this, 'scanStart', callback));
+  this.messenger.setFiltering(0, 0, !this._allowDuplicates, function(err, response){
+    if (err) {
+      callabck && callback(err)
+    } else {
+      // Start scanning
+      this.messenger.startScanning(this.manageRequestResult.bind(this, 'scanStart', callback));
+    }
   }.bind(this));
 
 };
