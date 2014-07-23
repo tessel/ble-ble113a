@@ -9,6 +9,9 @@ npm install ble-ble113a
 ```
 You can use module port A, B, or D. We will be implementing software UART on port C in the near future.
 
+###Getting Started
+If you're interested in learning more about BLE, check out our getting started guide [here!](https://github.com/tessel/docs/blob/master/tutorials/ble-getting-started.md)
+
 ###Examples
 ####Basic Example
 ```js
