@@ -1,6 +1,6 @@
 var tessel = require('tessel');
 var async = require('async');
-var test = require('ttt');
+var test = require('tinytap');
 var port1 = process.argv[2] || 'A';
 var port2 = process.argv[3] || 'B';
 var bleLib = require('../');
