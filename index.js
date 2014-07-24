@@ -1678,21 +1678,24 @@ BluetoothController.prototype.setScanResponseData = function(data, callback) {
 };
 
 BluetoothController.prototype.advDataHelper = function(data, advParam, callback) {
-  this.messenger.setAdvertisementData(advParam, data, function(err, response) {
-    if (callback) {
-      callback(err); // TODO This seems wrong: callback err before checking for err. Check?
-    }
+  if (data.length > 32){
+    callback && callback(new Error("Advertisement packet exceeds maximum length of 32 bytes."));
+  } else {
+    this.messenger.setAdvertisementData(advParam, data, function(err, response) {
 
-    if (err) {
-      setImmediate(function() {
-        this.emit('error');
-      }.bind(this));
-      this._userAdvData = false;
-    } else {
-      this._userAdvData = true;
-    }
+      if (err) {
+        setImmediate(function() {
+          this.emit('error');
+        }.bind(this));
+        this._userAdvData = false;
+        callback && callback(err);
+      } else {
+        this._userAdvData = true;
+        callback && callback(null);
+      }
 
-  }.bind(this));
+    }.bind(this));
+  }
 };
 
 BluetoothController.prototype.getFirmwareVersion = function(callback) {
