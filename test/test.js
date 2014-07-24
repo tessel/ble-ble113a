@@ -18,7 +18,7 @@ var trans0_handle = 21;
 var trans1_handle = 25;
 var connected = false;
 
-console.log('1..23');
+console.log('1..25');
 
 async.series([
   test("Connecting to BLE module", function(t){
@@ -83,6 +83,17 @@ async.series([
         ble1.stopScanning();
         t.end();
       }
+    });
+  }),
+  test("Set advertising data", function(t){
+    var validAd = [0x02,0x01,0x06, 0x0F, 0x09, 0x74, 0x65, 0x73, 0x73, 0x65, 0x6c, 0x65, 0x72, 0x6f, 0x6d, 0x65, 0x74, 0x65, 0x72];
+    var invalidAd = 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef';
+    ble2.setAdvertisingData(new Buffer(invalidAd), function(err){
+      t.equal(true, !!err, "Long advertisement should give an error");
+      ble2.setAdvertisingData(new Buffer(validAd), function(err){
+        t.equal(err, undefined, "Valid advertisement should not error");
+        t.end();
+      });
     });
   }),
   test("Stop advertising", function(t){
