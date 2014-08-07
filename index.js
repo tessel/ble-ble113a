@@ -79,7 +79,7 @@ BluetoothController.prototype.bootSequence = function(callback, err) {
           callback(null, this);
         }
       }.bind(this));
-    });
+    }.bind(this));
   } else {
     // Emit the error
     setImmediate(function() {
