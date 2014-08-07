@@ -273,6 +273,7 @@ async.series([
     ble1.reset(function(err){
       t.equal(err, undefined, "Error reseting device 1");
       ble2.reset(function(err){
+        clearTimeout(timeout);
         t.equal(err, undefined, "Error reseting device 2");
         t.end();
       });
