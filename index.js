@@ -117,7 +117,6 @@ BluetoothController.prototype.onDiscover = function(peripheralData) {
       // Emit the event
       setImmediate(function() {
         this.emit('discover', peripheral);
-        console.log('');
       }.bind(this));
     }
   }.bind(this));
