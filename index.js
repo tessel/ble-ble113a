@@ -1828,10 +1828,12 @@ function BluetoothPin(controller, port, pin) {
 util.inherits(BluetoothPin, events.EventEmitter);
 
 BluetoothPin.prototype.toString = function() {
-  return JSON.stringify({
+  var str = JSON.stringify({
     direction: this.direction,
     value: this.value,
   });
+  console.log('index.js stringify:',str);
+  return str;
 };
 
 BluetoothPin.prototype.setInput = function(callback) {
