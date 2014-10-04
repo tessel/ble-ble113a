@@ -27,11 +27,11 @@ function createIBeaconAdvertisementPacket(major, minor, peripheral) {
   // Apple AirLocate Service UUID
   var airLocate = new Buffer([0xe2, 0xc5, 0x6d, 0xb5, 0xdf, 0xfb, 0x48, 0xd2, 0xb0, 0x60, 0xd0, 0xf5, 0xa7, 0x10, 0x96, 0xe0]);
 
-  var major = new Buffer(2);
-  major.writeUInt16BE(major, 0);
+  var majorBuf = new Buffer(2);
+  majorBuf.writeUInt16BE(major, 0);
 
-  var minor = new Buffer(2);
-  major.writeUInt16BE(minor, 0);
+  var minorBuf = new Buffer(2);
+  minorBuf.writeUInt16BE(minor, 0);
 
   // Measured signal strength
   var signalStrength = 0xc6
@@ -39,5 +39,5 @@ function createIBeaconAdvertisementPacket(major, minor, peripheral) {
     signalStrength = peripheral.rssi;
   }
 
-  return Buffer.concat([flags, manufacturerData, preamble, airLocate, major, minor, new Buffer([signalStrength])]);
+  return Buffer.concat([flags, manufacturerData, preamble, airLocate, majorBuf, minorBuf, new Buffer([signalStrength])]);
 }
