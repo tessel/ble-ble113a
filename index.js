@@ -1111,6 +1111,7 @@ BluetoothController.prototype.writeAttribute = function(attribute, value, callba
   // }
 
   // Write has to be in 20 byte increments
+  var self = this;
   this.splitWriteIntoBuffers(value, function(err, buffers) {
     if (err) {
       if (callback) {
@@ -1121,10 +1122,10 @@ BluetoothController.prototype.writeAttribute = function(attribute, value, callba
       // If there is only one buffer
       if (buffers.length == 1) {
         // We can send it immediately
-        this.writeAttributeImmediately(attribute, buffers[0], callback);
+        self.writeAttributeImmediately(attribute, buffers[0], callback);
       } else {
         // If there are multiple buffers, we've got to prepare several writes, then execute
-        this.prepareAttributeWrite(attribute, buffers, callback);
+        self.prepareAttributeWrite(attribute, buffers, callback);
       }
     }
   });
