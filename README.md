@@ -285,7 +285,7 @@ options =
 
 &#x20;<a href="#api-bluetooth-on-remoteWrite-callback-connection-index-valueWritten" name="api-bluetooth-on-remoteWrite-callback-connection-index-valueWritten">#</a> bluetooth<b>.on</b>( 'remoteWrite', callback(connection, index, valueWritten) )  
 
-&#x20;<a href="#api-bluetooth-on-remoteReadRequest-callback-connection-index" name="api-bluetooth-on-remoteReadRequest-callback-connection-index">#</a> bluetooth<b>.on</b>( 'remoteReadRequest', callback(connection, index) )  
+&#x20;<a href="#api-bluetooth-on-remoteReadRequest-callback-connection-index" name="api-bluetooth-on-remoteReadRequest-callback-connection-index">#</a> bluetooth<b>.on</b>( 'remoteReadRequest', callback(connection, index, offset, maxSize) )  
 
 &#x20;<a href="#api-bluetooth-on-remoteNotification-callback-connection-index" name="api-bluetooth-on-remoteNotification-callback-connection-index">#</a> bluetooth<b>.on</b>( 'remoteNotification', callback(connection, index) )  
 
