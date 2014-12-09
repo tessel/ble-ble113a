@@ -1762,6 +1762,27 @@ BluetoothController.prototype.writeLocalHandle = function(handle, data, callback
   });
 };
 
+BluetoothController.prototype.sendReadResponse = function(handle, err, data, callback) {
+
+  if (!err && !Buffer.isBuffer(data)) {
+    if (callback) {
+      callback(new Error("Data must be a buffer."));
+    }
+    return;
+  }
+
+  // Error should be either an error code or 0
+  if (typeof err != "number") {
+    err = err ? 1 : 0;
+  }
+
+  this.messenger.sendReadResponse(handle, err, data, function(err, response) {
+    if (callback) {
+      callback(err);
+    }
+  });
+}
+
 /*
 * HARDWARE
 */
