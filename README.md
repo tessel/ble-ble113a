@@ -222,7 +222,7 @@ options =
 
 &#x20;<a href="#api-bluetooth-stopIndications-characteristic-callback-err-Stop-receiving-remote-characteristic-updates-and-indicate-it-was-received" name="api-bluetooth-stopIndications-characteristic-callback-err-Stop-receiving-remote-characteristic-updates-and-indicate-it-was-received">#</a> bluetooth<b>.stopIndications</b>( characteristic, callback(err) ) Stop receiving remote characteristic updates and indicate it was received.  
 
-&#x20;<a href="#api-bluetooth-updateRSSI-peripheral-callback-err-rssi-Get-signal-strength-of-peripheral-that-we-re-connected-to" name="api-bluetooth-updateRSSI-peripheral-callback-err-rssi-Get-signal-strength-of-peripheral-that-we-re-connected-to">#</a> bluetooth<b>.updateRSSI</b>( peripheral, callback(err, rssi) ) Get signal strength of peripheral that we're connected to.  
+&#x20;<a href="#api-bluetooth-updateRssi-peripheral-callback-err-rssi-Get-signal-strength-of-peripheral-that-we-re-connected-to" name="api-bluetooth-updateRssi-peripheral-callback-err-rssi-Get-signal-strength-of-peripheral-that-we-re-connected-to">#</a> bluetooth<b>.updateRssi</b>( peripheral, callback(err, rssi) ) Get signal strength of peripheral that we're connected to.  
 
 &#x20;<a href="#api-bluetooth-reset-callback-err-Reset-the-module-useful-in-case-of-unexpected-state" name="api-bluetooth-reset-callback-err-Reset-the-module-useful-in-case-of-unexpected-state">#</a> bluetooth<b>.reset</b>( callback(err)) Reset the module (useful in case of unexpected state ).  
 
@@ -361,7 +361,7 @@ options =
 
 &#x20;<a href="#api-peripheral-disconnect-function-err-Disconnected-from-a-peripheral-as-a-master" name="api-peripheral-disconnect-function-err-Disconnected-from-a-peripheral-as-a-master">#</a> peripheral<b>.disconnect</b>( function(err) ) Disconnected from a peripheral as a master.  
 
-&#x20;<a href="#api-peripheral-updateRSSI-function-err-rssi-Get-the-peripheral-s-signal-strength" name="api-peripheral-updateRSSI-function-err-rssi-Get-the-peripheral-s-signal-strength">#</a> peripheral<b>.updateRSSI</b>( function(err, rssi) ) Get the peripheral's signal strength.  
+&#x20;<a href="#api-peripheral-updateRssi-function-err-rssi-Get-the-peripheral-s-signal-strength" name="api-peripheral-updateRssi-function-err-rssi-Get-the-peripheral-s-signal-strength">#</a> peripheral<b>.updateRssi</b>( function(err, rssi) ) Get the peripheral's signal strength.  
 
 &#x20;<a href="#api-peripheral-discoverServices-uuids-function-err-services-Discover-a-subset-of-the-peripheral-s-services" name="api-peripheral-discoverServices-uuids-function-err-services-Discover-a-subset-of-the-peripheral-s-services">#</a> peripheral<b>.discoverServices</b>( uuids, function(err, services) ) Discover a subset of the peripheral's services.  
 
