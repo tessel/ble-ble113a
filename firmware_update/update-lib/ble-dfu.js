@@ -7,6 +7,7 @@ console.log("...done.");
 function dfuUpdate (messenger, callback) {
 
   console.log("Loaded image of size", image.length, "bytes...");
+  console.log("NOTE: Do not cancel script or unplug your Tessel until update completes. You will brick your module!!!");
 
   dfuReboot(messenger, 1, function() {
 
