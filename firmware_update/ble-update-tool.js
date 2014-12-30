@@ -16,5 +16,6 @@ ble.on('ready', function() {
     if (err) throw err;
 
     console.log("Finished updating!");
+    process.exit(1);
   })
 })

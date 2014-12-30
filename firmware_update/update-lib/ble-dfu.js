@@ -51,10 +51,7 @@ function transferImage(image, messenger, callback) {
         return callback && callback(err);
       }
 
-      console.log("Sent the image... Setting finish timeout...");
-
       setTimeout(function() {
-        console.log('calling flash upload finish.')
         messenger.flashUploadFinish(callback); 
       }, 1000);
     });
