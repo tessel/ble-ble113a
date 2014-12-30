@@ -32,7 +32,7 @@
   },
   "hardware" :
   {
-    "./firmware_update" : false,
+    "./firmware_update/update-lib/v1.0.2.hex" : false,
     "./examples" : false
   }
 }
