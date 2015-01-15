@@ -9,4 +9,14 @@ Then, run the hex_to_buffer.py script with the name of hex file as the first arg
 
 Then, in the directory above, `tessel run ble-update-tool.js` in order to open that new image, put the BLE module into DFU mode, and load the new firmware. This process takes a couple minutes. 
 
+Running the following commands should update your firmware.
+
+```bash
+cd <root of ble module>
+cd firmware_update/update_lib
+python hex_to_buffer.py v1.0.2.hex
+cd ../
+tessel run ble-update-tool.js
+```
+
 Once that completes, the firmware should be updated.
