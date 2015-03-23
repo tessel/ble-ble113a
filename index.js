@@ -1746,6 +1746,7 @@ BluetoothController.prototype.readLocalHandle = function(handle, offset, callbac
 
 BluetoothController.prototype.writeLocalHandle = function(handle, data, callback) {
   this.messenger.writeLocalHandle(handle, data, function(err, response) {
+    err = err ? err : response.result;
     if (callback) {
       callback(err);
     }
@@ -2150,10 +2151,6 @@ BluetoothController.prototype.enableMITMProtection = function(enable, callback) 
       callback(err);
     }
   });
-};
-
-BluetoothController.prototype.dfuUpdate = function(callback) {
-  var dfuUpdate = require('./firmware_update/ble-dfu')(this.messenger, callback);
 };
 
 // Set the module port of the Bluetooth Low Energy module to initialize
