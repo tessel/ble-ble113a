@@ -203,7 +203,7 @@ async.series([
         t.end();
       }, 5000);
       ble2.writeLocalValue(0, new Buffer([0xee]), function(err){
-        t.equal(err, undefined, "Error writing local value");
+        t.equal(err, undefined, "Error writing local value:" + err);
         char0.read(function(err, value){
           clearTimeout(timeout);
           t.equal(value[0], 0xee, "Unexpected value on characteristic read");

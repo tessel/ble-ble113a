@@ -1746,7 +1746,11 @@ BluetoothController.prototype.readLocalHandle = function(handle, offset, callbac
 
 BluetoothController.prototype.writeLocalHandle = function(handle, data, callback) {
   this.messenger.writeLocalHandle(handle, data, function(err, response) {
-    err = err ? err : response.result;
+
+    if (!err && response.result != 0) {
+      err = new Error("Unable to write local handle. Error Code:" + response.result);
+    }
+
     if (callback) {
       callback(err);
     }
