@@ -26,7 +26,7 @@ var blelib = require('ble-ble113a');
 
 var ble = blelib.use(tessel.port['A']);
 
-ble.on('ready', function(err) {
+ble.on('ready', function() {
   console.log('Scanning...');
   ble.startScanning();
 });
