@@ -83,10 +83,12 @@ BluetoothController.prototype.bootSequence = function(callback, err) {
   } else {
     // Emit the error
     setImmediate(function() {
-      this.emit('error', err);
       // Call the callback
       if (callback) {
         callback(err, this);
+      }
+      else {
+        this.emit('error', err);
       }
     }.bind(this));
   }
